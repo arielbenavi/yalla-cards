@@ -22,6 +22,23 @@ type Queue = {
   remaining_new: number;
 };
 
+function AudioIconButton({ onClick, size = "large" }: { onClick: () => void; size?: "large" | "small" }) {
+  const dim = size === "large" ? "h-24 w-24" : "h-14 w-14";
+  return (
+    <button
+      onClick={onClick}
+      aria-label={strings.review.playAudio}
+      className={`flex ${dim} items-center justify-center rounded-full bg-black text-white active:bg-gray-800`}
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" className={size === "large" ? "h-12 w-12" : "h-7 w-7"}>
+        <path d="M3 9v6h4l5 5V4L7 9H3z" />
+        <path d="M16.5 12a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12z" />
+        <path d="M14 4.35v2.1a7 7 0 0 1 0 11.1v2.1a9 9 0 0 0 0-15.3z" />
+      </svg>
+    </button>
+  );
+}
+
 export default function ReviewPage() {
   const [queue, setQueue] = useState<Queue | null>(null);
   const [index, setIndex] = useState(0);
@@ -42,6 +59,7 @@ export default function ReviewPage() {
   }, [loadQueue]);
 
   const current = queue?.cards[index];
+  const audioOnlyPrompt = current?.direction === "ar_to_he" && !!current.audio_url;
 
   const playAudio = useCallback(() => {
     if (!current?.audio_url) return;
@@ -50,10 +68,6 @@ export default function ReviewPage() {
     audio.currentTime = 0;
     audio.play();
   }, [current]);
-
-  useEffect(() => {
-    if (revealed) playAudio();
-  }, [revealed, playAudio]);
 
   async function grade(rating: number) {
     if (!current || grading) return;
@@ -106,7 +120,7 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col p-4 gap-4">
+    <div className="flex flex-1 flex-col p-4 gap-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
       <div className="flex justify-between text-sm text-gray-500">
         <span>
           <bdi>{queue.remaining_due + queue.remaining_new - index}</bdi> {strings.review.remaining}
@@ -119,6 +133,8 @@ export default function ReviewPage() {
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
         {current.direction === "he_to_ar" ? (
           <p className="text-3xl font-bold nikud-text">{current.hebrew_meaning}</p>
+        ) : audioOnlyPrompt ? (
+          <AudioIconButton onClick={playAudio} />
         ) : (
           <p className="text-3xl font-bold nikud-text">{current.translit_nikud}</p>
         )}
@@ -127,17 +143,19 @@ export default function ReviewPage() {
           <div className="flex flex-col items-center gap-3">
             {current.direction === "he_to_ar" ? (
               <p className="text-2xl nikud-text">{current.translit_nikud}</p>
+            ) : audioOnlyPrompt ? (
+              <>
+                <p className="text-2xl font-bold nikud-text">{current.translit_nikud}</p>
+                <p className="text-2xl nikud-text">{current.hebrew_meaning}</p>
+              </>
             ) : (
               <p className="text-2xl nikud-text">{current.hebrew_meaning}</p>
             )}
-            {current.audio_url && (
-              <button onClick={playAudio} className="text-sm underline text-gray-500">
-                {strings.review.playAudio}
-              </button>
-            )}
-            <audio ref={audioRef} src={current.audio_url ?? undefined} className="hidden" />
+            {current.audio_url && !audioOnlyPrompt && <AudioIconButton onClick={playAudio} size="small" />}
           </div>
         )}
+
+        {current.audio_url && <audio ref={audioRef} src={current.audio_url} className="hidden" />}
       </div>
 
       {!revealed ? (

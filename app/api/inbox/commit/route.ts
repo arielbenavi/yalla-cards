@@ -6,6 +6,8 @@ type CommitRow = {
   hebrew_meaning: string;
   translit_nikud: string;
   item_type: "word" | "phrase" | "sentence";
+  notes?: string;
+  recording_id?: string | null;
 };
 
 export async function POST(request: NextRequest) {
@@ -28,6 +30,8 @@ export async function POST(request: NextRequest) {
         hebrew_meaning: row.hebrew_meaning,
         translit_nikud: row.translit_nikud,
         item_type: row.item_type,
+        notes: row.notes || null,
+        recording_id: row.recording_id || null,
       }))
     )
     .select();

@@ -1,11 +1,13 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import type { ParsedCard } from "@/lib/gemini";
 
-export type InboxRow = ParsedCard & {
-  duplicate_of: { id: string; hebrew_meaning: string; translit_nikud: string; similarity: number } | null;
-};
+export type DuplicateMatch = { id: string; hebrew_meaning: string; translit_nikud: string; similarity: number };
 
-export async function attachDuplicates(rows: ParsedCard[]): Promise<InboxRow[]> {
+export type InboxRow = ParsedCard & { duplicate_of: DuplicateMatch | null };
+
+export async function attachDuplicates<T extends ParsedCard>(
+  rows: T[]
+): Promise<(T & { duplicate_of: DuplicateMatch | null })[]> {
   const supabase = supabaseAdmin();
   return Promise.all(
     rows.map(async (row) => {

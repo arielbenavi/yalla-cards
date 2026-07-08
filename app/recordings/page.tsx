@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { strings } from "@/lib/strings";
-import { supabaseBrowser } from "@/lib/supabase-browser";
-import { transcodeToOpus, sliceChunks } from "@/lib/transcode";
+import { uploadAndTranscribeRecording, type UploadStatus } from "@/lib/recording-upload";
 
 type Lesson = { id: string; date: string; title: string | null };
 type Recording = {
@@ -35,59 +34,25 @@ export default function RecordingsPage() {
     refresh();
   }, []);
 
+  const statusLabels: Record<UploadStatus, string> = {
+    transcoding: strings.recordings.transcoding,
+    uploading: strings.recordings.uploading,
+    transcribing: strings.recordings.transcribing,
+  };
+
   async function handleUpload() {
     if (!file) return;
 
-    setStatus(strings.recordings.transcoding);
-    const { blob, durationSec } = await transcodeToOpus(file);
-
-    setStatus(strings.recordings.uploading);
-    const { path, token } = await fetch("/api/recordings/upload-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ extension: "ogg" }),
-    }).then((r) => r.json());
-
-    const supabase = supabaseBrowser();
-    const { error: uploadError } = await supabase.storage
-      .from("recordings")
-      .uploadToSignedUrl(path, token, blob);
-
-    if (uploadError) {
+    try {
+      await uploadAndTranscribeRecording(file, {
+        lessonId: lessonId || null,
+        onStatus: (s) => setStatus(statusLabels[s]),
+      });
+      setFile(null);
+      refresh();
+    } finally {
       setStatus(null);
-      return;
     }
-
-    const { recording } = await fetch("/api/recordings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lesson_id: lessonId || null, storage_path: path, duration_sec: durationSec }),
-    }).then((r) => r.json());
-
-    setStatus(strings.recordings.transcribing);
-    const chunks = await sliceChunks(blob, durationSec);
-    const allWords: { word: string; start: number; end: number }[] = [];
-
-    for (const chunk of chunks) {
-      const formData = new FormData();
-      formData.append("chunk", chunk.blob, "chunk.ogg");
-      formData.append("offset_sec", String(chunk.offsetSec));
-      const { words } = await fetch(`/api/recordings/${recording.id}/transcribe-chunk`, {
-        method: "POST",
-        body: formData,
-      }).then((r) => r.json());
-      allWords.push(...(words ?? []));
-    }
-
-    await fetch(`/api/recordings/${recording.id}/save-transcript`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words: allWords }),
-    });
-
-    setStatus(null);
-    setFile(null);
-    refresh();
   }
 
   return (
