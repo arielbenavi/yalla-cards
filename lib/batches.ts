@@ -37,11 +37,26 @@ export function emptyBatchRow(): BatchRow {
   };
 }
 
+export type PdfPageStatus = "pending" | "done" | "failed";
+
 export type RawInput =
   | { source: "paste"; text: string }
   | { source: "photo"; image_paths: string[] }
   | { source: "whatsapp"; chat_identifier: string; messages: { index: number; text: string }[] }
-  | { source: "pdf"; page_image_paths: string[]; page_range: { from: number; to: number } };
+  | {
+      source: "pdf";
+      page_image_paths: string[];
+      page_range: { from: number; to: number };
+      page_status: PdfPageStatus[];
+    };
+
+// Indexes (into page_image_paths / page_status) that still need processing.
+// mode "all" re-does every page; mode "resume" only touches pages that
+// aren't marked "done" yet (pending or failed).
+export function pdfPageIndexesToProcess(pageStatus: PdfPageStatus[], mode: "all" | "resume"): number[] {
+  if (mode === "all") return pageStatus.map((_, i) => i);
+  return pageStatus.map((s, i) => [s, i] as const).filter(([s]) => s !== "done").map(([, i]) => i);
+}
 
 export type ImportBatch = {
   id: string;
@@ -62,6 +77,7 @@ export type BatchSummary = {
   updated_at: string;
   total_rows: number;
   committed_rows: number;
+  has_incomplete_pdf_pages: boolean;
 };
 
 export type ItemNumberGap = { number: number; nearPages: number[] };

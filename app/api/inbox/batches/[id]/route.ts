@@ -13,7 +13,11 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
-  const patch = (await request.json()) as { parsed_rows?: unknown; lesson_id?: string | null };
+  const patch = (await request.json()) as {
+    parsed_rows?: unknown;
+    lesson_id?: string | null;
+    raw_input?: unknown;
+  };
 
   const supabase = supabaseAdmin();
   const { data, error } = await supabase

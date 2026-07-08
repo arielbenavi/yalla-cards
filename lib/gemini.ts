@@ -219,17 +219,37 @@ function mergePdfPasses(pass1: PdfExtractedItem[], pass2: PdfExtractedItem[]): P
   });
 }
 
+const RETRY_DELAYS_MS = [5000, 15000, 45000];
+
+function isRetryableError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return /\b(503|429)\b/.test(message) || /overloaded|fetch failed|network|ECONNRESET|ETIMEDOUT/i.test(message);
+}
+
+async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt === RETRY_DELAYS_MS.length || !isRetryableError(err)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+    }
+  }
+  throw lastErr;
+}
+
 export async function extractPdfPage(image: { mimeType: string; base64: string }): Promise<PdfExtractedItem[]> {
   const model = getModel(pdfExtractSchema);
   const imagePart = { inlineData: { mimeType: image.mimeType, data: image.base64 } };
 
-  const pass1Result = await model.generateContent([PDF_PASS1_PROMPT, imagePart]);
+  const pass1Result = await withRetry(() => model.generateContent([PDF_PASS1_PROMPT, imagePart]));
   const pass1: PdfExtractedItem[] = JSON.parse(pass1Result.response.text());
 
-  const pass2Result = await model.generateContent([
-    PDF_PASS2_PROMPT + JSON.stringify(pass1),
-    imagePart,
-  ]);
+  const pass2Result = await withRetry(() =>
+    model.generateContent([PDF_PASS2_PROMPT + JSON.stringify(pass1), imagePart])
+  );
   const pass2: PdfExtractedItem[] = JSON.parse(pass2Result.response.text());
 
   return mergePdfPasses(pass1, pass2);

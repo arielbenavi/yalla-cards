@@ -7,13 +7,18 @@ export async function GET() {
   const supabase = supabaseAdmin();
   const { data, error } = await supabase
     .from("import_batches")
-    .select("id, source, lesson_id, parsed_rows, created_at, updated_at, lesson:lessons(title, date)")
+    .select("id, source, lesson_id, raw_input, parsed_rows, created_at, updated_at, lesson:lessons(title, date)")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   const batches = (data ?? []).map((b) => {
     const rows = (b.parsed_rows ?? []) as BatchRow[];
+    const rawInput = b.raw_input as RawInput;
+    const hasIncompletePdfPages =
+      rawInput.source === "pdf" && Array.isArray(rawInput.page_status)
+        ? rawInput.page_status.some((s) => s !== "done")
+        : false;
     return {
       id: b.id,
       source: b.source,
@@ -23,6 +28,7 @@ export async function GET() {
       updated_at: b.updated_at,
       total_rows: rows.length,
       committed_rows: rows.filter((r) => r.committed).length,
+      has_incomplete_pdf_pages: hasIncompletePdfPages,
     };
   });
 

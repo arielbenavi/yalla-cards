@@ -12,7 +12,15 @@ import {
 } from "@/lib/whatsapp";
 import { uploadAndTranscribeRecording } from "@/lib/recording-upload";
 import { supabaseBrowser } from "@/lib/supabase-browser";
-import { emptyBatchRow, findItemNumberGaps, type BatchRow, type BatchSummary, type RawInput } from "@/lib/batches";
+import {
+  emptyBatchRow,
+  findItemNumberGaps,
+  pdfPageIndexesToProcess,
+  type BatchRow,
+  type BatchSummary,
+  type PdfPageStatus,
+  type RawInput,
+} from "@/lib/batches";
 import { getPdfPageCount, renderPdfPagesToImages } from "@/lib/pdf";
 
 type Row = BatchRow;
@@ -22,6 +30,13 @@ const typeLabels: Record<Row["item_type"], string> = {
   word: strings.inbox.typeWord,
   phrase: strings.inbox.typePhrase,
   sentence: strings.inbox.typeSentence,
+};
+
+const pdfPageStatusLabels: Record<PdfPageStatus | "processing", string> = {
+  pending: strings.inbox.pdfStatusPending,
+  processing: strings.inbox.pdfStatusProcessing,
+  done: strings.inbox.pdfStatusDone,
+  failed: strings.inbox.pdfStatusFailed,
 };
 
 const sourceLabels: Record<BatchSummary["source"], string> = {
@@ -97,6 +112,7 @@ export default function InboxPage() {
   const [pdfFromPage, setPdfFromPage] = useState(1);
   const [pdfToPage, setPdfToPage] = useState(1);
   const [pdfStatus, setPdfStatus] = useState<string | null>(null);
+  const [pdfPages, setPdfPages] = useState<{ pageNumber: number; status: PdfPageStatus | "processing" }[]>([]);
 
   const [zipFile, setZipFile] = useState<File | null>(null);
   const [waStep, setWaStep] = useState<"pick-zip" | "pick-teacher" | "processing">("pick-zip");
@@ -144,50 +160,136 @@ export default function InboxPage() {
     setCommitted(false);
     setShowBatchList(false);
     setGapWarning(batch.source === "pdf" ? gapWarningText(batch.parsed_rows ?? []) : null);
+
+    if (batch.source === "pdf") {
+      const rawInput = batch.raw_input as RawInput & { source: "pdf" };
+      // Batches created before per-page status tracking existed have no
+      // page_status -- they only ever got persisted after a fully successful
+      // run, so treat every page as already done.
+      const pageStatus: PdfPageStatus[] =
+        rawInput.page_status ?? rawInput.page_image_paths.map(() => "done" as const);
+      setPdfPages(
+        rawInput.page_image_paths.map((_, i) => ({
+          pageNumber: rawInput.page_range.from + i,
+          status: pageStatus[i] ?? "pending",
+        }))
+      );
+    } else {
+      setPdfPages([]);
+    }
   }
 
-  async function reparsePdfBatch() {
-    if (!currentBatchId) return;
+  // Extracts one PDF page image, appends its rows into the running batch
+  // state, and immediately persists both the rows and the page's status --
+  // so a crash/close mid-run only ever loses the page in flight, not
+  // everything parsed so far. Failures (even after Gemini-side retries) are
+  // recorded as "failed" rather than thrown, so the loop can continue.
+  async function processPdfPage(
+    batchId: string,
+    pageIndex: number,
+    pageNumber: number,
+    getBase64: () => Promise<string>,
+    rowsRef: { current: Row[] },
+    statusRef: { current: PdfPageStatus[] },
+    rawInput: RawInput & { source: "pdf" }
+  ) {
+    setPdfPages((prev) => prev.map((p, i) => (i === pageIndex ? { ...p, status: "processing" } : p)));
+
+    try {
+      const base64 = await getBase64();
+      const res = await fetch("/api/inbox/pdf-extract-page", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ base64, mimeType: "image/png" }),
+      }).then((r) => r.json());
+      if (res.error) throw new Error(res.error);
+
+      const newRows: Row[] = (res.items ?? []).map((it: Partial<Row>) => ({
+        ...emptyBatchRow(),
+        ...it,
+        page_number: pageNumber,
+      }));
+      rowsRef.current = [...rowsRef.current.filter((r) => r.page_number !== pageNumber), ...newRows];
+      statusRef.current = statusRef.current.map((s, i) => (i === pageIndex ? "done" : s));
+    } catch {
+      statusRef.current = statusRef.current.map((s, i) => (i === pageIndex ? "failed" : s));
+    }
+
+    setRows([...rowsRef.current]);
+    setGapWarning(gapWarningText(rowsRef.current));
+    setPdfPages((prev) => prev.map((p, i) => (i === pageIndex ? { ...p, status: statusRef.current[pageIndex] } : p)));
+
+    await fetch(`/api/inbox/batches/${batchId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        parsed_rows: rowsRef.current,
+        raw_input: { ...rawInput, page_status: statusRef.current },
+      }),
+    });
+    loadBatches();
+  }
+
+  // mode "all" re-extracts every page (full reparse); mode "resume" only
+  // (re)processes pages not yet marked "done" -- used both by the batch-list
+  // "resume" action and the per-page retry button.
+  async function runPdfBatch(batchId: string, mode: "all" | "resume", onlyPageIndex?: number) {
     setReparsing(true);
     try {
-      const { batch } = await fetch(`/api/inbox/batches/${currentBatchId}`).then((r) => r.json());
+      const { batch } = await fetch(`/api/inbox/batches/${batchId}`).then((r) => r.json());
       const rawInput = batch.raw_input as RawInput & { source: "pdf" };
-      const newRows: Row[] = [];
+      const existingStatus: PdfPageStatus[] =
+        rawInput.page_status ?? rawInput.page_image_paths.map(() => "done" as const);
+      const statusRef = { current: [...existingStatus] };
+      const rowsRef: { current: Row[] } = { current: batch.parsed_rows ?? [] };
 
-      for (let i = 0; i < rawInput.page_image_paths.length; i++) {
+      setCurrentBatchId(batchId);
+      setCurrentBatchSource("pdf");
+      setLessonId(batch.lesson_id ?? "");
+      setCommitted(false);
+      setShowBatchList(false);
+      setRows(rowsRef.current);
+      setGapWarning(gapWarningText(rowsRef.current));
+      setPdfPages(
+        rawInput.page_image_paths.map((_, i) => ({
+          pageNumber: rawInput.page_range.from + i,
+          status: statusRef.current[i] ?? "pending",
+        }))
+      );
+
+      const indexes =
+        onlyPageIndex !== undefined ? [onlyPageIndex] : pdfPageIndexesToProcess(statusRef.current, mode);
+
+      for (let n = 0; n < indexes.length; n++) {
+        const i = indexes[n];
         const pageNumber = rawInput.page_range.from + i;
-        setPdfStatus(`${strings.inbox.pdfExtracting} (${i + 1}/${rawInput.page_image_paths.length})`);
-
-        const { url } = await fetch(
-          `/api/inbox/imports-url?path=${encodeURIComponent(rawInput.page_image_paths[i])}`
-        ).then((r) => r.json());
-        const imageBlob = await fetch(url).then((r) => r.blob());
-        const base64 = await blobToBase64(imageBlob);
-
-        const { items } = await fetch("/api/inbox/pdf-extract-page", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ base64, mimeType: "image/png" }),
-        }).then((r) => r.json());
-
-        newRows.push(
-          ...(items ?? []).map((it: Partial<Row>) => ({ ...emptyBatchRow(), ...it, page_number: pageNumber }))
+        setPdfStatus(`${strings.inbox.pdfExtracting} (${n + 1}/${indexes.length})`);
+        await processPdfPage(
+          batchId,
+          i,
+          pageNumber,
+          async () => {
+            const { url } = await fetch(
+              `/api/inbox/imports-url?path=${encodeURIComponent(rawInput.page_image_paths[i])}`
+            ).then((r) => r.json());
+            const blob = await fetch(url).then((r) => r.blob());
+            return blobToBase64(blob);
+          },
+          rowsRef,
+          statusRef,
+          rawInput
         );
       }
-
-      const committedRows = rows.filter((r) => r.committed);
-      const merged = [...committedRows, ...newRows];
-      setRows(merged);
-      setGapWarning(gapWarningText(merged));
     } finally {
       setPdfStatus(null);
       setReparsing(false);
+      loadBatches();
     }
   }
 
   async function reparseCurrentBatch() {
     if (!currentBatchId) return;
-    if (currentBatchSource === "pdf") return reparsePdfBatch();
+    if (currentBatchSource === "pdf") return runPdfBatch(currentBatchId, "all");
 
     setReparsing(true);
     try {
@@ -375,41 +477,59 @@ export default function InboxPage() {
     });
 
     const pageImagePaths: string[] = [];
-    const extractedRows: Row[] = [];
-
-    for (let i = 0; i < pages.length; i++) {
-      const { pageNumber, blob } = pages[i];
-      setPdfStatus(`${strings.inbox.pdfExtracting} (${i + 1}/${pages.length})`);
-
+    for (const { pageNumber, blob } of pages) {
       const file = new File([blob], `page-${pageNumber}.png`, { type: "image/png" });
       pageImagePaths.push(await uploadToImports(file));
+    }
 
-      const base64 = await blobToBase64(blob);
-      const { items } = await fetch("/api/inbox/pdf-extract-page", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ base64, mimeType: "image/png" }),
-      }).then((r) => r.json());
+    const initialStatus: PdfPageStatus[] = pages.map(() => "pending");
+    const rawInput: RawInput & { source: "pdf" } = {
+      source: "pdf",
+      page_image_paths: pageImagePaths,
+      page_range: { from: pdfFromPage, to: pdfToPage },
+      page_status: initialStatus,
+    };
 
-      extractedRows.push(
-        ...(items ?? []).map((it: Partial<Row>) => ({ ...emptyBatchRow(), ...it, page_number: pageNumber }))
+    // Create the batch now, before any extraction happens, so a Gemini
+    // failure partway through the page loop still leaves everything parsed
+    // so far persisted and resumable -- rather than only ever getting saved
+    // once the entire range succeeds.
+    const batch = await createBatch("pdf", lessonId, rawInput, []);
+    setCurrentBatchId(batch.id);
+    setCurrentBatchSource("pdf");
+    setRows([]);
+    setGapWarning(null);
+    setPdfPages(pages.map((p) => ({ pageNumber: p.pageNumber, status: "pending" as const })));
+    loadBatches();
+
+    const rowsRef: { current: Row[] } = { current: [] };
+    const statusRef = { current: [...initialStatus] };
+
+    for (let i = 0; i < pages.length; i++) {
+      setPdfStatus(`${strings.inbox.pdfExtracting} (${i + 1}/${pages.length})`);
+      const { blob } = pages[i];
+      await processPdfPage(
+        batch.id,
+        i,
+        pages[i].pageNumber,
+        () => blobToBase64(blob),
+        rowsRef,
+        statusRef,
+        rawInput
       );
     }
 
-    setRows(extractedRows);
-    setGapWarning(gapWarningText(extractedRows));
-
-    const batch = await createBatch(
-      "pdf",
-      lessonId,
-      { source: "pdf", page_image_paths: pageImagePaths, page_range: { from: pdfFromPage, to: pdfToPage } },
-      extractedRows
-    );
-    setCurrentBatchId(batch.id);
-    setCurrentBatchSource("pdf");
-    loadBatches();
-
     setPdfStatus(null);
+    loadBatches();
+  }
+
+  function retryPdfPage(pageIndex: number) {
+    if (!currentBatchId) return;
+    return runPdfBatch(currentBatchId, "resume", pageIndex);
+  }
+
+  function resumeBatchFromList(id: string) {
+    return runPdfBatch(id, "resume");
   }
 
   function playLinkedRecording(recordingId: string) {
@@ -528,10 +648,20 @@ export default function InboxPage() {
                 <span>
                   {sourceLabels[b.source]} · {b.lesson?.title || b.lesson?.date || strings.inbox.noLesson} ·{" "}
                   {b.committed_rows}/{b.total_rows}
+                  {b.has_incomplete_pdf_pages && (
+                    <span className="text-orange-600"> · {strings.inbox.pdfIncompleteBadge}</span>
+                  )}
                 </span>
-                <button onClick={() => reopenBatch(b.id)} className="text-blue-700 underline">
-                  {strings.inbox.batchReopen}
-                </button>
+                <span className="flex gap-3">
+                  {b.has_incomplete_pdf_pages && (
+                    <button onClick={() => resumeBatchFromList(b.id)} className="text-orange-700 underline">
+                      {strings.inbox.pdfResume}
+                    </button>
+                  )}
+                  <button onClick={() => reopenBatch(b.id)} className="text-blue-700 underline">
+                    {strings.inbox.batchReopen}
+                  </button>
+                </span>
               </div>
             ))
           )}
@@ -712,6 +842,33 @@ export default function InboxPage() {
           >
             {pdfStatus ?? strings.inbox.pdfImport}
           </button>
+
+          {pdfPages.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {pdfPages.map((p, i) => (
+                <span
+                  key={p.pageNumber}
+                  className={
+                    "flex items-center gap-1 rounded-full px-2 py-1 text-xs " +
+                    (p.status === "done"
+                      ? "bg-green-100 text-green-800"
+                      : p.status === "failed"
+                        ? "bg-red-100 text-red-800"
+                        : p.status === "processing"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-gray-100 text-gray-600")
+                  }
+                >
+                  {p.pageNumber}: {pdfPageStatusLabels[p.status]}
+                  {p.status === "failed" && (
+                    <button onClick={() => retryPdfPage(i)} className="underline">
+                      {strings.inbox.pdfRetryPage}
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -727,13 +884,24 @@ export default function InboxPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">{strings.inbox.tableTitle}</h2>
           {currentBatchId && (
-            <button
-              onClick={reparseCurrentBatch}
-              disabled={reparsing}
-              className="text-sm underline text-blue-700 disabled:opacity-50"
-            >
-              {reparsing ? strings.inbox.batchReparsing : strings.inbox.batchReparse}
-            </button>
+            <span className="flex gap-3">
+              {currentBatchSource === "pdf" && pdfPages.some((p) => p.status !== "done") && (
+                <button
+                  onClick={() => runPdfBatch(currentBatchId, "resume")}
+                  disabled={reparsing}
+                  className="text-sm underline text-orange-700 disabled:opacity-50"
+                >
+                  {reparsing ? strings.inbox.batchReparsing : strings.inbox.pdfResume}
+                </button>
+              )}
+              <button
+                onClick={reparseCurrentBatch}
+                disabled={reparsing}
+                className="text-sm underline text-blue-700 disabled:opacity-50"
+              >
+                {reparsing ? strings.inbox.batchReparsing : strings.inbox.batchReparse}
+              </button>
+            </span>
           )}
         </div>
         {rows.length === 0 ? (

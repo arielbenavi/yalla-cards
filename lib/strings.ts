@@ -100,6 +100,13 @@ export const strings = {
     pdfExtracting: "מחלץ פריטים עם Gemini...",
     pdfGapWarningPrefix: "מספרים חסרים ברשימה הממוספרת",
     pdfGapPagesHint: "בדוק עמודים",
+    pdfStatusPending: "ממתין",
+    pdfStatusProcessing: "מעבד",
+    pdfStatusDone: "הושלם",
+    pdfStatusFailed: "נכשל",
+    pdfRetryPage: "נסה שוב",
+    pdfResume: "השלם עמודים שנותרו",
+    pdfIncompleteBadge: "יש עמודים שלא הושלמו",
   },
 
   recordings: {
