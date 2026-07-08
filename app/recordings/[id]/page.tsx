@@ -1,0 +1,272 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import { strings } from "@/lib/strings";
+import { config } from "@/lib/config";
+import { createClip } from "@/lib/clip";
+import { supabaseBrowser } from "@/lib/supabase-browser";
+import { isMobileDevice } from "@/lib/device";
+
+type Word = { word: string; start: number; end: number };
+type Recording = {
+  id: string;
+  storage_path: string;
+  duration_sec: number | null;
+  transcript_json: { words: Word[] } | null;
+};
+type CardResult = { id: string; hebrew_meaning: string; translit_nikud: string };
+
+export default function RecordingDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const [recording, setRecording] = useState<Recording | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [start, setStart] = useState<number | null>(null);
+  const [end, setEnd] = useState<number | null>(null);
+  const [mode, setMode] = useState<"attach" | "create">("attach");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<CardResult[]>([]);
+  const [newMeaning, setNewMeaning] = useState("");
+  const [newTranslit, setNewTranslit] = useState("");
+  const [attached, setAttached] = useState(false);
+  const [attaching, setAttaching] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    setIsMobile(isMobileDevice());
+  }, []);
+
+  useEffect(() => {
+    fetch(`/api/recordings/${id}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setRecording(d.recording);
+        setAudioUrl(d.audio_url);
+      });
+  }, [id]);
+
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      return;
+    }
+    const t = setTimeout(() => {
+      fetch(`/api/cards/search?q=${encodeURIComponent(query)}`)
+        .then((r) => r.json())
+        .then((d) => setResults(d.cards ?? []));
+    }, 300);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  function seekTo(t: number) {
+    if (audioRef.current) {
+      audioRef.current.currentTime = t;
+      audioRef.current.play();
+    }
+  }
+
+  function selectWord(word: Word) {
+    if (isMobile) return;
+    if (start === null || (start !== null && end !== null)) {
+      setStart(word.start);
+      setEnd(word.end);
+    } else if (word.start >= start) {
+      setEnd(word.end);
+    } else {
+      setStart(word.start);
+    }
+  }
+
+  function nudge(which: "start" | "end", delta: number) {
+    if (which === "start" && start !== null) setStart(Math.max(0, start + delta));
+    if (which === "end" && end !== null) setEnd(Math.max(0, end + delta));
+  }
+
+  async function uploadClip(): Promise<string | null> {
+    if (start === null || end === null || !audioUrl) return null;
+
+    const clipBlob = await createClip(audioUrl, start, end);
+
+    const { path, token } = await fetch("/api/recordings/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ extension: "mp3" }),
+    }).then((r) => r.json());
+
+    const supabase = supabaseBrowser();
+    const { error } = await supabase.storage.from("recordings").uploadToSignedUrl(path, token, clipBlob);
+    if (error) return null;
+
+    return path;
+  }
+
+  async function attachToCard(cardId: string) {
+    if (start === null || end === null) return;
+    setAttaching(true);
+    const clipPath = await uploadClip();
+    await fetch(`/api/recordings/${id}/attach`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        card_id: cardId,
+        audio_start_sec: start,
+        audio_end_sec: end,
+        clip_path: clipPath,
+      }),
+    });
+    setAttaching(false);
+    setAttached(true);
+  }
+
+  async function createFromRange() {
+    if (start === null || end === null) return;
+    setAttaching(true);
+    const clipPath = await uploadClip();
+    await fetch(`/api/recordings/${id}/attach`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        hebrew_meaning: newMeaning,
+        translit_nikud: newTranslit,
+        audio_start_sec: start,
+        audio_end_sec: end,
+        clip_path: clipPath,
+      }),
+    });
+    setAttaching(false);
+    setAttached(true);
+    setNewMeaning("");
+    setNewTranslit("");
+  }
+
+  if (!recording) {
+    return <div className="p-4">{strings.common.loading}</div>;
+  }
+
+  const words = recording.transcript_json?.words ?? [];
+
+  return (
+    <div className="flex flex-col gap-6 p-4 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold">{strings.recordings.detailTitle}</h1>
+
+      {audioUrl && <audio ref={audioRef} src={audioUrl} controls className="w-full" />}
+
+      <div>
+        <h2 className="text-lg font-bold mb-2">{strings.recordings.transcript}</h2>
+        {words.length === 0 ? (
+          <p className="text-gray-500">{strings.recordings.noTranscript}</p>
+        ) : (
+          <p className="nikud-text leading-loose">
+            {words.map((w, i) => {
+              const selected = start !== null && end !== null && w.start >= start && w.end <= end;
+              return (
+                <span key={i}>
+                  <button
+                    onClick={() => seekTo(w.start)}
+                    onDoubleClick={() => selectWord(w)}
+                    className={selected ? "bg-yellow-200 rounded px-0.5" : "hover:bg-gray-100 rounded px-0.5"}
+                  >
+                    {w.word}
+                  </button>{" "}
+                </span>
+              );
+            })}
+          </p>
+        )}
+      </div>
+
+      {isMobile && words.length > 0 && (
+        <p className="text-orange-700 bg-orange-50 border border-orange-400 rounded p-3">
+          {strings.recordings.mobileClipNotice}
+        </p>
+      )}
+
+      {!isMobile && start !== null && end !== null && (
+        <div className="border rounded p-3 flex flex-col gap-3">
+          <h3 className="font-bold">{strings.recordings.selectRange}</h3>
+          <div className="flex items-center gap-2">
+            <span>{strings.recordings.startLabel}:</span>
+            <bdi>{start.toFixed(2)}s</bdi>
+            <button onClick={() => nudge("start", -config.audioNudgeSec)} className="border rounded px-2">
+              {strings.recordings.nudgeBack}
+            </button>
+            <button onClick={() => nudge("start", config.audioNudgeSec)} className="border rounded px-2">
+              {strings.recordings.nudgeForward}
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>{strings.recordings.endLabel}:</span>
+            <bdi>{end.toFixed(2)}s</bdi>
+            <button onClick={() => nudge("end", -config.audioNudgeSec)} className="border rounded px-2">
+              {strings.recordings.nudgeBack}
+            </button>
+            <button onClick={() => nudge("end", config.audioNudgeSec)} className="border rounded px-2">
+              {strings.recordings.nudgeForward}
+            </button>
+          </div>
+
+          <div className="flex gap-4 border-b">
+            <button
+              onClick={() => setMode("attach")}
+              className={mode === "attach" ? "font-bold border-b-2 border-black pb-2" : "text-gray-500 pb-2"}
+            >
+              {strings.recordings.attachExisting}
+            </button>
+            <button
+              onClick={() => setMode("create")}
+              className={mode === "create" ? "font-bold border-b-2 border-black pb-2" : "text-gray-500 pb-2"}
+            >
+              {strings.recordings.createNew}
+            </button>
+          </div>
+
+          {mode === "attach" ? (
+            <div className="flex flex-col gap-2">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={strings.recordings.searchCards}
+                className="border rounded px-3 py-2 nikud-text"
+              />
+              {results.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => attachToCard(c.id)}
+                  disabled={attaching}
+                  className="text-start border rounded px-3 py-2 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {c.translit_nikud} — {c.hebrew_meaning}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <input
+                value={newTranslit}
+                onChange={(e) => setNewTranslit(e.target.value)}
+                placeholder={strings.inbox.colTranslit}
+                className="border rounded px-3 py-2 nikud-text"
+              />
+              <input
+                value={newMeaning}
+                onChange={(e) => setNewMeaning(e.target.value)}
+                placeholder={strings.inbox.colMeaning}
+                className="border rounded px-3 py-2 nikud-text"
+              />
+              <button
+                onClick={createFromRange}
+                disabled={attaching}
+                className="self-start bg-black text-white rounded px-4 py-2 disabled:opacity-50"
+              >
+                {attaching ? strings.recordings.clipping : strings.recordings.attach}
+              </button>
+            </div>
+          )}
+
+          {attached && <p className="text-green-700">{strings.recordings.attached}</p>}
+        </div>
+      )}
+    </div>
+  );
+}

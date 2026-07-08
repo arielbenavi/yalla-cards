@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-hebrew: var(--font-hebrew);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Nikkud combining marks need extra line-height or they get clipped on mobile */
+.font-hebrew,
+.nikud-text {
+  line-height: 2;
+  unicode-bidi: isolate;
+}
