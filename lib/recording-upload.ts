@@ -18,6 +18,10 @@ export async function uploadAndTranscribeRecording(
     lessonId?: string | null;
     onStatus?: (status: UploadStatus) => void;
     maxAutoTranscribeDurationSec?: number;
+    // If set, recordings at or under this duration get tagged (e.g. WhatsApp
+    // voice notes under a minute are auto-tagged "פתגם יומי"). Unset for the
+    // plain lesson-recording upload, which never auto-tags.
+    autoTag?: { maxDurationSec: number; tag: string };
   } = {}
 ): Promise<{ id: string; durationSec: number; transcribed: boolean }> {
   opts.onStatus?.("transcoding");
@@ -34,10 +38,13 @@ export async function uploadAndTranscribeRecording(
   const { error: uploadError } = await supabase.storage.from("recordings").uploadToSignedUrl(path, token, blob);
   if (uploadError) throw new Error(uploadError.message);
 
+  const tag =
+    opts.autoTag && durationSec <= opts.autoTag.maxDurationSec ? opts.autoTag.tag : null;
+
   const { recording } = await fetch("/api/recordings", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ lesson_id: opts.lessonId ?? null, storage_path: path, duration_sec: durationSec }),
+    body: JSON.stringify({ lesson_id: opts.lessonId ?? null, storage_path: path, duration_sec: durationSec, tag }),
   }).then((r) => r.json());
 
   const shouldTranscribe = durationSec <= (opts.maxAutoTranscribeDurationSec ?? Infinity);

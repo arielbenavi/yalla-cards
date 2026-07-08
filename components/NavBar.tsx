@@ -7,6 +7,7 @@ import { strings } from "@/lib/strings";
 const links = [
   { href: "/review", label: strings.nav.review },
   { href: "/inbox", label: strings.nav.inbox },
+  { href: "/lessons", label: strings.nav.lessons },
   { href: "/recordings", label: strings.nav.recordings },
   { href: "/stats", label: strings.nav.stats },
 ];

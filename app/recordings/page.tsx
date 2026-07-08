@@ -10,6 +10,7 @@ type Recording = {
   id: string;
   storage_path: string;
   duration_sec: number | null;
+  tag: string | null;
   created_at: string;
   lesson: { title: string | null; date: string } | null;
 };
@@ -20,6 +21,7 @@ export default function RecordingsPage() {
   const [lessonId, setLessonId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [tagFilter, setTagFilter] = useState("");
 
   async function refresh() {
     const [lessonsRes, recordingsRes] = await Promise.all([
@@ -39,6 +41,9 @@ export default function RecordingsPage() {
     uploading: strings.recordings.uploading,
     transcribing: strings.recordings.transcribing,
   };
+
+  const tags = Array.from(new Set(recordings.map((r) => r.tag).filter((t): t is string => !!t)));
+  const filteredRecordings = tagFilter ? recordings.filter((r) => r.tag === tagFilter) : recordings;
 
   async function handleUpload() {
     if (!file) return;
@@ -89,17 +94,42 @@ export default function RecordingsPage() {
         </button>
       </div>
 
+      {tags.length > 0 && (
+        <label className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">{strings.recordings.tagFilterLabel}</span>
+          <select
+            value={tagFilter}
+            onChange={(e) => setTagFilter(e.target.value)}
+            className="border rounded px-3 py-2"
+          >
+            <option value="">{strings.recordings.tagFilterAll}</option>
+            {tags.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <div className="flex flex-col gap-2">
-        {recordings.length === 0 ? (
+        {filteredRecordings.length === 0 ? (
           <p className="text-gray-500">{strings.recordings.noRecordings}</p>
         ) : (
-          recordings.map((r) => (
+          filteredRecordings.map((r) => (
             <Link
               key={r.id}
               href={`/recordings/${r.id}`}
               className="border rounded p-3 flex justify-between hover:bg-gray-50"
             >
-              <span>{r.lesson?.title || r.lesson?.date || strings.inbox.noLesson}</span>
+              <span className="flex items-center gap-2">
+                {r.lesson?.title || r.lesson?.date || strings.inbox.noLesson}
+                {r.tag && (
+                  <span className="text-xs bg-gray-100 border rounded-full px-2 py-0.5 text-gray-600">
+                    {r.tag}
+                  </span>
+                )}
+              </span>
               <span className="text-gray-500 text-sm">
                 {r.duration_sec ? `${Math.round(r.duration_sec / 60)} min` : ""}
               </span>

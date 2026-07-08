@@ -5,4 +5,7 @@ export const config = {
   transcodeSampleRateHz: 16000,
   audioNudgeSec: 0.5,
   autoTranscribeMaxDurationSec: 10 * 60, // voice notes are short; skip auto-transcribe above this
+  defaultWhatsappTeacherName: "R.D",
+  dailyProverbTag: "פתגם יומי",
+  dailyProverbMaxDurationSec: 60,
 };

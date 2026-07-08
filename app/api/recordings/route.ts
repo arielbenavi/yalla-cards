@@ -6,7 +6,7 @@ export async function GET() {
   const supabase = supabaseAdmin();
   const { data, error } = await supabase
     .from("recordings")
-    .select("id, lesson_id, storage_path, duration_sec, created_at, lesson:lessons(title, date)")
+    .select("id, lesson_id, storage_path, duration_sec, tag, created_at, lesson:lessons(title, date)")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -14,12 +14,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { lesson_id, storage_path, duration_sec } = await request.json();
+  const { lesson_id, storage_path, duration_sec, tag } = await request.json();
   const supabase = supabaseAdmin();
 
   const { data, error } = await supabase
     .from("recordings")
-    .insert({ lesson_id: lesson_id || null, storage_path, duration_sec })
+    .insert({ lesson_id: lesson_id || null, storage_path, duration_sec, tag: tag || null })
     .select()
     .single();
 

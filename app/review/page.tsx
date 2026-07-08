@@ -142,7 +142,10 @@ export default function ReviewPage() {
         {revealed && (
           <div className="flex flex-col items-center gap-3">
             {current.direction === "he_to_ar" ? (
-              <p className="text-2xl nikud-text">{current.translit_nikud}</p>
+              <>
+                <p className="text-2xl nikud-text">{current.translit_nikud}</p>
+                {current.notes && <p className="text-base text-gray-500">{current.notes}</p>}
+              </>
             ) : audioOnlyPrompt ? (
               <>
                 <p className="text-2xl font-bold nikud-text">{current.translit_nikud}</p>

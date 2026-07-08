@@ -8,6 +8,7 @@ type CommitRow = {
   item_type: "word" | "phrase" | "sentence";
   notes?: string;
   recording_id?: string | null;
+  arabic_script?: string | null;
 };
 
 export async function POST(request: NextRequest) {
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
         item_type: row.item_type,
         notes: row.notes || null,
         recording_id: row.recording_id || null,
+        arabic_script: row.arabic_script || null,
       }))
     )
     .select();
