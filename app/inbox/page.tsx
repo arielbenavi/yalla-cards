@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import { config } from "@/lib/config";
 import {
@@ -25,6 +25,8 @@ import { getPdfPageCount, renderPdfPagesToImages } from "@/lib/pdf";
 
 type Row = BatchRow;
 type Lesson = { id: string; date: string; title: string | null };
+
+type ConfidenceFilter = "all" | "high" | "low";
 
 const typeLabels: Record<Row["item_type"], string> = {
   word: strings.inbox.typeWord,
@@ -89,6 +91,31 @@ function gapWarningText(items: Row[]): string | null {
   return `${strings.inbox.pdfGapWarningPrefix}: ${parts.join(", ")}`;
 }
 
+function rowsToCsv(rows: Row[]): string {
+  const headers = ["item_number", "item_type", "translit_nikud", "hebrew_meaning", "arabic_script", "notes", "confidence", "page_number", "committed"];
+  const escape = (v: string | number | boolean | null | undefined) => {
+    if (v === null || v === undefined) return "";
+    const s = String(v);
+    if (s.includes(",") || s.includes('"') || s.includes("\n")) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  };
+  const dataRows = rows.map((r) =>
+    headers.map((h) => escape((r as Record<string, unknown>)[h] as string)).join(",")
+  );
+  return [headers.join(","), ...dataRows].join("\n");
+}
+
+function downloadCsv(rows: Row[], filename: string) {
+  const csv = rowsToCsv(rows);
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function InboxPage() {
   const [tab, setTab] = useState<"paste" | "photo" | "whatsapp" | "pdf">("paste");
   const [text, setText] = useState("");
@@ -99,6 +126,8 @@ export default function InboxPage() {
   const [committed, setCommitted] = useState(false);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [lessonId, setLessonId] = useState<string>("");
+  const [confidenceFilter, setConfidenceFilter] = useState<ConfidenceFilter>("all");
+  const [showReferenceRows, setShowReferenceRows] = useState(false);
 
   const [currentBatchId, setCurrentBatchId] = useState<string | null>(null);
   const [currentBatchSource, setCurrentBatchSource] = useState<RawInput["source"] | null>(null);
@@ -127,7 +156,39 @@ export default function InboxPage() {
     null
   );
 
+  // Component-level ref always mirrors rows state — so processPdfPage always
+  // sees the latest user edits/deletes rather than a stale snapshot from when
+  // the run started. Fixes the resurrection bug where deleted rows reappeared
+  // when the next page finished.
+  const rowsRef = useRef<Row[]>([]);
+  const currentBatchIdRef = useRef<string | null>(null);
+  const savePendingRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Keep rowsRef and state in sync.
+  function setRowsAndRef(newRows: Row[]) {
+    rowsRef.current = newRows;
+    setRows(newRows);
+  }
+
+  // Persist current rows to batch after a short debounce. Safe to call
+  // frequently; only fires if a batch is open.
+  const scheduleBatchSave = useCallback((updatedRows: Row[]) => {
+    const batchId = currentBatchIdRef.current;
+    if (!batchId) return;
+    if (savePendingRef.current) clearTimeout(savePendingRef.current);
+    savePendingRef.current = setTimeout(() => {
+      fetch(`/api/inbox/batches/${batchId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parsed_rows: updatedRows }),
+      });
+    }, 800);
+  }, []);
+
+  useEffect(() => {
+    currentBatchIdRef.current = currentBatchId;
+  }, [currentBatchId]);
 
   useEffect(() => {
     fetch("/api/lessons")
@@ -155,7 +216,7 @@ export default function InboxPage() {
     const { batch } = await fetch(`/api/inbox/batches/${id}`).then((r) => r.json());
     setCurrentBatchId(batch.id);
     setCurrentBatchSource(batch.source);
-    setRows(batch.parsed_rows ?? []);
+    setRowsAndRef(batch.parsed_rows ?? []);
     setLessonId(batch.lesson_id ?? "");
     setCommitted(false);
     setShowBatchList(false);
@@ -163,9 +224,6 @@ export default function InboxPage() {
 
     if (batch.source === "pdf") {
       const rawInput = batch.raw_input as RawInput & { source: "pdf" };
-      // Batches created before per-page status tracking existed have no
-      // page_status -- they only ever got persisted after a fully successful
-      // run, so treat every page as already done.
       const pageStatus: PdfPageStatus[] =
         rawInput.page_status ?? rawInput.page_image_paths.map(() => "done" as const);
       setPdfPages(
@@ -179,17 +237,20 @@ export default function InboxPage() {
     }
   }
 
+  async function downloadBatchCsv(id: string, source: BatchSummary["source"]) {
+    const { batch } = await fetch(`/api/inbox/batches/${id}`).then((r) => r.json());
+    downloadCsv(batch.parsed_rows ?? [], `batch-${source}-${id.slice(0, 8)}.csv`);
+  }
+
   // Extracts one PDF page image, appends its rows into the running batch
-  // state, and immediately persists both the rows and the page's status --
-  // so a crash/close mid-run only ever loses the page in flight, not
-  // everything parsed so far. Failures (even after Gemini-side retries) are
-  // recorded as "failed" rather than thrown, so the loop can continue.
+  // state, and immediately persists both the rows and the page's status.
+  // Uses component-level rowsRef so user edits/deletes made mid-run are
+  // preserved and never overwritten by incoming page results.
   async function processPdfPage(
     batchId: string,
     pageIndex: number,
     pageNumber: number,
     getBase64: () => Promise<string>,
-    rowsRef: { current: Row[] },
     statusRef: { current: PdfPageStatus[] },
     rawInput: RawInput & { source: "pdf" }
   ) {
@@ -207,8 +268,12 @@ export default function InboxPage() {
       const newRows: Row[] = (res.items ?? []).map((it: Partial<Row>) => ({
         ...emptyBatchRow(),
         ...it,
+        // low-confidence rows start unapproved; high-confidence start approved
+        approved: (it.confidence ?? "high") === "high",
         page_number: pageNumber,
       }));
+      // Merge: keep all rows NOT from this page (including user edits/deletes
+      // on other pages) and replace this page's rows with fresh results.
       rowsRef.current = [...rowsRef.current.filter((r) => r.page_number !== pageNumber), ...newRows];
       statusRef.current = statusRef.current.map((s, i) => (i === pageIndex ? "done" : s));
     } catch {
@@ -230,9 +295,6 @@ export default function InboxPage() {
     loadBatches();
   }
 
-  // mode "all" re-extracts every page (full reparse); mode "resume" only
-  // (re)processes pages not yet marked "done" -- used both by the batch-list
-  // "resume" action and the per-page retry button.
   async function runPdfBatch(batchId: string, mode: "all" | "resume", onlyPageIndex?: number) {
     setReparsing(true);
     try {
@@ -241,14 +303,15 @@ export default function InboxPage() {
       const existingStatus: PdfPageStatus[] =
         rawInput.page_status ?? rawInput.page_image_paths.map(() => "done" as const);
       const statusRef = { current: [...existingStatus] };
-      const rowsRef: { current: Row[] } = { current: batch.parsed_rows ?? [] };
 
       setCurrentBatchId(batchId);
       setCurrentBatchSource("pdf");
       setLessonId(batch.lesson_id ?? "");
       setCommitted(false);
       setShowBatchList(false);
-      setRows(rowsRef.current);
+      // Initialize the component-level rowsRef from server state
+      rowsRef.current = batch.parsed_rows ?? [];
+      setRows([...rowsRef.current]);
       setGapWarning(gapWarningText(rowsRef.current));
       setPdfPages(
         rawInput.page_image_paths.map((_, i) => ({
@@ -275,7 +338,6 @@ export default function InboxPage() {
             const blob = await fetch(url).then((r) => r.blob());
             return blobToBase64(blob);
           },
-          rowsRef,
           statusRef,
           rawInput
         );
@@ -297,7 +359,7 @@ export default function InboxPage() {
         method: "POST",
       }).then((r) => r.json());
       const committedRows = rows.filter((r) => r.committed);
-      setRows([...committedRows, ...(newRows ?? [])]);
+      setRowsAndRef([...committedRows, ...(newRows ?? [])]);
     } finally {
       setReparsing(false);
     }
@@ -316,7 +378,7 @@ export default function InboxPage() {
     const data = await res.json();
     setParsing(false);
     const parsedRows: Row[] = (data.rows ?? []).map((r: Partial<Row>) => ({ ...emptyBatchRow(), ...r }));
-    setRows(parsedRows);
+    setRowsAndRef(parsedRows);
     const batch = await createBatch("paste", lessonId, { source: "paste", text }, parsedRows);
     setCurrentBatchId(batch.id);
     setCurrentBatchSource("paste");
@@ -337,7 +399,7 @@ export default function InboxPage() {
     const data = await res.json();
     setParsing(false);
     const parsedRows: Row[] = (data.rows ?? []).map((r: Partial<Row>) => ({ ...emptyBatchRow(), ...r }));
-    setRows(parsedRows);
+    setRowsAndRef(parsedRows);
     const batch = await createBatch("photo", lessonId, { source: "photo", image_paths: imagePaths }, parsedRows);
     setCurrentBatchId(batch.id);
     setCurrentBatchSource("photo");
@@ -435,7 +497,7 @@ export default function InboxPage() {
       return { ...emptyBatchRow(), ...rest, recording_id: recordingId };
     });
 
-    setRows(withRecording);
+    setRowsAndRef(withRecording);
     setGapWarning(null);
     const batch = await createBatch(
       "whatsapp",
@@ -490,19 +552,16 @@ export default function InboxPage() {
       page_status: initialStatus,
     };
 
-    // Create the batch now, before any extraction happens, so a Gemini
-    // failure partway through the page loop still leaves everything parsed
-    // so far persisted and resumable -- rather than only ever getting saved
-    // once the entire range succeeds.
     const batch = await createBatch("pdf", lessonId, rawInput, []);
     setCurrentBatchId(batch.id);
     setCurrentBatchSource("pdf");
+    // Initialize component-level rowsRef for this new run
+    rowsRef.current = [];
     setRows([]);
     setGapWarning(null);
     setPdfPages(pages.map((p) => ({ pageNumber: p.pageNumber, status: "pending" as const })));
     loadBatches();
 
-    const rowsRef: { current: Row[] } = { current: [] };
     const statusRef = { current: [...initialStatus] };
 
     for (let i = 0; i < pages.length; i++) {
@@ -513,7 +572,6 @@ export default function InboxPage() {
         i,
         pages[i].pageNumber,
         () => blobToBase64(blob),
-        rowsRef,
         statusRef,
         rawInput
       );
@@ -544,19 +602,44 @@ export default function InboxPage() {
   }
 
   function updateRow(i: number, patch: Partial<Row>) {
-    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+    setRows((prev) => {
+      const next = prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r));
+      rowsRef.current = next;
+      scheduleBatchSave(next);
+      return next;
+    });
   }
 
   function deleteRow(i: number) {
-    setRows((prev) => prev.filter((_, idx) => idx !== i));
+    setRows((prev) => {
+      const next = prev.filter((_, idx) => idx !== i);
+      rowsRef.current = next;
+      // Persist delete immediately (no debounce)
+      const batchId = currentBatchIdRef.current;
+      if (batchId) {
+        fetch(`/api/inbox/batches/${batchId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ parsed_rows: next }),
+        });
+      }
+      return next;
+    });
   }
 
   function addRow() {
-    setRows((prev) => [...prev, emptyBatchRow()]);
+    setRows((prev) => {
+      const next = [...prev, emptyBatchRow()];
+      rowsRef.current = next;
+      return next;
+    });
   }
 
   async function commit() {
-    const toCommit = rows.filter((r) => !r.committed);
+    // Reference rows are never committed; low-confidence rows must be approved.
+    const toCommit = rows.filter(
+      (r) => !r.committed && r.page_kind !== "reference" && (r.confidence === "high" || r.approved)
+    );
     if (toCommit.length === 0) return;
 
     setCommitting(true);
@@ -577,10 +660,13 @@ export default function InboxPage() {
     }).then((r) => r.json());
 
     let cardIdx = 0;
+    const committedIds = new Set(toCommit.map((r) => r.row_id));
     const updatedRows = rows.map((r) =>
-      r.committed ? r : { ...r, committed: true, card_id: cards?.[cardIdx++]?.id ?? null }
+      committedIds.has(r.row_id)
+        ? { ...r, committed: true, card_id: cards?.[cardIdx++]?.id ?? null }
+        : r
     );
-    setRows(updatedRows);
+    setRowsAndRef(updatedRows);
 
     if (currentBatchId) {
       await fetch(`/api/inbox/batches/${currentBatchId}`, {
@@ -608,7 +694,19 @@ export default function InboxPage() {
     loadBatches();
   }
 
-  const uncommittedCount = rows.filter((r) => !r.committed).length;
+  const hasReferenceRows = rows.some((r) => r.page_kind === "reference");
+
+  const visibleRows = rows.filter((r) => {
+    if (r.page_kind === "reference" && !showReferenceRows) return false;
+    if (confidenceFilter === "high" && r.confidence !== "high") return false;
+    if (confidenceFilter === "low" && r.confidence !== "low") return false;
+    return true;
+  });
+
+  // Committable = not yet committed, not reference, and either high confidence or approved
+  const uncommittedCount = rows.filter(
+    (r) => !r.committed && r.page_kind !== "reference" && (r.confidence === "high" || r.approved)
+  ).length;
 
   return (
     <div className="flex flex-col gap-6 p-4 max-w-3xl mx-auto">
@@ -658,6 +756,9 @@ export default function InboxPage() {
                       {strings.inbox.pdfResume}
                     </button>
                   )}
+                  <button onClick={() => downloadBatchCsv(b.id, b.source)} className="text-gray-600 underline">
+                    {strings.inbox.exportCsv}
+                  </button>
                   <button onClick={() => reopenBatch(b.id)} className="text-blue-700 underline">
                     {strings.inbox.batchReopen}
                   </button>
@@ -881,36 +982,68 @@ export default function InboxPage() {
       <audio ref={previewAudioRef} className="hidden" />
 
       <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-lg font-bold">{strings.inbox.tableTitle}</h2>
-          {currentBatchId && (
-            <span className="flex gap-3">
-              {currentBatchSource === "pdf" && pdfPages.some((p) => p.status !== "done") && (
-                <button
-                  onClick={() => runPdfBatch(currentBatchId, "resume")}
-                  disabled={reparsing}
-                  className="text-sm underline text-orange-700 disabled:opacity-50"
-                >
-                  {reparsing ? strings.inbox.batchReparsing : strings.inbox.pdfResume}
-                </button>
-              )}
+          <span className="flex gap-3 items-center flex-wrap">
+            {/* Confidence filter */}
+            <select
+              value={confidenceFilter}
+              onChange={(e) => setConfidenceFilter(e.target.value as ConfidenceFilter)}
+              className="text-sm border rounded px-2 py-1"
+            >
+              <option value="all">{strings.inbox.confidenceFilterAll}</option>
+              <option value="high">{strings.inbox.confidenceFilterHigh}</option>
+              <option value="low">{strings.inbox.confidenceFilterLow}</option>
+            </select>
+            {/* Reference rows toggle */}
+            {hasReferenceRows && (
               <button
-                onClick={reparseCurrentBatch}
-                disabled={reparsing}
-                className="text-sm underline text-blue-700 disabled:opacity-50"
+                onClick={() => setShowReferenceRows((v) => !v)}
+                className="text-sm underline text-gray-600"
               >
-                {reparsing ? strings.inbox.batchReparsing : strings.inbox.batchReparse}
+                {showReferenceRows ? strings.inbox.hideReferenceRows : strings.inbox.showReferenceRows}
               </button>
-            </span>
-          )}
+            )}
+            {/* Export CSV for current batch */}
+            {currentBatchId && (
+              <button
+                onClick={() => downloadCsv(rows, `batch-${currentBatchId.slice(0, 8)}.csv`)}
+                className="text-sm underline text-gray-600"
+              >
+                {strings.inbox.exportCsv}
+              </button>
+            )}
+            {currentBatchId && (
+              <span className="flex gap-3">
+                {currentBatchSource === "pdf" && pdfPages.some((p) => p.status !== "done") && (
+                  <button
+                    onClick={() => runPdfBatch(currentBatchId, "resume")}
+                    disabled={reparsing}
+                    className="text-sm underline text-orange-700 disabled:opacity-50"
+                  >
+                    {reparsing ? strings.inbox.batchReparsing : strings.inbox.pdfResume}
+                  </button>
+                )}
+                <button
+                  onClick={reparseCurrentBatch}
+                  disabled={reparsing}
+                  className="text-sm underline text-blue-700 disabled:opacity-50"
+                >
+                  {reparsing ? strings.inbox.batchReparsing : strings.inbox.batchReparse}
+                </button>
+              </span>
+            )}
+          </span>
         </div>
-        {rows.length === 0 ? (
+        {visibleRows.length === 0 ? (
           <p className="text-gray-500">{strings.inbox.emptyState}</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {rows.map((row, i) =>
-              row.committed ? (
-                <div key={i} className="flex items-center gap-2 border rounded p-3 bg-gray-50 text-gray-500">
+            {visibleRows.map((row) => {
+              // Find index in original rows array (for updateRow/deleteRow)
+              const i = rows.indexOf(row);
+              return row.committed ? (
+                <div key={row.row_id} className="flex items-center gap-2 border rounded p-3 bg-gray-50 text-gray-500">
                   <span className="text-xs bg-green-100 text-green-700 rounded-full px-2 py-0.5">
                     {strings.inbox.committedBadge}
                   </span>
@@ -920,11 +1053,20 @@ export default function InboxPage() {
                 </div>
               ) : (
                 <div
-                  key={i}
+                  key={row.row_id}
                   className={`flex flex-col gap-2 border rounded p-3 ${
-                    row.confidence === "low" ? "border-orange-400 bg-orange-50" : ""
+                    row.page_kind === "reference"
+                      ? "border-gray-300 bg-gray-50 opacity-70"
+                      : row.confidence === "low"
+                        ? "border-orange-400 bg-orange-50"
+                        : ""
                   }`}
                 >
+                  {row.page_kind === "reference" && (
+                    <span className="text-xs bg-gray-200 text-gray-600 rounded-full px-2 py-0.5 self-start">
+                      {strings.inbox.referenceRowBadge}
+                    </span>
+                  )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <label className="flex flex-col gap-1">
                       <span className="text-sm text-gray-500">{strings.inbox.colTranslit}</span>
@@ -994,6 +1136,17 @@ export default function InboxPage() {
                       {strings.inbox.colConfidence}:{" "}
                       {row.confidence === "low" ? strings.inbox.confidenceLow : strings.inbox.confidenceHigh}
                     </span>
+                    {/* Low-confidence rows require explicit approval before commit */}
+                    {row.confidence === "low" && row.page_kind !== "reference" && (
+                      <label className="flex items-center gap-1 text-sm text-orange-800">
+                        <input
+                          type="checkbox"
+                          checked={row.approved}
+                          onChange={(e) => updateRow(i, { approved: e.target.checked })}
+                        />
+                        {strings.inbox.colApprove}
+                      </label>
+                    )}
                     {row.recording_id && (
                       <button
                         onClick={() => playLinkedRecording(row.recording_id!)}
@@ -1013,8 +1166,8 @@ export default function InboxPage() {
                     </p>
                   )}
                 </div>
-              )
-            )}
+              );
+            })}
           </div>
         )}
         <button onClick={addRow} className="self-start text-sm underline text-gray-600">

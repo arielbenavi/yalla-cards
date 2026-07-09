@@ -7,6 +7,8 @@ export const strings = {
     lessons: "שיעורים",
     recordings: "הקלטות",
     stats: "סטטיסטיקה",
+    browse: "עיון",
+    notes: "פתקים",
     logout: "יציאה",
   },
 
@@ -107,6 +109,35 @@ export const strings = {
     pdfRetryPage: "נסה שוב",
     pdfResume: "השלם עמודים שנותרו",
     pdfIncompleteBadge: "יש עמודים שלא הושלמו",
+    colApprove: "אישור",
+    confidenceFilterLabel: "סינון לפי ביטחון",
+    confidenceFilterAll: "הכל",
+    confidenceFilterHigh: "גבוהה בלבד",
+    confidenceFilterLow: "נמוכה בלבד",
+    showReferenceRows: "הצג שורות עמודי עזר",
+    hideReferenceRows: "הסתר שורות עמודי עזר",
+    referenceRowBadge: "עמוד עזר",
+    exportCsv: "ייצוא CSV",
+  },
+
+  browse: {
+    title: "עיון בכרטיסים",
+    searchPlaceholder: "חיפוש לפי תרגום או תעתיק...",
+    filterLesson: "שיעור",
+    filterType: "סוג",
+    filterTypeAll: "הכל",
+    noResults: "לא נמצאו כרטיסים",
+    playAudio: "נגן",
+  },
+
+  notes: {
+    title: "פתקים",
+    addPlaceholder: "כתוב פתק...",
+    tagPlaceholder: "תגית (אופציונלי, למשל: inbox, review)",
+    add: "הוסף",
+    empty: "אין פתקים פתוחים",
+    dismiss: "סגור",
+    done: "בוצע",
   },
 
   recordings: {

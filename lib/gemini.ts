@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
+import Anthropic from "@anthropic-ai/sdk";
 
 export type ParsedCard = {
   hebrew_meaning: string;
@@ -22,7 +23,8 @@ const CORE_RULES = `For each item, produce:
 - confidence: "low" if you had to guess/infer anything (nikkud, illegible handwriting, ambiguous
   meaning), otherwise "high".
 - notes: any usage notes, context, or literal-vs-idiomatic distinction worth keeping (e.g. "used
-  when addressing a man" or "literally: my neighbor"). Empty string "" if there's nothing to add.`;
+  when addressing a man" or "literally: my neighbor"). Empty string "" if there's nothing to add.
+  IMPORTANT: notes must always be written in HEBREW. Never write notes in English or Arabic.`;
 
 const responseSchema: Schema = {
   type: SchemaType.ARRAY,
@@ -88,10 +90,10 @@ ${CORE_RULES}
 Return ONLY the JSON array, no prose. Skip messages that aren't vocabulary teaching content
 (greetings, logistics, etc).`;
 
-function getModel(schema: Schema) {
+function getGeminiModel(modelName: string, schema: Schema) {
   const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
   return genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
+    model: modelName,
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: schema,
@@ -100,7 +102,7 @@ function getModel(schema: Schema) {
 }
 
 export async function parseLessonText(text: string): Promise<ParsedCard[]> {
-  const model = getModel(responseSchema);
+  const model = getGeminiModel("gemini-2.5-flash", responseSchema);
   const result = await model.generateContent([SYSTEM_PROMPT, `Lesson notes:\n${text}`]);
   return JSON.parse(result.response.text());
 }
@@ -108,7 +110,7 @@ export async function parseLessonText(text: string): Promise<ParsedCard[]> {
 export async function parseLessonImages(
   images: { mimeType: string; base64: string }[]
 ): Promise<ParsedCard[]> {
-  const model = getModel(responseSchema);
+  const model = getGeminiModel("gemini-2.5-flash", responseSchema);
   const parts = [
     SYSTEM_PROMPT,
     ...images.map((img) => ({
@@ -122,7 +124,7 @@ export async function parseLessonImages(
 export async function parseWhatsAppMessages(
   messages: { index: number; text: string }[]
 ): Promise<ParsedWhatsAppCard[]> {
-  const model = getModel(whatsappResponseSchema);
+  const model = getGeminiModel("gemini-2.5-flash", whatsappResponseSchema);
   const numbered = messages.map((m) => `[${m.index}] ${m.text}`).join("\n\n");
   const result = await model.generateContent([WHATSAPP_SYSTEM_PROMPT, `Messages:\n${numbered}`]);
   return JSON.parse(result.response.text());
@@ -136,6 +138,7 @@ export type PdfExtractedItem = {
   item_type: "word" | "phrase" | "sentence";
   confidence: "low" | "high";
   notes: string;
+  page_kind: "vocabulary" | "reference";
 };
 
 const pdfExtractSchema: Schema = {
@@ -150,8 +153,9 @@ const pdfExtractSchema: Schema = {
       item_type: { type: SchemaType.STRING, format: "enum", enum: ["word", "phrase", "sentence"] },
       confidence: { type: SchemaType.STRING, format: "enum", enum: ["low", "high"] },
       notes: { type: SchemaType.STRING },
+      page_kind: { type: SchemaType.STRING, format: "enum", enum: ["vocabulary", "reference"] },
     },
-    required: ["item_number", "translit_nikud", "hebrew_meaning", "arabic_script", "item_type", "confidence", "notes"],
+    required: ["item_number", "translit_nikud", "hebrew_meaning", "arabic_script", "item_type", "confidence", "notes", "page_kind"],
   },
 };
 
@@ -161,22 +165,32 @@ The book represents spoken Arabic using Hebrew letters with nikkud. You are give
 of the page -- there is no reliable embedded text layer for this book, so read directly from the
 image, not from any text you might otherwise expect to find.
 
+CRITICAL FIELD RULES:
+- translit_nikud: MUST contain the spoken Arabic transliterated into Hebrew letters (e.g. "יָא גָ'אר
+  אִינְתָה"). For sentence items, this is the Arabic sentence. NEVER put plain Hebrew in this field.
+  If a row's "translit" reads as plain Hebrew with no Arabic dialect words, it is mis-assigned.
+- hebrew_meaning: MUST contain the Hebrew translation/meaning (plain Hebrew, not Arabic).
+- arabic_script: Copy the Arabic-script text ONLY IF Arabic script letters (ا ب ت ...) are
+  VISUALLY PRESENT on this specific page image. NEVER generate, translate, or infer Arabic script.
+  If you do not see actual Arabic script characters on the page, set arabic_script to null.
+- notes: MUST be written in HEBREW only. Never write notes in English or Arabic.
+- page_kind: Set to "reference" if this page is primarily a nikkud-sign chart, alphabet/letter table,
+  fill-in-the-blank exercise template, or answer key. Set to "vocabulary" for all other pages
+  (vocabulary lists, sentence-practice lists, grammar-example pages). Every item on the page gets
+  the same page_kind value matching the page type.
+
 The page may contain:
 - A NUMBERED vocabulary list (numbers usually run 1-64 within a מפגש/lesson unit). Set item_number
   to that number for these entries; otherwise leave item_number null.
 - A plural form shown after the main word, often marked with "(ר)" (רבים = plural). Put the
   singular/base form in translit_nikud and note the plural form in notes, e.g. "רבים: <form>".
-- Arabic script alongside the transliteration on some pages -- extract it into arabic_script when
-  shown, otherwise leave it null.
-- Sentence-practice lists: transliterated sentences paired with a Hebrew translation, matched by
-  line/item number. Extract each pair as item_type "sentence": translit_nikud = the transliterated
-  sentence, hebrew_meaning = the Hebrew translation.
-- Grammar-rule pages: extract the example words/sentences shown (e.g. demonstratives like האדא,
-  הדאכ with their meanings) as regular items too.
+- Sentence-practice lists: transliterated sentences paired with a Hebrew translation. Extract each
+  pair as item_type "sentence": translit_nikud = the Arabic sentence in Hebrew script,
+  hebrew_meaning = the Hebrew translation.
+- Grammar-rule pages: extract example words/sentences as regular vocabulary items.
 
 SKIP: exercise tables meant to be filled in by the student, blank drill pages, and pages that only
-reference solutions/answer keys found elsewhere in the book. If the page has no extractable items,
-return an empty array.
+reference solutions/answer keys. If the page has no extractable items, return an empty array.
 
 ${CORE_RULES}
 
@@ -191,6 +205,10 @@ Re-examine the image carefully and return a CORRECTED, COMPLETE list of items fo
 - Add any items the draft missed entirely.
 - Keep draft items that are already correct, unchanged (including their item_number).
 - Do not drop correct items.
+- arabic_script: ONLY copy Arabic script if you can literally see Arabic letters on this page image.
+  Never generate or translate. If not visible, null.
+- notes must be in HEBREW only.
+- page_kind must be consistent across all items on this page ("vocabulary" or "reference").
 
 ${CORE_RULES}
 
@@ -240,17 +258,86 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
   throw lastErr;
 }
 
+// --- Parser backends ---
+
+type ImagePart = { mimeType: string; base64: string };
+
+interface PdfParserBackend {
+  generateJson(prompt: string, image: ImagePart): Promise<PdfExtractedItem[]>;
+}
+
+function extractJsonArray(text: string): PdfExtractedItem[] {
+  const match = text.match(/\[[\s\S]*\]/);
+  if (!match) return [];
+  return JSON.parse(match[0]);
+}
+
+class GeminiPdfBackend implements PdfParserBackend {
+  private model: ReturnType<InstanceType<typeof GoogleGenerativeAI>["getGenerativeModel"]>;
+
+  constructor(modelName: string) {
+    this.model = getGeminiModel(modelName, pdfExtractSchema);
+  }
+
+  async generateJson(prompt: string, image: ImagePart): Promise<PdfExtractedItem[]> {
+    const imagePart = { inlineData: { mimeType: image.mimeType, data: image.base64 } };
+    const result = await withRetry(() => this.model.generateContent([prompt, imagePart]));
+    return JSON.parse(result.response.text());
+  }
+}
+
+class AnthropicPdfBackend implements PdfParserBackend {
+  private client: Anthropic;
+
+  constructor() {
+    this.client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+
+  async generateJson(prompt: string, image: ImagePart): Promise<PdfExtractedItem[]> {
+    const response = await withRetry(() =>
+      this.client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 8096,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "image",
+                source: {
+                  type: "base64",
+                  media_type: image.mimeType as "image/png" | "image/jpeg" | "image/gif" | "image/webp",
+                  data: image.base64,
+                },
+              },
+              { type: "text", text: prompt },
+            ],
+          },
+        ],
+      })
+    );
+    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    return extractJsonArray(text);
+  }
+}
+
+function getPdfParserBackend(): PdfParserBackend {
+  const model = process.env.PARSER_MODEL ?? "gemini-2.5-pro";
+  if (model.startsWith("anthropic/") || model === "claude-sonnet-4-6") {
+    return new AnthropicPdfBackend();
+  }
+  return new GeminiPdfBackend(model);
+}
+
 export async function extractPdfPage(image: { mimeType: string; base64: string }): Promise<PdfExtractedItem[]> {
-  const model = getModel(pdfExtractSchema);
-  const imagePart = { inlineData: { mimeType: image.mimeType, data: image.base64 } };
+  const backend = getPdfParserBackend();
 
-  const pass1Result = await withRetry(() => model.generateContent([PDF_PASS1_PROMPT, imagePart]));
-  const pass1: PdfExtractedItem[] = JSON.parse(pass1Result.response.text());
+  const pass1 = await backend.generateJson(PDF_PASS1_PROMPT, image);
 
-  const pass2Result = await withRetry(() =>
-    model.generateContent([PDF_PASS2_PROMPT + JSON.stringify(pass1), imagePart])
+  const pass2 = await backend.generateJson(
+    PDF_PASS2_PROMPT + JSON.stringify(pass1),
+    image
   );
-  const pass2: PdfExtractedItem[] = JSON.parse(pass2Result.response.text());
 
   return mergePdfPasses(pass1, pass2);
 }

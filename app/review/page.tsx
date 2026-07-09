@@ -77,14 +77,11 @@ export default function ReviewPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ card_srs_id: current.card_srs_id, rating }),
     });
+    // Always reload the queue after each grade so learning-step cards
+    // (e.g. those rated Again at 1m/10m intervals) re-appear when due,
+    // rather than only being re-fetched when the initial queue is exhausted.
+    await loadQueue();
     setGrading(false);
-
-    if (queue && index + 1 < queue.cards.length) {
-      setIndex(index + 1);
-      setRevealed(false);
-    } else {
-      loadQueue();
-    }
   }
 
   useEffect(() => {

@@ -6,14 +6,17 @@ export type DuplicateMatch = { id: string; hebrew_meaning: string; translit_niku
 // committed/card_id track whether this specific row has already been turned
 // into a card, so reopening a batch can show what's left to commit.
 export type BatchRow = {
+  row_id: string;
   hebrew_meaning: string;
   translit_nikud: string;
   item_type: "word" | "phrase" | "sentence";
   confidence: "low" | "high";
+  approved: boolean;
   notes: string;
   arabic_script: string | null;
   item_number: number | null;
   page_number: number | null;
+  page_kind: "vocabulary" | "reference" | null;
   recording_id: string | null;
   duplicate_of: DuplicateMatch | null;
   committed: boolean;
@@ -22,14 +25,17 @@ export type BatchRow = {
 
 export function emptyBatchRow(): BatchRow {
   return {
+    row_id: crypto.randomUUID(),
     hebrew_meaning: "",
     translit_nikud: "",
     item_type: "phrase",
     confidence: "high",
+    approved: true,
     notes: "",
     arabic_script: null,
     item_number: null,
     page_number: null,
+    page_kind: null,
     recording_id: null,
     duplicate_of: null,
     committed: false,
