@@ -101,8 +101,11 @@ function getGeminiModel(modelName: string, schema: Schema) {
   });
 }
 
+// gemini-2.5-flash is deprecated; use 3.1-flash-lite for cheap text/vision tasks
+const FLASH_MODEL = "gemini-3.1-flash-lite";
+
 export async function parseLessonText(text: string): Promise<ParsedCard[]> {
-  const model = getGeminiModel("gemini-2.5-flash", responseSchema);
+  const model = getGeminiModel(FLASH_MODEL, responseSchema);
   const result = await model.generateContent([SYSTEM_PROMPT, `Lesson notes:\n${text}`]);
   return JSON.parse(result.response.text());
 }
@@ -110,7 +113,7 @@ export async function parseLessonText(text: string): Promise<ParsedCard[]> {
 export async function parseLessonImages(
   images: { mimeType: string; base64: string }[]
 ): Promise<ParsedCard[]> {
-  const model = getGeminiModel("gemini-2.5-flash", responseSchema);
+  const model = getGeminiModel(FLASH_MODEL, responseSchema);
   const parts = [
     SYSTEM_PROMPT,
     ...images.map((img) => ({
@@ -124,7 +127,7 @@ export async function parseLessonImages(
 export async function parseWhatsAppMessages(
   messages: { index: number; text: string }[]
 ): Promise<ParsedWhatsAppCard[]> {
-  const model = getGeminiModel("gemini-2.5-flash", whatsappResponseSchema);
+  const model = getGeminiModel(FLASH_MODEL, whatsappResponseSchema);
   const numbered = messages.map((m) => `[${m.index}] ${m.text}`).join("\n\n");
   const result = await model.generateContent([WHATSAPP_SYSTEM_PROMPT, `Messages:\n${numbered}`]);
   return JSON.parse(result.response.text());
@@ -321,8 +324,12 @@ class AnthropicPdfBackend implements PdfParserBackend {
   }
 }
 
+// gemini-2.5-pro is deprecated; gemini-3.1-pro-preview is the current high-quality model.
+// Set PARSER_MODEL env var to override (e.g. "gemini-3.1-flash-lite" or "anthropic/claude-sonnet-4-6").
+const DEFAULT_PDF_MODEL = "gemini-3.1-pro-preview";
+
 function getPdfParserBackend(): PdfParserBackend {
-  const model = process.env.PARSER_MODEL ?? "gemini-2.5-pro";
+  const model = process.env.PARSER_MODEL ?? DEFAULT_PDF_MODEL;
   if (model.startsWith("anthropic/") || model === "claude-sonnet-4-6") {
     return new AnthropicPdfBackend();
   }

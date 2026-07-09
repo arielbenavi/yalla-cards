@@ -12,9 +12,10 @@ type CommitRow = {
 };
 
 export async function POST(request: NextRequest) {
-  const { rows, lesson_id } = (await request.json()) as {
+  const { rows, lesson_id, batch_id } = (await request.json()) as {
     rows: CommitRow[];
     lesson_id: string | null;
+    batch_id?: string | null;
   };
 
   if (!rows?.length) {
@@ -28,6 +29,7 @@ export async function POST(request: NextRequest) {
     .insert(
       rows.map((row) => ({
         lesson_id: lesson_id || null,
+        batch_id: batch_id || null,
         hebrew_meaning: row.hebrew_meaning,
         translit_nikud: row.translit_nikud,
         item_type: row.item_type,

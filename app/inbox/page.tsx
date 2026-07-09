@@ -656,6 +656,7 @@ export default function InboxPage() {
           arabic_script,
         })),
         lesson_id: lessonId || null,
+        batch_id: currentBatchId || null,
       }),
     }).then((r) => r.json());
 
