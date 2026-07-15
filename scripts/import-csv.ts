@@ -78,7 +78,7 @@ async function main() {
   const supabase = createClient(
     process.env.SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false }, realtime: { transport: class {} as typeof WebSocket } }
+    { auth: { persistSession: false }, realtime: { transport: class {} as any } }
   );
 
   // --- 1. Resolve lesson id ---
