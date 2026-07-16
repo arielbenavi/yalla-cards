@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { strings } from "@/lib/strings";
 
 type BrowseCard = {
@@ -64,7 +65,15 @@ export default function BrowsePage() {
 
   return (
     <div className="flex flex-col gap-4 p-4 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold">{strings.browse.title}</h1>
+      <div className="flex items-center justify-between gap-2">
+        <h1 className="text-2xl font-bold">{strings.browse.title}</h1>
+        <Link
+          href="/review?mode=all"
+          className="shrink-0 rounded-xl bg-black px-4 py-2 text-sm font-bold text-white"
+        >
+          תרגול על הכל
+        </Link>
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
         <input

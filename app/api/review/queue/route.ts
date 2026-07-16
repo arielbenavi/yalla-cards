@@ -3,43 +3,58 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { State } from "@/lib/fsrs";
 import { config } from "@/lib/config";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const modeAll = searchParams.get("mode") === "all";
+
   const supabase = supabaseAdmin();
   const now = new Date().toISOString();
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const { count: newDoneToday } = await supabase
-    .from("review_log")
-    .select("id", { count: "exact", head: true })
-    .eq("state", State.New)
-    .gte("reviewed_at", startOfDay.toISOString());
-
-  const remainingNewAllowance = Math.max(0, config.newCardsPerDay - (newDoneToday ?? 0));
 
   const cardSelect =
     "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path)";
 
-  const { data: dueRows, error: dueError } = await supabase
-    .from("card_srs")
-    .select(cardSelect)
-    .neq("state", State.New)
-    .lte("due", now)
-    .order("due", { ascending: true });
+  let rows;
 
-  if (dueError) return NextResponse.json({ error: dueError.message }, { status: 500 });
+  if (modeAll) {
+    const { data, error } = await supabase
+      .from("card_srs")
+      .select(cardSelect)
+      .order("due", { ascending: true });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    rows = data ?? [];
+  } else {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-  const { data: newRows, error: newError } = await supabase
-    .from("card_srs")
-    .select(cardSelect)
-    .eq("state", State.New)
-    .lte("due", now)
-    .order("due", { ascending: true })
-    .limit(remainingNewAllowance);
+    const { count: newDoneToday } = await supabase
+      .from("review_log")
+      .select("id", { count: "exact", head: true })
+      .eq("state", State.New)
+      .gte("reviewed_at", startOfDay.toISOString());
 
-  if (newError) return NextResponse.json({ error: newError.message }, { status: 500 });
+    const remainingNewAllowance = Math.max(0, config.newCardsPerDay - (newDoneToday ?? 0));
 
-  const rows = [...(dueRows ?? []), ...(newRows ?? [])];
+    const { data: dueRows, error: dueError } = await supabase
+      .from("card_srs")
+      .select(cardSelect)
+      .neq("state", State.New)
+      .lte("due", now)
+      .order("due", { ascending: true });
+
+    if (dueError) return NextResponse.json({ error: dueError.message }, { status: 500 });
+
+    const { data: newRows, error: newError } = await supabase
+      .from("card_srs")
+      .select(cardSelect)
+      .eq("state", State.New)
+      .lte("due", now)
+      .order("due", { ascending: true })
+      .limit(remainingNewAllowance);
+
+    if (newError) return NextResponse.json({ error: newError.message }, { status: 500 });
+
+    rows = [...(dueRows ?? []), ...(newRows ?? [])];
+  }
 
   const withAudioUrl = await Promise.all(
     rows.map(async (row) => {
@@ -69,7 +84,7 @@ export async function GET() {
 
   return NextResponse.json({
     cards: withAudioUrl,
-    remaining_due: dueRows?.length ?? 0,
-    remaining_new: Math.min(remainingNewAllowance, newRows?.length ?? 0),
+    remaining_due: modeAll ? withAudioUrl.length : 0,
+    remaining_new: 0,
   });
 }

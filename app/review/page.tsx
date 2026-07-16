@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Rating } from "ts-fsrs";
 import { strings } from "@/lib/strings";
 
@@ -40,6 +41,9 @@ function AudioIconButton({ onClick, size = "large" }: { onClick: () => void; siz
 }
 
 export default function ReviewPage() {
+  const searchParams = useSearchParams();
+  const modeAll = searchParams.get("mode") === "all";
+
   const [queue, setQueue] = useState<Queue | null>(null);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -47,12 +51,13 @@ export default function ReviewPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const loadQueue = useCallback(async () => {
-    const res = await fetch("/api/review/queue");
+    const url = modeAll ? "/api/review/queue?mode=all" : "/api/review/queue";
+    const res = await fetch(url);
     const data = await res.json();
     setQueue(data);
     setIndex(0);
     setRevealed(false);
-  }, []);
+  }, [modeAll]);
 
   useEffect(() => {
     loadQueue();
@@ -120,9 +125,10 @@ export default function ReviewPage() {
     <div className="flex flex-1 flex-col p-4 gap-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
       <div className="flex justify-between text-sm text-gray-500">
         <span>
-          <bdi>{queue.remaining_due + queue.remaining_new - index}</bdi> {strings.review.remaining}
+          <bdi>{queue.cards.length - index}</bdi> {strings.review.remaining}
         </span>
-        <span>
+        <span className="flex items-center gap-2">
+          {modeAll && <span className="text-xs bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5">כל הקארדים</span>}
           {current.direction === "he_to_ar" ? strings.review.directionHeToAr : strings.review.directionArToHe}
         </span>
       </div>
