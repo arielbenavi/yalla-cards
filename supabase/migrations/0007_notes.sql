@@ -1,9 +1,12 @@
 -- Quick notes for jotting bugs/ideas mid-use (from phone or desktop).
 -- tag is a free-text screen/context hint (e.g. "inbox", "review").
 -- status: open → done/dismissed once actioned.
-create type note_status as enum ('open', 'done', 'dismissed');
+do $$ begin
+  create type note_status as enum ('open', 'done', 'dismissed');
+exception when duplicate_object then null;
+end $$;
 
-create table notes (
+create table if not exists notes (
   id uuid primary key default gen_random_uuid(),
   body text not null,
   tag text,

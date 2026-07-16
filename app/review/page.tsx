@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Rating } from "ts-fsrs";
 import { strings } from "@/lib/strings";
@@ -40,7 +40,7 @@ function AudioIconButton({ onClick, size = "large" }: { onClick: () => void; siz
   );
 }
 
-export default function ReviewPage() {
+function ReviewPageInner() {
   const searchParams = useSearchParams();
   const modeAll = searchParams.get("mode") === "all";
 
@@ -200,5 +200,13 @@ export default function ReviewPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ReviewPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-1 items-center justify-center">{strings.common.loading}</div>}>
+      <ReviewPageInner />
+    </Suspense>
   );
 }

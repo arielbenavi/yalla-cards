@@ -3,12 +3,11 @@ export const strings = {
 
   nav: {
     review: "חזרה",
-    inbox: "תיבה",
-    lessons: "שיעורים",
+    inbox: "ייבוא",
+    lessons: "מפגשים",
     recordings: "הקלטות",
     stats: "סטטיסטיקה",
     browse: "עיון",
-    notes: "פתקים",
     logout: "יציאה",
   },
 
