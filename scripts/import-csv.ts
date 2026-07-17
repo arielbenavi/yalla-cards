@@ -24,7 +24,7 @@ function stripMarkdown(s: string): string {
 // Extracts "רבים: X" from notes into a separate field.
 // Returns { plural_form, notes } — plural_form is null if not found.
 function extractPlural(notes: string): { plural_form: string | null; notes: string } {
-  const match = notes.match(/^(.*?)רבים:\s*(.+)$/s);
+  const match = notes.match(/^(.*?)רבים:\s*(.+)$/);
   if (!match) return { plural_form: null, notes };
   const before = match[1].replace(/[.\s]+$/, "").trim();
   return { plural_form: match[2].trim(), notes: before };

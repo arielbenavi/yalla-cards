@@ -14,7 +14,7 @@ const supabase = createClient(
 // Extracts plural_form and returns cleaned notes.
 // Matches "רבים: <value>" where value runs to end of string.
 function extractPlural(notes: string): { plural_form: string; cleaned_notes: string } | null {
-  const match = notes.match(/^(.*?)רבים:\s*(.+)$/s);
+  const match = notes.match(/^(.*?)רבים:\s*(.+)$/);
   if (!match) return null;
   const before = match[1].replace(/[.\s]+$/, "").trim();
   const plural = match[2].trim();
