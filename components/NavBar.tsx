@@ -11,6 +11,7 @@ const links = [
   { href: "/lessons", label: strings.nav.lessons },
   { href: "/recordings", label: strings.nav.recordings },
   { href: "/stats", label: strings.nav.stats },
+  { href: "/notes", label: strings.nav.notes },
 ];
 
 export default function NavBar() {

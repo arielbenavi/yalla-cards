@@ -8,6 +8,7 @@ export const strings = {
     recordings: "הקלטות",
     stats: "סטטיסטיקה",
     browse: "עיון",
+    notes: "משימות",
     logout: "יציאה",
   },
 
@@ -130,12 +131,12 @@ export const strings = {
   },
 
   notes: {
-    title: "פתקים",
-    addPlaceholder: "כתוב פתק...",
-    tagPlaceholder: "תגית (אופציונלי, למשל: inbox, review)",
+    title: "משימות",
+    addPlaceholder: "כתוב משימה...",
+    tagPlaceholder: "תגית (אופציונלי, למשל: באג, פיצ'ר)",
     add: "הוסף",
-    empty: "אין פתקים פתוחים",
-    dismiss: "סגור",
+    empty: "אין משימות פתוחות",
+    dismiss: "בטל",
     done: "בוצע",
   },
 
