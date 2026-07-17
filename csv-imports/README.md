@@ -18,9 +18,7 @@ npx tsx --env-file=.env.local scripts/import-csv.ts csv-imports/<filename>.csv "
 | `arabic_script` | לא | כתיב ערבי (רק אם מופיע בחומר) |
 | `item_type` | כן | `word` / `phrase` / `sentence` |
 | `notes` | לא | הערות בעברית: הקשר שימוש, הבדל מילולי/יומיומי וכו׳ |
-
-> **שדות DB שנוצרים אוטומטית ואינם עמודות CSV:**
-> - `plural_form` — אם ה-notes מכיל `רבים: X`, הסקריפט מחלץ את X לשדה נפרד ב-DB ומנקה מה-notes. אין צורך לעמודה נפרדת ב-CSV.
+| `plural_form` | לא (אוטומטי) | **אל תמלא ישירות** — כתוב `רבים: X` בתוך עמודת notes, והסקריפט מחלץ אוטומטית לשדה `plural_form` ב-DB ומנקה מה-notes |
 
 ## כללים
 
