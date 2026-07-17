@@ -18,8 +18,16 @@ import path from "path";
 // --- helpers ---
 
 function stripMarkdown(s: string): string {
-  // Remove ** emphasis markers (bold) anywhere in the string
   return s.replace(/\*\*/g, "").trim();
+}
+
+// Extracts "רבים: X" from notes into a separate field.
+// Returns { plural_form, notes } — plural_form is null if not found.
+function extractPlural(notes: string): { plural_form: string | null; notes: string } {
+  const match = notes.match(/^(.*?)רבים:\s*(.+)$/s);
+  if (!match) return { plural_form: null, notes };
+  const before = match[1].replace(/[.\s]+$/, "").trim();
+  return { plural_form: match[2].trim(), notes: before };
 }
 
 // Strips Hebrew nikkud (U+05B0–U+05BD, U+05BF, U+05C1, U+05C2, U+05C4–U+05C5, U+05C7)
@@ -140,6 +148,7 @@ async function main() {
     arabic_script: string | null;
     item_type: "word" | "phrase" | "sentence";
     notes: string;
+    plural_form: string | null;
   };
 
   const rows: CsvRow[] = [];
@@ -152,16 +161,19 @@ async function main() {
     const meaning = stripMarkdown(fields[iMeaning] ?? "");
     const arabic = stripMarkdown(fields[iArabic] ?? "") || null;
     const itemType = (fields[iType]?.trim() as CsvRow["item_type"]) || "word";
-    let notes = stripMarkdown(fields[iNotes] ?? "");
+    let rawNotes = stripMarkdown(fields[iNotes] ?? "");
 
     if (!translit) continue;
 
     // Prefix notes with item number if present
     if (itemNumber !== null) {
-      notes = `פריט ${itemNumber}. ${notes}`.trimEnd();
+      rawNotes = `פריט ${itemNumber}. ${rawNotes}`.trimEnd();
     }
 
-    rows.push({ item_number: itemNumber, translit_nikud: translit, hebrew_meaning: meaning, arabic_script: arabic, item_type: itemType, notes });
+    // Extract plural_form from notes if present ("רבים: X")
+    const { plural_form, notes } = extractPlural(rawNotes);
+
+    rows.push({ item_number: itemNumber, translit_nikud: translit, hebrew_meaning: meaning, arabic_script: arabic, item_type: itemType, notes, plural_form });
   }
 
   console.log(`CSV rows parsed: ${rows.length}`);
@@ -188,6 +200,7 @@ async function main() {
         arabic_script: row.arabic_script,
         item_type: row.item_type,
         notes: row.notes || null,
+        plural_form: row.plural_form || null,
       })
       .select("id")
       .single();

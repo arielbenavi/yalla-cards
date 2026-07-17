@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("cards")
-    .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path, lesson_id, lessons(title, date)")
+    .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, lessons(title, date)")
     .order("created_at", { ascending: false })
     .limit(200);
 

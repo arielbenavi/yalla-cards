@@ -10,6 +10,7 @@ type BrowseCard = {
   arabic_script: string | null;
   item_type: string;
   notes: string | null;
+  plural_form: string | null;
   clip_path: string | null;
   audio_url: string | null;
   lesson_id: string | null;
@@ -115,6 +116,11 @@ export default function BrowsePage() {
             {revealed && (
               <div className="flex flex-col items-center gap-3">
                 <p className="text-2xl nikud-text">{current.translit_nikud}</p>
+                {current.plural_form && (
+                  <p className="text-base text-gray-500 nikud-text">
+                    <span className="text-gray-400 text-sm">ר׳ </span>{current.plural_form}
+                  </p>
+                )}
                 {current.arabic_script && (
                   <p className="text-xl text-gray-600">{current.arabic_script}</p>
                 )}
