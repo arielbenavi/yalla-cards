@@ -48,6 +48,7 @@ function ReviewPageInner() {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [grading, setGrading] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const loadQueue = useCallback(async () => {
@@ -57,6 +58,7 @@ function ReviewPageInner() {
     setQueue(data);
     setIndex(0);
     setRevealed(false);
+    setHintUsed(false);
   }, [modeAll]);
 
   useEffect(() => {
@@ -98,10 +100,14 @@ function ReviewPageInner() {
         return;
       }
       if (!revealed) return;
-      if (e.key === "1") grade(Rating.Again);
-      else if (e.key === "2") grade(Rating.Hard);
-      else if (e.key === "3") grade(Rating.Good);
-      else if (e.key === "4") grade(Rating.Easy);
+      if (hintUsed) {
+        if (e.key === "2") grade(Rating.Hard);
+      } else {
+        if (e.key === "1") grade(Rating.Again);
+        else if (e.key === "2") grade(Rating.Hard);
+        else if (e.key === "3") grade(Rating.Good);
+        else if (e.key === "4") grade(Rating.Easy);
+      }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -165,36 +171,49 @@ function ReviewPageInner() {
       </div>
 
       {!revealed ? (
+        <div className="flex flex-col gap-2">
+          {hintUsed && current.direction === "he_to_ar" && (
+            <p className="text-center text-sm text-gray-400 nikud-text">
+              רמז: {current.translit_nikud.split(/\s+/)[0]}…
+            </p>
+          )}
+          <div className="flex gap-2">
+            {!hintUsed && (
+              <button
+                onClick={() => setHintUsed(true)}
+                className="rounded-xl border border-gray-300 px-5 py-5 text-base font-bold text-gray-600"
+              >
+                רמז
+              </button>
+            )}
+            <button
+              onClick={() => setRevealed(true)}
+              className="flex-1 rounded-xl bg-black py-5 text-lg font-bold text-white"
+            >
+              {strings.review.showAnswer}
+            </button>
+          </div>
+        </div>
+      ) : hintUsed ? (
         <button
-          onClick={() => setRevealed(true)}
-          className="w-full rounded-xl bg-black py-5 text-lg font-bold text-white"
+          onClick={() => grade(Rating.Hard)}
+          disabled={grading}
+          className="w-full rounded-xl bg-orange-500 py-5 text-lg font-bold text-white disabled:opacity-50"
         >
-          {strings.review.showAnswer}
+          {strings.review.hard}
         </button>
       ) : (
         <div className="grid grid-cols-4 gap-2">
-          <button
-            onClick={() => grade(Rating.Again)}
-            className="rounded-xl bg-red-600 py-5 text-lg font-bold text-white"
-          >
+          <button onClick={() => grade(Rating.Again)} className="rounded-xl bg-red-600 py-5 text-lg font-bold text-white">
             {strings.review.again}
           </button>
-          <button
-            onClick={() => grade(Rating.Hard)}
-            className="rounded-xl bg-orange-500 py-5 text-lg font-bold text-white"
-          >
+          <button onClick={() => grade(Rating.Hard)} className="rounded-xl bg-orange-500 py-5 text-lg font-bold text-white">
             {strings.review.hard}
           </button>
-          <button
-            onClick={() => grade(Rating.Good)}
-            className="rounded-xl bg-green-600 py-5 text-lg font-bold text-white"
-          >
+          <button onClick={() => grade(Rating.Good)} className="rounded-xl bg-green-600 py-5 text-lg font-bold text-white">
             {strings.review.good}
           </button>
-          <button
-            onClick={() => grade(Rating.Easy)}
-            className="rounded-xl bg-blue-600 py-5 text-lg font-bold text-white"
-          >
+          <button onClick={() => grade(Rating.Easy)} className="rounded-xl bg-blue-600 py-5 text-lg font-bold text-white">
             {strings.review.easy}
           </button>
         </div>
