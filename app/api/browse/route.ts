@@ -9,9 +9,11 @@ export async function GET(request: NextRequest) {
   const itemType = searchParams.get("item_type") ?? "";
   const supabase = supabaseAdmin();
 
+  const score = searchParams.get("score") ?? "";
+
   let query = supabase
     .from("cards")
-    .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, lessons(title, date)")
+    .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, self_score, lessons(title, date), card_srs(id, direction)")
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -24,8 +26,24 @@ export async function GET(request: NextRequest) {
   if (itemType) {
     query = query.eq("item_type", itemType);
   }
+  if (score) {
+    query = query.eq("self_score", parseInt(score, 10));
+  }
 
-  const { data, error } = await query;
+  let { data, error } = await query;
+
+  // Graceful fallback: if self_score column doesn't exist yet, retry without it
+  if (error?.message?.includes("self_score")) {
+    const fallback = await supabase
+      .from("cards")
+      .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, lessons(title, date), card_srs(id, direction)")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
+    data = (fallback.data ?? []).map((c) => ({ ...c, self_score: null })) as typeof data;
+    error = null;
+  }
+
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Generate signed audio URLs for cards with clips
