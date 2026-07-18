@@ -115,13 +115,18 @@ async function main() {
     console.log(`Lesson "${lessonTitle}" created: ${lessonId}`);
   }
 
-  // --- 2. Load existing cards for dedup (nikkud-stripped translit) ---
+  // --- 2. Load existing cards for dedup ---
+  // Key = (nikkud-stripped translit, hebrew_meaning) so minimal pairs like
+  // בִּחְכִּי/מדבר vs בַּחְכִּי/אני מדבר are treated as distinct cards.
   const { data: existingCards } = await supabase
     .from("cards")
-    .select("translit_nikud");
+    .select("translit_nikud, hebrew_meaning");
+
+  const dedupKey = (translit: string, meaning: string) =>
+    `${stripNikkud(translit)}__${meaning.trim()}`;
 
   const existingNormalized = new Set(
-    (existingCards ?? []).map((c) => stripNikkud(c.translit_nikud))
+    (existingCards ?? []).map((c) => dedupKey(c.translit_nikud, c.hebrew_meaning))
   );
   console.log(`Existing cards for dedup: ${existingNormalized.size}`);
 
@@ -190,8 +195,8 @@ async function main() {
   const errors: string[] = [];
 
   for (const row of rows) {
-    const normalized = stripNikkud(row.translit_nikud);
-    if (existingNormalized.has(normalized)) {
+    const key = dedupKey(row.translit_nikud, row.hebrew_meaning);
+    if (existingNormalized.has(key)) {
       console.log(`  SKIP (exists): ${row.translit_nikud}`);
       skipped++;
       continue;
@@ -230,7 +235,7 @@ async function main() {
     }
 
     // Track in the local set so subsequent identical rows in this CSV are also skipped
-    existingNormalized.add(normalized);
+    existingNormalized.add(key);
     inserted++;
     console.log(`  INSERT: ${row.translit_nikud} — ${row.hebrew_meaning}`);
   }
