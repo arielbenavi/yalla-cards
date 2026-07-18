@@ -131,15 +131,21 @@ async function main() {
     .split("\n")
     .filter((l) => l.trim());
 
-  // skip header
+  // skip header — support both English and Hebrew column names
   const header = parseCsvLine(lines[0]);
-  const colIndex = (name: string) => header.indexOf(name);
-  const iItemNumber = colIndex("item_number");
-  const iTranslit = colIndex("translit_nikud");
-  const iMeaning = colIndex("hebrew_meaning");
-  const iArabic = colIndex("arabic_script");
-  const iType = colIndex("item_type");
-  const iNotes = colIndex("notes");
+  const colIndex = (...names: string[]) => {
+    for (const name of names) {
+      const i = header.indexOf(name);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+  const iItemNumber = colIndex("item_number", "#");
+  const iTranslit = colIndex("translit_nikud", "תעתיק מנוקד");
+  const iMeaning = colIndex("hebrew_meaning", "משמעות בעברית");
+  const iArabic = colIndex("arabic_script", "כתב ערבי");
+  const iType = colIndex("item_type", "סוג");
+  const iNotes = colIndex("notes", "הערות");
 
   type CsvRow = {
     item_number: number | null;
