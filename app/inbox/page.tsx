@@ -476,10 +476,10 @@ export default function InboxPage() {
       try {
         const uploadPromise = uploadAndTranscribeRecording(file, {
           lessonId: lessonId || null,
-          maxAutoTranscribeDurationSec: config.autoTranscribeMaxDurationSec,
           autoTag: { maxDurationSec: config.dailyProverbMaxDurationSec, tag: config.dailyProverbTag },
           sourceFilename: filename,
           skipTranscode: true,
+          maxAutoTranscribeDurationSec: 0, // skip auto-transcription for bulk imports; do it manually from /recordings
           onStatus: (step) => {
             const label = step === "uploading" ? "העלאה" : "תמלול";
             setWaStatus(`${label} (${n}): ${filename}`);

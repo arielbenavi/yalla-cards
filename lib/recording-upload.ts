@@ -77,26 +77,39 @@ export async function uploadAndTranscribeRecording(
 
   const shouldTranscribe = durationSec <= (opts.maxAutoTranscribeDurationSec ?? Infinity);
   if (shouldTranscribe) {
-    opts.onStatus?.("transcribing");
-    const chunks = await sliceChunks(blob, durationSec);
-    const allWords: { word: string; start: number; end: number }[] = [];
+    try {
+      opts.onStatus?.("transcribing");
+      const chunks = await sliceChunks(blob, durationSec);
+      const allWords: { word: string; start: number; end: number }[] = [];
 
-    for (const chunk of chunks) {
-      const formData = new FormData();
-      formData.append("chunk", chunk.blob, "chunk.ogg");
-      formData.append("offset_sec", String(chunk.offsetSec));
-      const { words } = await fetch(`/api/recordings/${recording.id}/transcribe-chunk`, {
-        method: "POST",
-        body: formData,
-      }).then((r) => r.json());
-      allWords.push(...(words ?? []));
+      for (const chunk of chunks) {
+        const formData = new FormData();
+        formData.append("chunk", chunk.blob, "chunk.ogg");
+        formData.append("offset_sec", String(chunk.offsetSec));
+        const transcribeRes = await fetch(`/api/recordings/${recording.id}/transcribe-chunk`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!transcribeRes.ok) {
+          console.warn(`[transcribe] ${recording.id} chunk failed: HTTP ${transcribeRes.status}`);
+          break;
+        }
+        const { words } = await transcribeRes.json();
+        allWords.push(...(words ?? []));
+      }
+
+      if (allWords.length > 0) {
+        await fetch(`/api/recordings/${recording.id}/save-transcript`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ words: allWords }),
+        });
+      }
+    } catch (transcribeErr) {
+      // Transcription failing is non-fatal — the recording is already saved.
+      // User can transcribe manually from /recordings.
+      console.warn(`[transcribe] ${recording.id}:`, (transcribeErr as Error).message);
     }
-
-    await fetch(`/api/recordings/${recording.id}/save-transcript`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ words: allWords }),
-    });
   }
 
   return { id: recording.id, durationSec, transcribed: shouldTranscribe, deduplicated: false };
