@@ -12,6 +12,7 @@ import {
   type ChatMessage,
 } from "@/lib/whatsapp";
 import { uploadAndTranscribeRecording } from "@/lib/recording-upload";
+import { resetFFmpeg } from "@/lib/transcode";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { FileDropZone } from "@/components/FileDropZone";
 import {
@@ -153,7 +154,7 @@ export default function InboxPage() {
   const [teacherSender, setTeacherSender] = useState("");
   const [waStatus, setWaStatus] = useState<string | null>(null);
   const [waMissingAudio, setWaMissingAudio] = useState<string[]>([]);
-  const [waSummary, setWaSummary] = useState<{ recordings: number; deduped: number } | null>(null);
+  const [waSummary, setWaSummary] = useState<{ recordings: number; deduped: number; errors: { filename: string; error: string }[] } | null>(null);
   const [waCursor, setWaCursor] = useState<Date | null>(null);
   const [waImportAll, setWaImportAll] = useState(false);
   const [waPendingCursor, setWaPendingCursor] = useState<{ chatIdentifier: string; lastImportedAt: string } | null>(
@@ -465,17 +466,38 @@ export default function InboxPage() {
 
     const uploadedRecordings: { id: string; timestamp: Date }[] = [];
     let dedupedCount = 0;
+    const uploadErrors: { filename: string; error: string }[] = [];
+    const UPLOAD_TIMEOUT_MS = 90_000;
+
     for (let i = 0; i < voiceNoteEntries.length; i++) {
-      setWaStatus(`${strings.inbox.whatsappUploadingVoiceNotes} (${i + 1}/${voiceNoteEntries.length})`);
       const { file, filename, timestamp } = voiceNoteEntries[i];
-      const { id, deduplicated } = await uploadAndTranscribeRecording(file, {
-        lessonId: lessonId || null,
-        maxAutoTranscribeDurationSec: config.autoTranscribeMaxDurationSec,
-        autoTag: { maxDurationSec: config.dailyProverbMaxDurationSec, tag: config.dailyProverbTag },
-        sourceFilename: filename,
-      });
-      if (deduplicated) dedupedCount++;
-      uploadedRecordings.push({ id, timestamp });
+      const n = `${i + 1}/${voiceNoteEntries.length}`;
+      setWaStatus(`${strings.inbox.whatsappUploadingVoiceNotes} (${n})`);
+
+      try {
+        const uploadPromise = uploadAndTranscribeRecording(file, {
+          lessonId: lessonId || null,
+          maxAutoTranscribeDurationSec: config.autoTranscribeMaxDurationSec,
+          autoTag: { maxDurationSec: config.dailyProverbMaxDurationSec, tag: config.dailyProverbTag },
+          sourceFilename: filename,
+          onStatus: (step) => {
+            const label = step === "transcoding" ? "המרה" : step === "uploading" ? "העלאה" : "תמלול";
+            setWaStatus(`${label} (${n}): ${filename}`);
+          },
+        });
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`timeout after ${UPLOAD_TIMEOUT_MS / 1000}s`)), UPLOAD_TIMEOUT_MS)
+        );
+        const { id, deduplicated } = await Promise.race([uploadPromise, timeoutPromise]);
+        if (deduplicated) dedupedCount++;
+        uploadedRecordings.push({ id, timestamp });
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`[upload] ${filename}: ${msg}`);
+        uploadErrors.push({ filename, error: msg });
+        // Reset FFmpeg singleton so a hung/failed transcode doesn't block the next file
+        resetFFmpeg();
+      }
     }
 
     setWaStatus(strings.inbox.whatsappParsing);
@@ -519,7 +541,7 @@ export default function InboxPage() {
     loadBatches();
 
     setWaStatus(null);
-    setWaSummary({ recordings: uploadedRecordings.length, deduped: dedupedCount });
+    setWaSummary({ recordings: uploadedRecordings.length, deduped: dedupedCount, errors: uploadErrors });
     setWaStep("pick-zip");
     setZipFile(null);
     setChatMessages([]);
@@ -846,12 +868,23 @@ export default function InboxPage() {
       ) : tab === "whatsapp" ? (
         <div className="flex flex-col gap-2">
           {waSummary && (
-            <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 px-4 py-3 text-sm text-green-800 dark:text-green-300 flex flex-col gap-1">
+            <div className={`rounded-lg border px-4 py-3 text-sm flex flex-col gap-1 ${waSummary.errors.length > 0 ? "border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950 text-orange-800 dark:text-orange-300" : "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 text-green-800 dark:text-green-300"}`}>
               <span className="font-medium">ייבוא הסתיים</span>
               <span>
                 הקלטות: {waSummary.recordings - waSummary.deduped} חדשות
                 {waSummary.deduped > 0 && `, ${waSummary.deduped} כבר קיימות (דולגו)`}
+                {waSummary.errors.length > 0 && `, ${waSummary.errors.length} נכשלו`}
               </span>
+              {waSummary.errors.length > 0 && (
+                <details className="mt-1">
+                  <summary className="cursor-pointer text-xs opacity-80">פרטי שגיאות</summary>
+                  <ul className="mt-1 space-y-0.5 text-xs opacity-80 font-mono">
+                    {waSummary.errors.map((e, i) => (
+                      <li key={i}>{e.filename}: {e.error}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           )}
           {waStep === "pick-zip" && (

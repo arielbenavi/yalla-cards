@@ -8,6 +8,10 @@ const CORE_BASE = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
 
 let ffmpegInstance: FFmpeg | null = null;
 
+export function resetFFmpeg() {
+  ffmpegInstance = null;
+}
+
 export async function getFFmpeg(onProgress?: (ratio: number) => void) {
   if (ffmpegInstance) return ffmpegInstance;
 
