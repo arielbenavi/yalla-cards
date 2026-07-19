@@ -49,6 +49,7 @@ function ReviewPageInner() {
   const [revealed, setRevealed] = useState(false);
   const [grading, setGrading] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
+  const [dirFlipped, setDirFlipped] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const loadQueue = useCallback(async () => {
@@ -66,7 +67,12 @@ function ReviewPageInner() {
   }, [loadQueue]);
 
   const current = queue?.cards[index];
-  const audioOnlyPrompt = current?.direction === "ar_to_he" && !!current.audio_url;
+  const effectiveDir: "he_to_ar" | "ar_to_he" = current
+    ? dirFlipped
+      ? current.direction === "he_to_ar" ? "ar_to_he" : "he_to_ar"
+      : current.direction
+    : "he_to_ar";
+  const audioOnlyPrompt = effectiveDir === "ar_to_he" && !!current?.audio_url;
 
   const playAudio = useCallback(() => {
     if (!current?.audio_url) return;
@@ -135,12 +141,19 @@ function ReviewPageInner() {
         </span>
         <span className="flex items-center gap-2">
           {modeAll && <span className="text-xs bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5">כל הקארדים</span>}
-          {current.direction === "he_to_ar" ? strings.review.directionHeToAr : strings.review.directionArToHe}
+          <button
+            onClick={() => { setDirFlipped((f) => !f); setRevealed(false); setHintUsed(false); }}
+            className={`rounded px-2 py-0.5 text-xs font-medium border transition-colors ${
+              dirFlipped ? "bg-black text-white border-black" : "border-gray-300 text-gray-500"
+            }`}
+          >
+            {dirFlipped ? "ת→ע" : "ע→ת"}
+          </button>
         </span>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
-        {current.direction === "he_to_ar" ? (
+        {effectiveDir === "he_to_ar" ? (
           <p className="text-3xl font-bold nikud-text">{current.hebrew_meaning}</p>
         ) : audioOnlyPrompt ? (
           <AudioIconButton onClick={playAudio} />
@@ -150,7 +163,7 @@ function ReviewPageInner() {
 
         {revealed && (
           <div className="flex flex-col items-center gap-3">
-            {current.direction === "he_to_ar" ? (
+            {effectiveDir === "he_to_ar" ? (
               <>
                 <p className="text-2xl nikud-text">{current.translit_nikud}</p>
                 {current.notes && <p className="text-base text-gray-500">{current.notes}</p>}
@@ -172,7 +185,7 @@ function ReviewPageInner() {
 
       {!revealed ? (
         <div className="flex flex-col gap-2">
-          {hintUsed && current.direction === "he_to_ar" && (
+          {hintUsed && effectiveDir === "he_to_ar" && (
             <p className="text-center text-sm text-gray-400 nikud-text">
               רמז: {current.translit_nikud.split(/\s+/)[0]}…
             </p>
