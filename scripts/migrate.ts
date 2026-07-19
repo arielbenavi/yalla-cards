@@ -82,8 +82,19 @@ async function main() {
       );
       console.log(`  apply ${file}`);
     } catch (err) {
-      console.error(`  error ${file}: ${(err as Error).message}`);
-      throw err;
+      const msg = (err as Error).message;
+      // "already exists" (42P07) means the migration ran before we started
+      // tracking — record it as applied so we don't retry it next time.
+      if (msg.includes("already exists") || msg.includes("42P07")) {
+        await runSQL(
+          token,
+          `insert into _schema_migrations (filename) values ('${file.replace(/'/g, "''")}') on conflict do nothing`
+        );
+        console.log(`  baseline ${file} (already applied, now tracked)`);
+      } else {
+        console.error(`  error ${file}: ${msg}`);
+        throw err;
+      }
     }
   }
 
