@@ -35,10 +35,8 @@ After creating a new `.sql` file under `supabase/migrations/`:
 2. Confirm the output shows `apply 00XX_...sql` (or `already up to date` on a re-run).
 3. Commit both the migration file and any code that depends on the new schema together.
 
-**Setup (one-time, already done for existing migrations):**
-`DATABASE_URL` must be set in `.env.local`. If it's missing:
-- Supabase Dashboard → your project → **Project Settings → Database**
-- Under **Connection string**, select the **Direct** tab (not Transaction/Session pooler)
-- Copy the URI: `postgresql://postgres:[password]@db.tpksmcxysqjanxwvtbow.supabase.co:5432/postgres`
-- Add to `.env.local`: `DATABASE_URL=postgresql://postgres:[your-db-password]@db.tpksmcxysqjanxwvtbow.supabase.co:5432/postgres`
-- The DB password is separate from the service-role key — it's the password set when the project was created (or reset in Settings → Database → Reset database password).
+**Setup (one-time):**
+`SUPABASE_ACCESS_TOKEN` must be set in `.env.local`:
+- Go to https://supabase.com/dashboard/account/tokens
+- Click **Generate new token**, give it a name (e.g. "yalla-cards local")
+- Add to `.env.local`: `SUPABASE_ACCESS_TOKEN=sbp_...`
