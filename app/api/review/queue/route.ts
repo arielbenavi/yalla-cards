@@ -6,6 +6,8 @@ import { config } from "@/lib/config";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const modeAll = searchParams.get("mode") === "all";
+  const modeSelected = searchParams.get("mode") === "selected";
+  const idsParam = searchParams.get("ids") ?? "";
 
   const supabase = supabaseAdmin();
   const now = new Date().toISOString();
@@ -15,7 +17,17 @@ export async function GET(request: Request) {
 
   let rows;
 
-  if (modeAll) {
+  if (modeSelected && idsParam) {
+    const ids = idsParam.split(",").filter(Boolean);
+    const { data, error } = await supabase
+      .from("card_srs")
+      .select(cardSelect)
+      .in("id", ids);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    // Shuffle so the user doesn't study in browse-list order
+    const shuffled = (data ?? []).slice().sort(() => Math.random() - 0.5);
+    rows = shuffled;
+  } else if (modeAll) {
     const { data, error } = await supabase
       .from("card_srs")
       .select(cardSelect)

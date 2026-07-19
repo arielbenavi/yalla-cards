@@ -2,7 +2,7 @@ export const strings = {
   appName: "יאללה כרטיסים",
 
   nav: {
-    review: "חזרה",
+    review: "חזרה יומית",
     inbox: "ייבוא",
     lessons: "מפגשים",
     recordings: "הקלטות",

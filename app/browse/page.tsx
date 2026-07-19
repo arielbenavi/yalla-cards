@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { strings } from "@/lib/strings";
 
 type CardSrs = { id: string; direction: "he_to_ar" | "ar_to_he" };
@@ -28,6 +29,7 @@ const SCORE_COLORS = ["bg-red-600", "bg-orange-500", "bg-green-600", "bg-blue-60
 const SCORE_DOT_COLORS = ["bg-red-500", "bg-orange-400", "bg-green-500", "bg-blue-500"];
 
 export default function BrowsePage() {
+  const router = useRouter();
   const [cards, setCards] = useState<BrowseCard[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [q, setQ] = useState("");
@@ -38,6 +40,8 @@ export default function BrowsePage() {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [dirFlipped, setDirFlipped] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedSrsIds, setSelectedSrsIds] = useState<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -118,6 +122,30 @@ export default function BrowsePage() {
 
   const dotColor = current?.self_score != null ? SCORE_DOT_COLORS[current.self_score - 1] : null;
 
+  function toggleSelect(srsId: string) {
+    setSelectedSrsIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(srsId)) next.delete(srsId);
+      else next.add(srsId);
+      return next;
+    });
+  }
+
+  function startSelectedReview() {
+    const ids = Array.from(selectedSrsIds).join(",");
+    router.push(`/review?mode=selected&ids=${ids}`);
+  }
+
+  function enterSelectMode() {
+    setSelectMode(true);
+    setSelectedSrsIds(new Set());
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedSrsIds(new Set());
+  }
+
   return (
     <div className="flex flex-col flex-1 p-4 gap-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] max-w-3xl mx-auto w-full">
       {/* Filters row 1 */}
@@ -139,15 +167,26 @@ export default function BrowsePage() {
           <option value="3">טוב</option>
           <option value="4">קל</option>
         </select>
-        <button
-          onClick={() => setDirFlipped((f) => !f)}
-          className={`border rounded px-3 py-2 text-sm font-medium transition-colors ${
-            dirFlipped ? "bg-black text-white border-black" : "text-gray-600"
-          }`}
-          title={dirFlipped ? "שאלה: תעתיק — לחץ להחזיר לעברית" : "שאלה: עברית — לחץ להחזיר תעתיק"}
-        >
-          {dirFlipped ? "ת→ע" : "ע→ת"}
-        </button>
+        {!selectMode && (
+          <button
+            onClick={() => setDirFlipped((f) => !f)}
+            className={`border rounded px-3 py-2 text-sm font-medium transition-colors ${
+              dirFlipped ? "bg-black text-white border-black" : "text-gray-600"
+            }`}
+            title={dirFlipped ? "שאלה: תעתיק — לחץ להחזיר לעברית" : "שאלה: עברית — לחץ להחזיר תעתיק"}
+          >
+            {dirFlipped ? "ת→ע" : "ע→ת"}
+          </button>
+        )}
+        {selectMode ? (
+          <button onClick={exitSelectMode} className="border rounded px-3 py-2 text-sm text-gray-600">
+            בטל
+          </button>
+        ) : (
+          <button onClick={enterSelectMode} className="border rounded px-3 py-2 text-sm text-gray-600">
+            בחר
+          </button>
+        )}
       </div>
       {/* Search */}
       <input
@@ -162,7 +201,52 @@ export default function BrowsePage() {
         <div className="flex flex-1 items-center justify-center text-gray-500">{strings.common.loading}</div>
       ) : cards.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-gray-500">{strings.browse.noResults}</div>
+      ) : selectMode ? (
+        /* ── Selection list view ── */
+        <div className="flex flex-col flex-1 gap-2 overflow-hidden">
+          <div className="text-sm text-gray-500 text-center">
+            {selectedSrsIds.size > 0 ? `${selectedSrsIds.size} נבחרו מתוך ${cards.length}` : `${cards.length} כרטיסים`}
+          </div>
+          <div className="flex-1 overflow-y-auto divide-y border rounded-xl">
+            {cards.map((card) => {
+              const srsId = card.card_srs?.[0]?.id;
+              const checked = srsId ? selectedSrsIds.has(srsId) : false;
+              return (
+                <label
+                  key={card.id}
+                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                    checked ? "bg-purple-50 dark:bg-purple-950" : "hover:bg-gray-50 dark:hover:bg-gray-900"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={!srsId}
+                    onChange={() => srsId && toggleSelect(srsId)}
+                    className="h-4 w-4 accent-purple-600 flex-shrink-0"
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-medium nikud-text text-sm leading-tight">{card.hebrew_meaning}</span>
+                    <span className="block text-xs text-gray-500 nikud-text truncate">{card.translit_nikud}</span>
+                  </span>
+                  {card.self_score != null && (
+                    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${SCORE_DOT_COLORS[card.self_score - 1]}`} />
+                  )}
+                </label>
+              );
+            })}
+          </div>
+          {selectedSrsIds.size > 0 && (
+            <button
+              onClick={startSelectedReview}
+              className="w-full rounded-xl bg-purple-600 py-4 text-lg font-bold text-white"
+            >
+              התחל חזרה ({selectedSrsIds.size})
+            </button>
+          )}
+        </div>
       ) : (
+        /* ── Flip-card view ── */
         <>
           <div className="text-sm text-gray-500 text-center">
             <bdi>{index + 1}</bdi> / <bdi>{cards.length}</bdi>
@@ -262,7 +346,7 @@ export default function BrowsePage() {
                 <button
                   onClick={next}
                   disabled={index === cards.length - 1}
-                  className="flex-1 rounded-xl border py-4 text-base font-bold disabled:opacity-30"
+                  className="flex-1 rounded-lg border py-2 text-sm text-gray-500 disabled:opacity-30"
                 >
                   דלג
                 </button>

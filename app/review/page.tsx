@@ -43,6 +43,8 @@ function AudioIconButton({ onClick, size = "large" }: { onClick: () => void; siz
 function ReviewPageInner() {
   const searchParams = useSearchParams();
   const modeAll = searchParams.get("mode") === "all";
+  const idsParam = searchParams.get("ids") ?? "";
+  const modeSelected = !!idsParam;
 
   const [queue, setQueue] = useState<Queue | null>(null);
   const [index, setIndex] = useState(0);
@@ -53,14 +55,18 @@ function ReviewPageInner() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const loadQueue = useCallback(async () => {
-    const url = modeAll ? "/api/review/queue?mode=all" : "/api/review/queue";
+    const url = modeSelected
+      ? `/api/review/queue?mode=selected&ids=${idsParam}`
+      : modeAll
+      ? "/api/review/queue?mode=all"
+      : "/api/review/queue";
     const res = await fetch(url);
     const data = await res.json();
     setQueue(data);
     setIndex(0);
     setRevealed(false);
     setHintUsed(false);
-  }, [modeAll]);
+  }, [modeAll, modeSelected, idsParam]);
 
   useEffect(() => {
     loadQueue();
@@ -141,6 +147,7 @@ function ReviewPageInner() {
         </span>
         <span className="flex items-center gap-2">
           {modeAll && <span className="text-xs bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5">כל הקארדים</span>}
+          {modeSelected && <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded px-1.5 py-0.5">נבחרו</span>}
           <button
             onClick={() => { setDirFlipped((f) => !f); setRevealed(false); setHintUsed(false); }}
             className={`rounded px-2 py-0.5 text-xs font-medium border transition-colors ${
