@@ -1,7 +1,7 @@
 "use client";
 
 import { supabaseBrowser } from "@/lib/supabase-browser";
-import { transcodeToOpus, sliceChunks } from "@/lib/transcode";
+import { transcodeToOpus, sliceChunks, getAudioDurationSec } from "@/lib/transcode";
 
 export type UploadStatus = "transcoding" | "uploading" | "transcribing";
 
@@ -19,20 +19,34 @@ export async function uploadAndTranscribeRecording(
     onStatus?: (status: UploadStatus) => void;
     maxAutoTranscribeDurationSec?: number;
     sourceFilename?: string | null;
+    // Skip FFmpeg transcoding and upload the raw file directly. Use for short
+    // voice notes (WhatsApp) where the file is already compressed and small.
+    skipTranscode?: boolean;
     // If set, recordings at or under this duration get tagged (e.g. WhatsApp
     // voice notes under a minute are auto-tagged "פתגם יומי"). Unset for the
     // plain lesson-recording upload, which never auto-tags.
     autoTag?: { maxDurationSec: number; tag: string };
   } = {}
 ): Promise<{ id: string; durationSec: number; transcribed: boolean; deduplicated: boolean }> {
-  opts.onStatus?.("transcoding");
-  const { blob, durationSec } = await transcodeToOpus(file);
+  let blob: Blob;
+  let durationSec: number;
+  const ext = file.name.match(/\.[^.]+$/)?.[0] ?? ".m4a";
+
+  if (opts.skipTranscode) {
+    opts.onStatus?.("uploading");
+    blob = file;
+    durationSec = await getAudioDurationSec(file);
+  } else {
+    opts.onStatus?.("transcoding");
+    ({ blob, durationSec } = await transcodeToOpus(file));
+  }
 
   opts.onStatus?.("uploading");
+  const uploadExt = opts.skipTranscode ? ext.replace(".", "") : "ogg";
   const { path, token } = await fetch("/api/recordings/upload-url", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ extension: "ogg" }),
+    body: JSON.stringify({ extension: uploadExt }),
   }).then((r) => r.json());
 
   const supabase = supabaseBrowser();

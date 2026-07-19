@@ -27,7 +27,7 @@ export async function getFFmpeg(onProgress?: (ratio: number) => void) {
   return ffmpeg;
 }
 
-function getAudioDurationSec(blob: Blob): Promise<number> {
+export function getAudioDurationSec(blob: Blob): Promise<number> {
   return new Promise((resolve, reject) => {
     const audio = new Audio();
     audio.preload = "metadata";

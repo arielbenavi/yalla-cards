@@ -12,7 +12,6 @@ import {
   type ChatMessage,
 } from "@/lib/whatsapp";
 import { uploadAndTranscribeRecording } from "@/lib/recording-upload";
-import { resetFFmpeg } from "@/lib/transcode";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { FileDropZone } from "@/components/FileDropZone";
 import {
@@ -480,8 +479,9 @@ export default function InboxPage() {
           maxAutoTranscribeDurationSec: config.autoTranscribeMaxDurationSec,
           autoTag: { maxDurationSec: config.dailyProverbMaxDurationSec, tag: config.dailyProverbTag },
           sourceFilename: filename,
+          skipTranscode: true,
           onStatus: (step) => {
-            const label = step === "transcoding" ? "המרה" : step === "uploading" ? "העלאה" : "תמלול";
+            const label = step === "uploading" ? "העלאה" : "תמלול";
             setWaStatus(`${label} (${n}): ${filename}`);
           },
         });
@@ -495,8 +495,6 @@ export default function InboxPage() {
         const msg = err instanceof Error ? err.message : String(err);
         console.error(`[upload] ${filename}: ${msg}`);
         uploadErrors.push({ filename, error: msg });
-        // Reset FFmpeg singleton so a hung/failed transcode doesn't block the next file
-        resetFFmpeg();
       }
     }
 
