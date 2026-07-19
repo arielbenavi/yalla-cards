@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { strings } from "@/lib/strings";
+import { PronunciationGuide } from "@/components/PronunciationGuide";
 
 type CardSrs = { id: string; direction: "he_to_ar" | "ar_to_he" };
 
@@ -187,6 +188,7 @@ export default function BrowsePage() {
             בחר
           </button>
         )}
+        <PronunciationGuide />
       </div>
       {/* Search */}
       <input

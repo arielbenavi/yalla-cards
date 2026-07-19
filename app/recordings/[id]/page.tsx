@@ -23,7 +23,7 @@ export default function RecordingDetailPage() {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [start, setStart] = useState<number | null>(null);
   const [end, setEnd] = useState<number | null>(null);
-  const [mode, setMode] = useState<"attach" | "create">("attach");
+  const [mode, setMode] = useState<"attach" | "create">("create");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CardResult[]>([]);
   const [newMeaning, setNewMeaning] = useState("");

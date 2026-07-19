@@ -62,12 +62,30 @@ function parseTimestamp(dateStr: string, timeStr: string): Date {
   return new Date(year, m - 1, d, hour, minute, second);
 }
 
+// Strip invisible Unicode direction marks that WhatsApp iOS inserts before
+// attachment tags inside the message body (U+200E LRM, U+200F RLM). Without
+// this strip the ATTACHED_IOS regex fails its ^ anchor and every voice note
+// is silently dropped.
+const INVISIBLE = /[‎‏‪-‮⁦-⁩]/g;
+
 function extractAttachment(body: string): { text: string; filename: string | null } {
-  const iosAttach = body.match(ATTACHED_IOS);
+  const clean = body.replace(INVISIBLE, "");
+  const iosAttach = clean.match(ATTACHED_IOS);
   if (iosAttach) return { text: "", filename: iosAttach[1].trim() };
-  const androidAttach = body.match(ATTACHED_ANDROID);
+  const androidAttach = clean.match(ATTACHED_ANDROID);
   if (androidAttach) return { text: "", filename: androidAttach[1].trim() };
   return { text: body, filename: null };
+}
+
+/** Returns filenames referenced in chat as audio that are absent from the ZIP. */
+export function findMissingAudioRefs(
+  messages: ChatMessage[],
+  mediaFiles: Map<string, File>
+): string[] {
+  return messages
+    .filter((m) => m.attachmentFilename && isVoiceNoteFilename(m.attachmentFilename))
+    .map((m) => m.attachmentFilename!)
+    .filter((f) => !mediaFiles.has(f));
 }
 
 export function parseChatText(chatText: string): ChatMessage[] {

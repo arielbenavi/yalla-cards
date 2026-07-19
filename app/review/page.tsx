@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Rating } from "ts-fsrs";
 import { strings } from "@/lib/strings";
+import { PronunciationGuide } from "@/components/PronunciationGuide";
 
 type ReviewCard = {
   card_srs_id: string;
@@ -113,7 +114,8 @@ function ReviewPageInner() {
       }
       if (!revealed) return;
       if (hintUsed) {
-        if (e.key === "2") grade(Rating.Hard);
+        if (e.key === "1") grade(Rating.Again);
+        else if (e.key === "2") grade(Rating.Hard);
       } else {
         if (e.key === "1") grade(Rating.Again);
         else if (e.key === "2") grade(Rating.Hard);
@@ -156,6 +158,7 @@ function ReviewPageInner() {
           >
             {dirFlipped ? "ת→ע" : "ע→ת"}
           </button>
+          <PronunciationGuide />
         </span>
       </div>
 
@@ -215,13 +218,14 @@ function ReviewPageInner() {
           </div>
         </div>
       ) : hintUsed ? (
-        <button
-          onClick={() => grade(Rating.Hard)}
-          disabled={grading}
-          className="w-full rounded-xl bg-orange-500 py-5 text-lg font-bold text-white disabled:opacity-50"
-        >
-          {strings.review.hard}
-        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => grade(Rating.Again)} disabled={grading} className="rounded-xl bg-red-600 py-5 text-lg font-bold text-white disabled:opacity-50">
+            {strings.review.again}
+          </button>
+          <button onClick={() => grade(Rating.Hard)} disabled={grading} className="rounded-xl bg-orange-500 py-5 text-lg font-bold text-white disabled:opacity-50">
+            {strings.review.hard}
+          </button>
+        </div>
       ) : (
         <div className="grid grid-cols-4 gap-2">
           <button onClick={() => grade(Rating.Again)} className="rounded-xl bg-red-600 py-5 text-lg font-bold text-white">

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { strings } from "@/lib/strings";
 import { uploadAndTranscribeRecording, type UploadStatus } from "@/lib/recording-upload";
+import { FileDropZone } from "@/components/FileDropZone";
 
 type Lesson = { id: string; date: string; title: string | null };
 type Recording = {
@@ -13,6 +14,7 @@ type Recording = {
   tag: string | null;
   created_at: string;
   lesson: { title: string | null; date: string } | null;
+  clips: { count: number }[] | null;
 };
 
 export default function RecordingsPage() {
@@ -22,6 +24,7 @@ export default function RecordingsPage() {
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState("");
+  const [clipsFilter, setClipsFilter] = useState<"" | "has" | "none">("");
 
   async function refresh() {
     const [lessonsRes, recordingsRes] = await Promise.all([
@@ -43,7 +46,12 @@ export default function RecordingsPage() {
   };
 
   const tags = Array.from(new Set(recordings.map((r) => r.tag).filter((t): t is string => !!t)));
-  const filteredRecordings = tagFilter ? recordings.filter((r) => r.tag === tagFilter) : recordings;
+  const filteredRecordings = recordings.filter((r) => {
+    if (tagFilter && r.tag !== tagFilter) return false;
+    if (clipsFilter === "has" && (r.clips?.[0]?.count ?? 0) === 0) return false;
+    if (clipsFilter === "none" && (r.clips?.[0]?.count ?? 0) > 0) return false;
+    return true;
+  });
 
   async function handleUpload() {
     if (!file) return;
@@ -80,10 +88,11 @@ export default function RecordingsPage() {
             ))}
           </select>
         </label>
-        <input
-          type="file"
+        <FileDropZone
           accept="audio/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          value={file ? [file] : []}
+          onChange={(fs) => setFile(fs[0] ?? null)}
+          hint="קבצי MP3, M4A, WAV, OGG וכד׳"
         />
         <button
           onClick={handleUpload}
@@ -94,23 +103,37 @@ export default function RecordingsPage() {
         </button>
       </div>
 
-      {tags.length > 0 && (
+      <div className="flex flex-wrap gap-3 items-center">
+        {tags.length > 0 && (
+          <label className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">{strings.recordings.tagFilterLabel}</span>
+            <select
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              className="border rounded px-3 py-2"
+            >
+              <option value="">{strings.recordings.tagFilterAll}</option>
+              {tags.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">{strings.recordings.tagFilterLabel}</span>
+          <span className="text-sm text-gray-500">קליפים</span>
           <select
-            value={tagFilter}
-            onChange={(e) => setTagFilter(e.target.value)}
+            value={clipsFilter}
+            onChange={(e) => setClipsFilter(e.target.value as "" | "has" | "none")}
             className="border rounded px-3 py-2"
           >
-            <option value="">{strings.recordings.tagFilterAll}</option>
-            {tags.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
+            <option value="">הכל</option>
+            <option value="has">יש קליפים</option>
+            <option value="none">אין קליפים</option>
           </select>
         </label>
-      )}
+      </div>
 
       <div className="flex flex-col gap-2">
         {filteredRecordings.length === 0 ? (
@@ -122,11 +145,16 @@ export default function RecordingsPage() {
               href={`/recordings/${r.id}`}
               className="border rounded p-3 flex justify-between hover:bg-gray-50"
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-2 flex-wrap">
                 {r.lesson?.title || r.lesson?.date || strings.inbox.noLesson}
                 {r.tag && (
                   <span className="text-xs bg-gray-100 border rounded-full px-2 py-0.5 text-gray-600">
                     {r.tag}
+                  </span>
+                )}
+                {(r.clips?.[0]?.count ?? 0) > 0 && (
+                  <span className="text-xs bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 text-blue-600">
+                    {r.clips![0].count} קליפים
                   </span>
                 )}
               </span>

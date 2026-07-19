@@ -8,10 +8,12 @@ import {
   parseChatText,
   distinctSenders,
   isVoiceNoteFilename,
+  findMissingAudioRefs,
   type ChatMessage,
 } from "@/lib/whatsapp";
 import { uploadAndTranscribeRecording } from "@/lib/recording-upload";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { FileDropZone } from "@/components/FileDropZone";
 import {
   emptyBatchRow,
   findItemNumberGaps,
@@ -150,6 +152,8 @@ export default function InboxPage() {
   const [senders, setSenders] = useState<string[]>([]);
   const [teacherSender, setTeacherSender] = useState("");
   const [waStatus, setWaStatus] = useState<string | null>(null);
+  const [waMissingAudio, setWaMissingAudio] = useState<string[]>([]);
+  const [waSummary, setWaSummary] = useState<{ recordings: number; deduped: number } | null>(null);
   const [waCursor, setWaCursor] = useState<Date | null>(null);
   const [waImportAll, setWaImportAll] = useState(false);
   const [waPendingCursor, setWaPendingCursor] = useState<{ chatIdentifier: string; lastImportedAt: string } | null>(
@@ -418,6 +422,8 @@ export default function InboxPage() {
       setChatMessages(messages);
       setMediaFiles(media);
       setSenders(detectedSenders);
+      setWaMissingAudio(findMissingAudioRefs(messages, media));
+      setWaSummary(null);
       const defaultSender =
         detectedSenders.find((s) => s === config.defaultWhatsappTeacherName) ??
         detectedSenders.find((s) => s.includes(config.defaultWhatsappTeacherName)) ??
@@ -454,18 +460,21 @@ export default function InboxPage() {
 
     const voiceNoteEntries = teacherMessages
       .filter((m) => m.attachmentFilename && isVoiceNoteFilename(m.attachmentFilename))
-      .map((m) => ({ timestamp: m.timestamp, file: mediaFiles.get(m.attachmentFilename!) }))
-      .filter((v): v is { timestamp: Date; file: File } => !!v.file);
+      .map((m) => ({ timestamp: m.timestamp, filename: m.attachmentFilename!, file: mediaFiles.get(m.attachmentFilename!) }))
+      .filter((v): v is { timestamp: Date; filename: string; file: File } => !!v.file);
 
     const uploadedRecordings: { id: string; timestamp: Date }[] = [];
+    let dedupedCount = 0;
     for (let i = 0; i < voiceNoteEntries.length; i++) {
       setWaStatus(`${strings.inbox.whatsappUploadingVoiceNotes} (${i + 1}/${voiceNoteEntries.length})`);
-      const { file, timestamp } = voiceNoteEntries[i];
-      const { id } = await uploadAndTranscribeRecording(file, {
+      const { file, filename, timestamp } = voiceNoteEntries[i];
+      const { id, deduplicated } = await uploadAndTranscribeRecording(file, {
         lessonId: lessonId || null,
         maxAutoTranscribeDurationSec: config.autoTranscribeMaxDurationSec,
         autoTag: { maxDurationSec: config.dailyProverbMaxDurationSec, tag: config.dailyProverbTag },
+        sourceFilename: filename,
       });
+      if (deduplicated) dedupedCount++;
       uploadedRecordings.push({ id, timestamp });
     }
 
@@ -510,6 +519,7 @@ export default function InboxPage() {
     loadBatches();
 
     setWaStatus(null);
+    setWaSummary({ recordings: uploadedRecordings.length, deduped: dedupedCount });
     setWaStep("pick-zip");
     setZipFile(null);
     setChatMessages([]);
@@ -818,15 +828,13 @@ export default function InboxPage() {
         </div>
       ) : tab === "photo" ? (
         <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1">
-            <span>{strings.inbox.photoLabel}</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            />
-          </label>
+          <FileDropZone
+            accept="image/*"
+            multiple
+            value={files}
+            onChange={setFiles}
+            hint="תמונות JPG, PNG וכד׳"
+          />
           <button
             onClick={submitImages}
             disabled={parsing || files.length === 0}
@@ -837,16 +845,23 @@ export default function InboxPage() {
         </div>
       ) : tab === "whatsapp" ? (
         <div className="flex flex-col gap-2">
+          {waSummary && (
+            <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 px-4 py-3 text-sm text-green-800 dark:text-green-300 flex flex-col gap-1">
+              <span className="font-medium">ייבוא הסתיים</span>
+              <span>
+                הקלטות: {waSummary.recordings - waSummary.deduped} חדשות
+                {waSummary.deduped > 0 && `, ${waSummary.deduped} כבר קיימות (דולגו)`}
+              </span>
+            </div>
+          )}
           {waStep === "pick-zip" && (
             <>
-              <label className="flex flex-col gap-1">
-                <span>{strings.inbox.whatsappZipLabel}</span>
-                <input
-                  type="file"
-                  accept=".zip"
-                  onChange={(e) => setZipFile(e.target.files?.[0] ?? null)}
-                />
-              </label>
+              <FileDropZone
+                accept=".zip"
+                value={zipFile ? [zipFile] : []}
+                onChange={(fs) => { setZipFile(fs[0] ?? null); setWaMissingAudio([]); setWaSummary(null); }}
+                hint="קובץ ZIP של ייצוא שיחת וואטסאפ"
+              />
               <button
                 onClick={handleUnzip}
                 disabled={!zipFile || waStatus !== null}
@@ -854,6 +869,12 @@ export default function InboxPage() {
               >
                 {waStatus ?? strings.inbox.whatsappUnzip}
               </button>
+              {waMissingAudio.length > 0 && (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950 px-4 py-3 text-sm text-orange-800 dark:text-orange-300">
+                  <span className="font-medium">⚠ השיחה מכילה {waMissingAudio.length} הקלטות שאינן בקובץ ה-ZIP</span>
+                  <p className="mt-1 text-xs opacity-80">ייצא שוב את השיחה עם מדיה (Media) מוואטסאפ</p>
+                </div>
+              )}
             </>
           )}
           {waStep === "pick-teacher" && (
@@ -900,14 +921,12 @@ export default function InboxPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1">
-            <span>{strings.inbox.pdfFileLabel}</span>
-            <input
-              type="file"
-              accept="application/pdf"
-              onChange={(e) => handlePdfFileChange(e.target.files?.[0] ?? null)}
-            />
-          </label>
+          <FileDropZone
+            accept="application/pdf"
+            value={pdfFile ? [pdfFile] : []}
+            onChange={(fs) => handlePdfFileChange(fs[0] ?? null)}
+            hint="קובץ PDF"
+          />
           {pdfPageCount !== null && (
             <p className="text-sm text-gray-500">
               {strings.inbox.pdfPageCountLabel}: {pdfPageCount}
