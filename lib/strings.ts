@@ -10,6 +10,7 @@ export const strings = {
     browse: "עיון",
     notes: "משימות",
     logout: "יציאה",
+    teachers: "למורים",
   },
 
   login: {
