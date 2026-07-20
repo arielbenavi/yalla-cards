@@ -6,6 +6,22 @@ import { Rating } from "ts-fsrs";
 import { strings } from "@/lib/strings";
 import { PronunciationGuide } from "@/components/PronunciationGuide";
 
+// Returns the first N base-letters of a nikud string + "…"
+// N = 1 for short words (≤4 base letters), 2 for longer ones.
+function buildHint(word: string): string {
+  const NIKUD = /[֑-ׇ]/;
+  const baseLetters = [...word].filter((c) => !NIKUD.test(c)).length;
+  const take = baseLetters <= 4 ? 1 : 2;
+  let count = 0;
+  let i = 0;
+  while (i < word.length && count < take) {
+    if (!NIKUD.test(word[i])) count++;
+    i++;
+  }
+  while (i < word.length && NIKUD.test(word[i])) i++;
+  return word.slice(0, i) + "…";
+}
+
 type ReviewCard = {
   card_srs_id: string;
   direction: "he_to_ar" | "ar_to_he";
@@ -197,7 +213,7 @@ function ReviewPageInner() {
         <div className="flex flex-col gap-2">
           {hintUsed && effectiveDir === "he_to_ar" && (
             <p className="text-center text-sm text-gray-400 nikud-text">
-              רמז: {current.translit_nikud.split(/\s+/)[0]}…
+              רמז: {buildHint(current.translit_nikud.split(/\s+/)[0])}
             </p>
           )}
           <div className="flex gap-2">
