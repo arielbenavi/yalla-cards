@@ -11,7 +11,10 @@ export const strings = {
     notes: "משימות",
     logout: "יציאה",
     teachers: "למורים",
+    inflections: "נטיות",
     simulate: "שיחה",
+    songs: "שירים",
+    pictureGame: "משחק תמונות",
   },
 
   login: {
