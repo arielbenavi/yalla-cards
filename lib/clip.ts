@@ -1,46 +1,55 @@
 "use client";
 
-import { fetchFile } from "@ffmpeg/util";
-import { getFFmpeg } from "@/lib/transcode";
+// Cuts [startSec, endSec) from the source audio using the Web Audio API and
+// returns a mono WAV blob. No ffmpeg — avoids webpack/Turbopack blob-URL
+// module-resolution issues with @ffmpeg/ffmpeg's internal dynamic imports.
+export async function createClip(audioUrl: string, startSec: number, endSec: number): Promise<Blob> {
+  const response = await fetch(audioUrl);
+  const arrayBuffer = await response.arrayBuffer();
 
-// Cuts [startSec, endSec) out of the full recording and re-encodes it as a
-// small standalone mono MP3 (64kbps — plays everywhere including iOS Safari,
-// unlike Opus). Uses ffmpeg.wasm (already loaded for recordings ingest)
-// rather than Web Audio's decodeAudioData: decodeAudioData would decode the
-// *entire* source file to float32 PCM at the AudioContext's native rate
-// (44.1/48kHz) before we could slice it — for a 90min recording that's
-// ~350MB in browser memory just to cut one clip, and it also produced
-// oversized WAV output. ffmpeg seeks and trims the compressed stream
-// directly, so memory use stays proportional to the source file's
-// compressed size (~16MB for a 90min lesson), not its decoded size.
-export async function createClip(fullAudioUrl: string, startSec: number, endSec: number): Promise<Blob> {
-  const ffmpeg = await getFFmpeg();
-  const inputName = "clip-src.ogg";
-  const outputName = "clip-out.mp3";
-  const duration = Math.max(0.1, endSec - startSec);
+  const ctx = new AudioContext();
+  const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+  await ctx.close();
 
-  await ffmpeg.writeFile(inputName, await fetchFile(fullAudioUrl));
-  await ffmpeg.exec([
-    "-ss",
-    String(startSec),
-    "-i",
-    inputName,
-    "-t",
-    String(duration),
-    "-ac",
-    "1",
-    "-c:a",
-    "libmp3lame",
-    "-b:a",
-    "64k",
-    outputName,
-  ]);
+  const sampleRate = audioBuffer.sampleRate;
+  const startSample = Math.floor(startSec * sampleRate);
+  const endSample = Math.min(Math.ceil(endSec * sampleRate), audioBuffer.length);
+  const length = Math.max(1, endSample - startSample);
 
-  const data = await ffmpeg.readFile(outputName);
-  const blob = new Blob([new Uint8Array(data as Uint8Array)], { type: "audio/mpeg" });
+  // Downmix to mono using channel 0
+  const clipBuffer = new AudioBuffer({ length, numberOfChannels: 1, sampleRate });
+  clipBuffer.copyToChannel(audioBuffer.getChannelData(0).slice(startSample, endSample), 0);
 
-  await ffmpeg.deleteFile(inputName);
-  await ffmpeg.deleteFile(outputName);
+  return encodeWav(clipBuffer);
+}
 
-  return blob;
+function encodeWav(buf: AudioBuffer): Blob {
+  const samples = buf.getChannelData(0);
+  const byteCount = samples.length * 2;
+  const ab = new ArrayBuffer(44 + byteCount);
+  const v = new DataView(ab);
+
+  const str = (off: number, s: string) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+  str(0, "RIFF");
+  v.setUint32(4, 36 + byteCount, true);
+  str(8, "WAVE");
+  str(12, "fmt ");
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true);          // PCM
+  v.setUint16(22, 1, true);          // mono
+  v.setUint32(24, buf.sampleRate, true);
+  v.setUint32(28, buf.sampleRate * 2, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true);
+  str(36, "data");
+  v.setUint32(40, byteCount, true);
+
+  let off = 44;
+  for (let i = 0; i < samples.length; i++) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    off += 2;
+  }
+
+  return new Blob([ab], { type: "audio/wav" });
 }

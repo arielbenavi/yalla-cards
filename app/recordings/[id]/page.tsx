@@ -107,7 +107,7 @@ export default function RecordingDetailPage() {
     const { path, token } = await fetch("/api/recordings/upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ extension: "mp3" }),
+      body: JSON.stringify({ extension: "wav" }),
     }).then((r) => r.json());
 
     const supabase = supabaseBrowser();
