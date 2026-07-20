@@ -13,7 +13,7 @@ const links = [
   { href: "/stats", label: strings.nav.stats },
   { href: "/notes", label: strings.nav.notes },
   { href: "/teachers", label: strings.nav.teachers },
-  { href: "/numbers", label: strings.nav.numbers },
+  { href: "/simulate", label: strings.nav.simulate },
 ];
 
 export default function NavBar() {
