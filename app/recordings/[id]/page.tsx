@@ -31,6 +31,7 @@ export default function RecordingDetailPage() {
   const [newTranslit, setNewTranslit] = useState("");
   const [attached, setAttached] = useState(false);
   const [attaching, setAttaching] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -59,6 +60,32 @@ export default function RecordingDetailPage() {
     }, 300);
     return () => clearTimeout(t);
   }, [query]);
+
+  async function transcribeNow() {
+    if (!audioUrl) return;
+    setTranscribing(true);
+    try {
+      const blob = await fetch(audioUrl).then((r) => r.blob());
+      const form = new FormData();
+      form.append("chunk", blob, "audio.ogg");
+      form.append("offset_sec", "0");
+      const res = await fetch(`/api/recordings/${id}/transcribe-chunk`, { method: "POST", body: form });
+      if (!res.ok) throw new Error("transcription failed");
+      const { words } = await res.json();
+      if (words?.length) {
+        await fetch(`/api/recordings/${id}/save-transcript`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ words }),
+        });
+        // Reload recording to show transcript
+        const d = await fetch(`/api/recordings/${id}`).then((r) => r.json());
+        setRecording(d.recording);
+      }
+    } finally {
+      setTranscribing(false);
+    }
+  }
 
   function seekTo(t: number) {
     if (audioRef.current) {
@@ -171,7 +198,18 @@ export default function RecordingDetailPage() {
       <div>
         <h2 className="text-lg font-bold mb-2">{strings.recordings.transcript}</h2>
         {words.length === 0 ? (
-          <p className="text-gray-500">{strings.recordings.noTranscript}</p>
+          <div className="flex items-center gap-3">
+            <p className="text-gray-500">{strings.recordings.noTranscript}</p>
+            {audioUrl && (
+              <button
+                onClick={transcribeNow}
+                disabled={transcribing}
+                className="text-sm border rounded px-3 py-1 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {transcribing ? "מתמלל…" : "תמלל עכשיו"}
+              </button>
+            )}
+          </div>
         ) : (
           <p className="nikud-text leading-loose">
             {words.map((w, i) => {
