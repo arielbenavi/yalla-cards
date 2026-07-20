@@ -21,6 +21,7 @@ export default function RecordingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [recording, setRecording] = useState<Recording | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [anchor, setAnchor] = useState<Word | null>(null);
   const [start, setStart] = useState<number | null>(null);
   const [end, setEnd] = useState<number | null>(null);
   const [mode, setMode] = useState<"attach" | "create">("create");
@@ -68,14 +69,29 @@ export default function RecordingDetailPage() {
 
   function selectWord(word: Word) {
     if (isMobile) return;
-    if (start === null || (start !== null && end !== null)) {
+    if (anchor === null) {
+      // First double-click: anchor this word, show single-word preview
+      setAnchor(word);
       setStart(word.start);
-      setEnd(word.end);
-    } else if (word.start >= start) {
       setEnd(word.end);
     } else {
-      setStart(word.start);
+      // Second double-click: finalize range between anchor and this word
+      const a = anchor;
+      setAnchor(null);
+      if (word.start >= a.start) {
+        setStart(a.start);
+        setEnd(word.end);
+      } else {
+        setStart(word.start);
+        setEnd(a.end);
+      }
     }
+  }
+
+  function clearSelection() {
+    setAnchor(null);
+    setStart(null);
+    setEnd(null);
   }
 
   function nudge(which: "start" | "end", delta: number) {
@@ -160,12 +176,19 @@ export default function RecordingDetailPage() {
           <p className="nikud-text leading-loose">
             {words.map((w, i) => {
               const selected = start !== null && end !== null && w.start >= start && w.end <= end;
+              const isAnchor = anchor !== null && w.start === anchor.start;
               return (
                 <span key={i}>
                   <button
                     onClick={() => seekTo(w.start)}
                     onDoubleClick={() => selectWord(w)}
-                    className={selected ? "bg-yellow-200 rounded px-0.5" : "hover:bg-gray-100 rounded px-0.5"}
+                    className={
+                      isAnchor
+                        ? "bg-orange-300 rounded px-0.5"
+                        : selected
+                        ? "bg-yellow-200 rounded px-0.5"
+                        : "hover:bg-gray-100 rounded px-0.5"
+                    }
                   >
                     {w.word}
                   </button>{" "}
@@ -184,7 +207,12 @@ export default function RecordingDetailPage() {
 
       {!isMobile && start !== null && end !== null && (
         <div className="border rounded p-3 flex flex-col gap-3">
-          <h3 className="font-bold">{strings.recordings.selectRange}</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold">{strings.recordings.selectRange}</h3>
+            <button onClick={clearSelection} className="text-sm text-gray-500 hover:text-gray-800">
+              ✕ נקה
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             <span>{strings.recordings.startLabel}:</span>
             <bdi>{start.toFixed(2)}s</bdi>
