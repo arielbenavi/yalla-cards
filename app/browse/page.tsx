@@ -42,7 +42,10 @@ export default function BrowsePage() {
   const [revealed, setRevealed] = useState(false);
   const [dirFlipped, setDirFlipped] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
+  const [listMode, setListMode] = useState(false);
   const [selectedSrsIds, setSelectedSrsIds] = useState<Set<string>>(new Set());
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -79,6 +82,9 @@ export default function BrowsePage() {
   const effectiveDir: "he_to_ar" | "ar_to_he" = dirFlipped
     ? (baseDir === "he_to_ar" ? "ar_to_he" : "he_to_ar")
     : baseDir;
+
+  // A filter is "active" when any filter field is set
+  const filterActive = !!(q || lessonId || itemType || scoreFilter);
 
   function next() {
     setIndex((i) => Math.min(i + 1, cards.length - 1));
@@ -121,6 +127,68 @@ export default function BrowsePage() {
     });
   }
 
+  /** Toggle ar_to_he card_srs row for a card in the list view. */
+  async function toggleArToHe(card: BrowseCard) {
+    if (togglingIds.has(card.id)) return;
+    const arToHeRow = card.card_srs?.find((s) => s.direction === "ar_to_he") ?? null;
+
+    setTogglingIds((prev) => new Set(prev).add(card.id));
+    try {
+      if (arToHeRow) {
+        // Remove: DELETE the ar_to_he card_srs row (review_logs cascade-delete via FK)
+        const res = await fetch(`/api/card-srs/${arToHeRow.id}`, { method: "DELETE" });
+        if (res.ok) {
+          setCards((prev) =>
+            prev.map((c) =>
+              c.id === card.id
+                ? { ...c, card_srs: (c.card_srs ?? []).filter((s) => s.direction !== "ar_to_he") }
+                : c
+            )
+          );
+        }
+      } else {
+        // Add: POST to create ar_to_he row with default FSRS values
+        const res = await fetch("/api/card-srs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ card_id: card.id, direction: "ar_to_he" }),
+        });
+        const data = await res.json();
+        if (data.card_srs) {
+          setCards((prev) =>
+            prev.map((c) =>
+              c.id === card.id
+                ? { ...c, card_srs: [...(c.card_srs ?? []), data.card_srs as CardSrs] }
+                : c
+            )
+          );
+        }
+      }
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(card.id);
+        return next;
+      });
+    }
+  }
+
+  /** Bulk-enable ar_to_he for all currently filtered cards. */
+  async function bulkEnableArToHe() {
+    setBulkLoading(true);
+    try {
+      await fetch("/api/card-srs/bulk-ar-to-he", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ card_ids: cards.map((c) => c.id) }),
+      });
+      // Reload to reflect updated card_srs rows
+      await search(q, lessonId, itemType, scoreFilter);
+    } finally {
+      setBulkLoading(false);
+    }
+  }
+
   const dotColor = current?.self_score != null ? SCORE_DOT_COLORS[current.self_score - 1] : null;
 
   function toggleSelect(srsId: string) {
@@ -139,12 +207,18 @@ export default function BrowsePage() {
 
   function enterSelectMode() {
     setSelectMode(true);
+    setListMode(false);
     setSelectedSrsIds(new Set());
   }
 
   function exitSelectMode() {
     setSelectMode(false);
     setSelectedSrsIds(new Set());
+  }
+
+  function toggleListMode() {
+    setListMode((m) => !m);
+    setSelectMode(false);
   }
 
   return (
@@ -168,7 +242,7 @@ export default function BrowsePage() {
           <option value="3">טוב</option>
           <option value="4">קל</option>
         </select>
-        {!selectMode && (
+        {!selectMode && !listMode && (
           <button
             onClick={() => setDirFlipped((f) => !f)}
             className={`border rounded px-3 py-2 text-sm font-medium transition-colors ${
@@ -179,15 +253,25 @@ export default function BrowsePage() {
             {dirFlipped ? "ת→ע" : "ע→ת"}
           </button>
         )}
+        {/* List-mode toggle */}
+        <button
+          onClick={toggleListMode}
+          className={`border rounded px-3 py-2 text-sm font-medium transition-colors ${
+            listMode ? "bg-black text-white border-black" : "text-gray-600"
+          }`}
+          title="תצוגת רשימה עם הפעלת ערבית→עברית"
+        >
+          רשימה
+        </button>
         {selectMode ? (
           <button onClick={exitSelectMode} className="border rounded px-3 py-2 text-sm text-gray-600">
             בטל
           </button>
-        ) : (
+        ) : !listMode ? (
           <button onClick={enterSelectMode} className="border rounded px-3 py-2 text-sm text-gray-600">
             בחר
           </button>
-        )}
+        ) : null}
         <PronunciationGuide />
       </div>
       {/* Search */}
@@ -203,6 +287,65 @@ export default function BrowsePage() {
         <div className="flex flex-1 items-center justify-center text-gray-500">{strings.common.loading}</div>
       ) : cards.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-gray-500">{strings.browse.noResults}</div>
+      ) : listMode ? (
+        /* ── ar_to_he list view ── */
+        <div className="flex flex-col flex-1 gap-2 overflow-hidden">
+          <div className="text-sm text-gray-500 text-center">{cards.length} כרטיסים</div>
+          <div className="flex-1 overflow-y-auto divide-y border rounded-xl">
+            {cards.map((card) => {
+              const arToHeRow = card.card_srs?.find((s) => s.direction === "ar_to_he") ?? null;
+              const isOn = arToHeRow !== null;
+              const isToggling = togglingIds.has(card.id);
+              return (
+                <div key={card.id} className="flex items-center gap-3 px-4 py-3">
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-medium nikud-text text-sm leading-tight">{card.hebrew_meaning}</span>
+                    <span className="block text-xs text-gray-500 nikud-text truncate">{card.translit_nikud}</span>
+                  </span>
+                  {card.self_score != null && (
+                    <span className={`h-2 w-2 rounded-full flex-shrink-0 ${SCORE_DOT_COLORS[card.self_score - 1]}`} />
+                  )}
+                  {/* ar_to_he toggle switch */}
+                  <button
+                    role="switch"
+                    aria-checked={isOn}
+                    aria-label="תרגול ערבית→עברית"
+                    data-testid="ar-to-he-toggle"
+                    disabled={isToggling}
+                    onClick={() => toggleArToHe(card)}
+                    className={`relative flex-shrink-0 inline-flex h-6 w-11 items-center rounded-full border-2 transition-colors focus:outline-none disabled:opacity-50 ${
+                      isOn
+                        ? "bg-purple-600 border-purple-600"
+                        : "bg-gray-200 border-gray-200 dark:bg-gray-700 dark:border-gray-700"
+                    }`}
+                    title={isOn ? "ביטול תרגול ערבית→עברית" : "הפעל תרגול ערבית→עברית"}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                        isOn ? "translate-x-5" : "translate-x-0.5"
+                      }`}
+                    />
+                    {isToggling && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      </span>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {/* Bulk action: visible only when a filter is active */}
+          {filterActive && (
+            <button
+              onClick={bulkEnableArToHe}
+              disabled={bulkLoading}
+              className="w-full rounded-xl bg-purple-600 py-4 text-base font-bold text-white disabled:opacity-50"
+            >
+              {bulkLoading ? "מפעיל…" : `הפעל לכל המסוננים (${cards.length})`}
+            </button>
+          )}
+        </div>
       ) : selectMode ? (
         /* ── Selection list view ── */
         <div className="flex flex-col flex-1 gap-2 overflow-hidden">
