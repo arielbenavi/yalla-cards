@@ -11,6 +11,7 @@ export const strings = {
     notes: "משימות",
     logout: "יציאה",
     teachers: "למורים",
+    numbers: "מספרים",
   },
 
   login: {
