@@ -910,6 +910,12 @@ export default function InboxPage() {
           )}
           {waStep === "pick-teacher" && (
             <>
+              {waMissingAudio.length > 0 && (
+                <div className="rounded-lg border border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950 px-4 py-3 text-sm text-orange-800 dark:text-orange-300">
+                  <span className="font-medium">&#x26A0; השיחה מכילה {waMissingAudio.length} הקלטות שאינן בקובץ ה-ZIP</span>
+                  <p className="mt-1 text-xs opacity-80">ייצא שוב את השיחה עם מדיה (Media) מוואטסאפ</p>
+                </div>
+              )}
               <label className="flex flex-col gap-1">
                 <span>{strings.inbox.whatsappTeacherLabel}</span>
                 <select
