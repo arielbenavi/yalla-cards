@@ -6,11 +6,24 @@ export async function GET() {
   const supabase = supabaseAdmin();
   const { data, error } = await supabase
     .from("recordings")
-    .select("id, lesson_id, storage_path, duration_sec, tag, title, created_at, lesson:lessons(title, date), clips:cards!recording_id(count)")
+    .select("id, lesson_id, storage_path, duration_sec, tag, title, created_at, transcript_json, lesson:lessons(title, date), clips:cards!recording_id(audio_start_sec,audio_end_sec)")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ recordings: data });
+
+  // Compute word coverage for each recording
+  const recordings = (data ?? []).map((r) => {
+    const words: { start: number; end: number }[] = r.transcript_json?.words ?? [];
+    const clips: { audio_start_sec: number; audio_end_sec: number }[] = r.clips ?? [];
+    const total = words.length;
+    const linked = total === 0 ? 0 : words.filter((w) =>
+      clips.some((c) => w.start < c.audio_end_sec && w.end > c.audio_start_sec)
+    ).length;
+    const { transcript_json: _omit, ...rest } = r;
+    return { ...rest, coverage_total: total, coverage_linked: linked };
+  });
+
+  return NextResponse.json({ recordings });
 }
 
 export async function POST(request: NextRequest) {

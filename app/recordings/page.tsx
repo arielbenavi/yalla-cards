@@ -15,7 +15,9 @@ type Recording = {
   title: string | null;
   created_at: string;
   lesson: { title: string | null; date: string } | null;
-  clips: { count: number }[] | null;
+  clips: { audio_start_sec: number; audio_end_sec: number }[] | null;
+  coverage_total: number;
+  coverage_linked: number;
 };
 
 export default function RecordingsPage() {
@@ -49,8 +51,9 @@ export default function RecordingsPage() {
   const tags = Array.from(new Set(recordings.map((r) => r.tag).filter((t): t is string => !!t)));
   const filteredRecordings = recordings.filter((r) => {
     if (tagFilter && r.tag !== tagFilter) return false;
-    if (clipsFilter === "has" && (r.clips?.[0]?.count ?? 0) === 0) return false;
-    if (clipsFilter === "none" && (r.clips?.[0]?.count ?? 0) > 0) return false;
+    const clipCount = r.clips?.length ?? 0;
+    if (clipsFilter === "has" && clipCount === 0) return false;
+    if (clipsFilter === "none" && clipCount > 0) return false;
     return true;
   });
 
@@ -153,9 +156,22 @@ export default function RecordingsPage() {
                     {r.tag}
                   </span>
                 )}
-                {(r.clips?.[0]?.count ?? 0) > 0 && (
+                {(r.clips?.length ?? 0) > 0 && (
                   <span className="text-xs bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 text-blue-600">
-                    {r.clips![0].count} קליפים
+                    {r.clips!.length} קליפים
+                  </span>
+                )}
+                {r.coverage_total > 0 && (
+                  <span
+                    className={`text-xs rounded-full px-2 py-0.5 border ${
+                      r.coverage_linked === 0
+                        ? "bg-gray-50 border-gray-200 text-gray-400"
+                        : r.coverage_linked / r.coverage_total >= 0.5
+                        ? "bg-yellow-50 border-yellow-300 text-yellow-700"
+                        : "bg-yellow-50 border-yellow-200 text-yellow-600"
+                    }`}
+                  >
+                    {Math.round((r.coverage_linked / r.coverage_total) * 100)}% משויך
                   </span>
                 )}
               </span>

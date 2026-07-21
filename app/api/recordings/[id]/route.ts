@@ -16,11 +16,16 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     return NextResponse.json({ error: error?.message ?? "not found" }, { status: 404 });
   }
 
-  const { data: signed } = await supabase.storage
-    .from("recordings")
-    .createSignedUrl(recording.storage_path, 60 * 60);
+  const [signed, clipsResult] = await Promise.all([
+    supabase.storage.from("recordings").createSignedUrl(recording.storage_path, 60 * 60),
+    supabase.from("cards").select("id, audio_start_sec, audio_end_sec, translit_nikud, hebrew_meaning").eq("recording_id", id),
+  ]);
 
-  return NextResponse.json({ recording, audio_url: signed?.signedUrl ?? null });
+  return NextResponse.json({
+    recording,
+    audio_url: signed.data?.signedUrl ?? null,
+    clips: clipsResult.data ?? [],
+  });
 }
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {

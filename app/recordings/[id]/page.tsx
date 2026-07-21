@@ -16,6 +16,7 @@ type Recording = {
   transcript_json: { words: Word[] } | null;
   title: string | null;
 };
+type Clip = { id: string; audio_start_sec: number; audio_end_sec: number; translit_nikud: string; hebrew_meaning: string };
 type CardResult = { id: string; hebrew_meaning: string; translit_nikud: string };
 
 export default function RecordingDetailPage() {
@@ -36,6 +37,7 @@ export default function RecordingDetailPage() {
   const [transcribing, setTranscribing] = useState(false);
   const [titleInput, setTitleInput] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [clips, setClips] = useState<Clip[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -48,6 +50,7 @@ export default function RecordingDetailPage() {
       .then((d) => {
         setRecording(d.recording);
         setAudioUrl(d.audio_url);
+        setClips(d.clips ?? []);
       });
   }, [id]);
 
@@ -169,6 +172,10 @@ export default function RecordingDetailPage() {
     setAttached(true);
     if (attachedTimer) clearTimeout(attachedTimer);
     setAttachedTimer(setTimeout(() => setAttached(false), 3000));
+    // Refresh clips so new highlight appears immediately
+    fetch(`/api/recordings/${id}`)
+      .then((r) => r.json())
+      .then((d) => setClips(d.clips ?? []));
   }
 
   async function createFromRange() {
@@ -253,8 +260,10 @@ export default function RecordingDetailPage() {
             {words.map((w, i) => {
               const selected = start !== null && end !== null && w.start >= start && w.end <= end;
               const isAnchor = anchor !== null && w.start === anchor.start;
+              const linkedClip = clips.find((c) => w.start < c.audio_end_sec && w.end > c.audio_start_sec);
+              const isLinked = !!linkedClip;
               return (
-                <span key={i}>
+                <span key={i} title={isLinked ? `${linkedClip!.translit_nikud} — ${linkedClip!.hebrew_meaning}` : undefined}>
                   <button
                     onClick={() => seekTo(w.start)}
                     onDoubleClick={() => selectWord(w)}
@@ -262,7 +271,9 @@ export default function RecordingDetailPage() {
                       isAnchor
                         ? "bg-orange-300 rounded px-0.5"
                         : selected
-                        ? "bg-yellow-200 rounded px-0.5"
+                        ? "bg-yellow-300 rounded px-0.5"
+                        : isLinked
+                        ? "bg-yellow-100 rounded px-0.5 underline decoration-yellow-400"
                         : "hover:bg-gray-100 rounded px-0.5"
                     }
                   >
