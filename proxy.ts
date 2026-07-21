@@ -4,13 +4,15 @@ import { createServerClient } from "@supabase/ssr";
 import { AUTH_COOKIE, isValidAuthCookie } from "@/lib/auth";
 
 const PUBLIC = ["/login", "/auth/callback"];
+const ADMIN_ONLY = ["/inbox", "/recordings", "/simulate", "/notes"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (PUBLIC.some((p) => pathname.startsWith(p))) return NextResponse.next();
 
   // Admin: valid HMAC cookie — fast path, no DB call
-  if (isValidAuthCookie(request.cookies.get(AUTH_COOKIE)?.value)) return NextResponse.next();
+  const isAdmin = isValidAuthCookie(request.cookies.get(AUTH_COOKIE)?.value);
+  if (isAdmin) return NextResponse.next();
 
   // Regular user: valid Supabase OAuth session
   const response = NextResponse.next();
@@ -25,12 +27,19 @@ export async function proxy(request: NextRequest) {
     }
   );
   const { data: { user } } = await supabase.auth.getUser();
-  if (user) return response;
+  if (!user) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("from", pathname);
+    return NextResponse.redirect(url);
+  }
 
-  const url = request.nextUrl.clone();
-  url.pathname = "/login";
-  url.searchParams.set("from", pathname);
-  return NextResponse.redirect(url);
+  // Regular user: block admin-only pages
+  if (ADMIN_ONLY.some((p) => pathname.startsWith(p))) {
+    return NextResponse.redirect(new URL("/review", request.url));
+  }
+
+  return response;
 }
 
 export const config = {
