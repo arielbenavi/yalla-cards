@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Rating } from "ts-fsrs";
 
@@ -25,12 +25,6 @@ type DrillItem = {
   translit: string;
   state: number;
 };
-
-type PopupState = {
-  word: LyricWord;
-  x: number;
-  y: number;
-} | null;
 
 function getYoutubeEmbedId(url: string): string | null {
   try {
@@ -73,7 +67,6 @@ export default function SongDetailPage() {
 
   const [song, setSong] = useState<Song | null>(null);
   const [loading, setLoading] = useState(true);
-  const [popup, setPopup] = useState<PopupState>(null);
   const [drillMode, setDrillMode] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
   const [drillItems, setDrillItems] = useState<DrillItem[]>([]);
@@ -90,23 +83,6 @@ export default function SongDetailPage() {
       .then((d) => setSong(d.song ?? null))
       .finally(() => setLoading(false));
   }, [id]);
-
-  // Close popup on outside click
-  useEffect(() => {
-    if (!popup) return;
-    const handler = () => setPopup(null);
-    window.addEventListener("click", handler);
-    return () => window.removeEventListener("click", handler);
-  }, [popup]);
-
-  const handleWordClick = useCallback(
-    (e: React.MouseEvent, word: LyricWord) => {
-      e.stopPropagation();
-      const rect = (e.target as HTMLElement).getBoundingClientRect();
-      setPopup({ word, x: rect.left + rect.width / 2, y: rect.bottom + window.scrollY + 8 });
-    },
-    []
-  );
 
   async function startDrill() {
     if (!song) return;
@@ -184,7 +160,6 @@ export default function SongDetailPage() {
     );
   }
 
-  const flatWords = song.lyrics_parsed?.flatMap((l) => l.words) ?? [];
   const youtubeId = song.youtube_url ? getYoutubeEmbedId(song.youtube_url) : null;
 
   // --- DRILL MODE ---
@@ -305,56 +280,20 @@ export default function SongDetailPage() {
 
       {/* Lyrics */}
       {song.lyrics_parsed ? (
-        <div className="space-y-4 relative" dir="rtl">
+        <div className="space-y-5" dir="rtl">
           {song.lyrics_parsed.map((line, li) => (
-            <div key={li} className="leading-relaxed">
-              <div className="flex flex-wrap gap-1.5">
-                {line.words.map((word, wi) => (
-                  <button
-                    key={wi}
-                    onClick={(e) => handleWordClick(e, word)}
-                    className="text-lg hover:bg-yellow-100 dark:hover:bg-yellow-900/30 rounded px-0.5 transition-colors cursor-pointer"
-                    dir="rtl"
-                  >
-                    {word.ar}
-                  </button>
-                ))}
-              </div>
+            <div key={li}>
+              <p className="text-lg font-medium leading-snug">{line.line}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
+                {line.words.map((w) => w.he).join(" ")}
+              </p>
             </div>
           ))}
-
-          {/* Word popup */}
-          {popup && (
-            <div
-              className="fixed z-50 bg-white dark:bg-gray-900 border rounded-lg shadow-xl p-4 min-w-[160px] text-center"
-              style={{
-                left: `${popup.x}px`,
-                top: `${popup.y}px`,
-                transform: "translateX(-50%)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <p className="text-2xl font-bold mb-1" dir="rtl">
-                {popup.word.ar}
-              </p>
-              <p className="text-base text-gray-700 dark:text-gray-300 mb-1">{popup.word.he}</p>
-              <p className="text-sm text-gray-400" dir="ltr">
-                {popup.word.translit}
-              </p>
-            </div>
-          )}
         </div>
       ) : (
         <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800 whitespace-pre-wrap text-sm" dir="rtl">
           {song.lyrics_raw}
         </div>
-      )}
-
-      {/* Flat word count note */}
-      {flatWords.length > 0 && (
-        <p className="mt-6 text-xs text-gray-400 text-center">
-          {flatWords.length} מילים בשיר — לחץ על מילה לפרטים
-        </p>
       )}
     </div>
   );
