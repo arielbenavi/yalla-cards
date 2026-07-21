@@ -46,6 +46,7 @@ export default function BrowsePage() {
   const [selectedSrsIds, setSelectedSrsIds] = useState<Set<string>>(new Set());
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [markedWords, setMarkedWords] = useState<Set<number>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -89,11 +90,13 @@ export default function BrowsePage() {
   function next() {
     setIndex((i) => Math.min(i + 1, cards.length - 1));
     setRevealed(false);
+    setMarkedWords(new Set());
   }
 
   function prev() {
     setIndex((i) => Math.max(i - 1, 0));
     setRevealed(false);
+    setMarkedWords(new Set());
   }
 
   function playAudio() {
@@ -111,6 +114,7 @@ export default function BrowsePage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ self_score: sc }),
     });
+    setMarkedWords(new Set());
     next();
   }
 
@@ -415,7 +419,29 @@ export default function BrowsePage() {
               <div className="flex flex-col items-center gap-3">
                 {effectiveDir === "he_to_ar" ? (
                   <>
-                    <p className="text-2xl nikud-text">{current.translit_nikud}</p>
+                    {(current.item_type === "phrase" || current.item_type === "sentence") ? (
+                      <div className="flex flex-wrap gap-1.5 justify-center max-w-xs">
+                        {current.translit_nikud.split(/\s+/).map((word, wi) => (
+                          <button
+                            key={wi}
+                            onClick={() => setMarkedWords((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(wi)) next.delete(wi); else next.add(wi);
+                              return next;
+                            })}
+                            className={`px-2 py-1 rounded-md text-lg nikud-text font-medium transition-colors border ${
+                              markedWords.has(wi)
+                                ? "bg-red-50 text-red-700 border-red-300"
+                                : "bg-green-50 text-green-700 border-green-200"
+                            }`}
+                          >
+                            {word}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-2xl nikud-text">{current.translit_nikud}</p>
+                    )}
                     {current.plural_form && (
                       <p className="text-base text-gray-500 nikud-text">
                         <span className="text-gray-400 text-sm">ר׳ </span>{current.plural_form}

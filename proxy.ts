@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { AUTH_COOKIE, isValidAuthCookie } from "@/lib/auth";
 
 const PUBLIC = ["/login", "/auth/callback"];
-const ADMIN_ONLY = ["/inbox", "/recordings", "/simulate", "/notes"];
+const ADMIN_ONLY = ["/inbox", "/recordings", "/notes"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
