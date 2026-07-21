@@ -11,7 +11,6 @@ const links = [
   { href: "/recordings", label: strings.nav.recordings },
   { href: "/stats", label: strings.nav.stats },
   { href: "/notes", label: strings.nav.notes },
-  { href: "/teachers", label: strings.nav.teachers },
   { href: "/inflections", label: strings.nav.inflections },
   { href: "/songs", label: strings.nav.songs },
   { href: "/simulate", label: strings.nav.simulate },

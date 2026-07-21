@@ -62,6 +62,20 @@ export default function LessonsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-4 max-w-2xl mx-auto">
+      {/* italki booking banner */}
+      <a
+        href="https://www.italki.com/en/teachers/arabic"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3 hover:bg-emerald-100 transition-colors"
+      >
+        <div className="flex flex-col gap-0.5">
+          <span className="font-bold text-emerald-800">הזמן שיעור ב-italki</span>
+          <span className="text-sm text-emerald-600">מצא מורה לערבית לשיחה חופשית</span>
+        </div>
+        <span className="text-emerald-700 text-xl">←</span>
+      </a>
+
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{strings.lessons.title}</h1>
         <button
