@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Rating } from "ts-fsrs";
 
 type LyricWord = { ar: string; he: string; translit: string };
-type LyricLine = { line: string; words: LyricWord[] };
+type LyricLine = { line: string; words: LyricWord[]; timestamp?: string };
 
 type Song = {
   id: string;
@@ -283,6 +283,11 @@ export default function SongDetailPage() {
         <div className="space-y-5" dir="rtl">
           {song.lyrics_parsed.map((line, li) => (
             <div key={li}>
+              {line.timestamp && (
+                <span className="inline-block text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5 mb-1 font-mono" dir="ltr">
+                  {line.timestamp}
+                </span>
+              )}
               <p className="text-lg font-medium leading-snug">{line.line}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
                 {line.words.map((w) => w.he).join(" ")}
