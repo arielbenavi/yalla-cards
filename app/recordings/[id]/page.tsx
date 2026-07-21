@@ -14,6 +14,7 @@ type Recording = {
   storage_path: string;
   duration_sec: number | null;
   transcript_json: { words: Word[] } | null;
+  title: string | null;
 };
 type CardResult = { id: string; hebrew_meaning: string; translit_nikud: string };
 
@@ -30,8 +31,10 @@ export default function RecordingDetailPage() {
   const [newMeaning, setNewMeaning] = useState("");
   const [newTranslit, setNewTranslit] = useState("");
   const [attached, setAttached] = useState(false);
+  const [attachedTimer, setAttachedTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [attaching, setAttaching] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [titleInput, setTitleInput] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -159,7 +162,13 @@ export default function RecordingDetailPage() {
       }),
     });
     setAttaching(false);
+    flashAttached();
+  }
+
+  function flashAttached() {
     setAttached(true);
+    if (attachedTimer) clearTimeout(attachedTimer);
+    setAttachedTimer(setTimeout(() => setAttached(false), 3000));
   }
 
   async function createFromRange() {
@@ -178,7 +187,7 @@ export default function RecordingDetailPage() {
       }),
     });
     setAttaching(false);
-    setAttached(true);
+    flashAttached();
     setNewMeaning("");
     setNewTranslit("");
   }
@@ -189,9 +198,38 @@ export default function RecordingDetailPage() {
 
   const words = recording.transcript_json?.words ?? [];
 
+  async function saveTitle(value: string) {
+    await fetch(`/api/recordings/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: value.trim() || null }),
+    });
+    setRecording((r) => r ? { ...r, title: value.trim() || null } : r);
+    setTitleInput(null);
+  }
+
   return (
     <div className="flex flex-col gap-6 p-4 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold">{strings.recordings.detailTitle}</h1>
+      {titleInput !== null ? (
+        <input
+          autoFocus
+          value={titleInput}
+          onChange={(e) => setTitleInput(e.target.value)}
+          onBlur={() => saveTitle(titleInput)}
+          onKeyDown={(e) => { if (e.key === "Enter") saveTitle(titleInput); if (e.key === "Escape") setTitleInput(null); }}
+          className="text-2xl font-bold border-b border-gray-300 outline-none bg-transparent"
+          placeholder="שם ההקלטה…"
+        />
+      ) : (
+        <h1
+          className="text-2xl font-bold cursor-pointer hover:opacity-70"
+          title="לחץ לעריכת שם"
+          onClick={() => setTitleInput(recording.title ?? "")}
+        >
+          {recording.title || strings.recordings.detailTitle}
+          <span className="text-base font-normal text-gray-400 mr-2">✏️</span>
+        </h1>
+      )}
 
       {audioUrl && <audio ref={audioRef} src={audioUrl} controls className="w-full" />}
 

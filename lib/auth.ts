@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { supabaseAuthServer } from "@/lib/supabase-auth-server";
 
 export const AUTH_COOKIE = "yalla_auth";
 const MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30 days
@@ -22,4 +23,15 @@ export function isValidAuthCookie(cookieValue: string | undefined): boolean {
   const a = Buffer.from(signature);
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// Returns true if there is a valid Supabase OAuth session (Google login).
+export async function isValidSupabaseSession(): Promise<boolean> {
+  try {
+    const supabase = await supabaseAuthServer();
+    const { data: { user } } = await supabase.auth.getUser();
+    return user !== null;
+  } catch {
+    return false;
+  }
 }

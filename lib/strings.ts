@@ -19,9 +19,11 @@ export const strings = {
 
   login: {
     title: "כניסה",
-    passwordLabel: "סיסמה",
+    passwordLabel: "סיסמה (אדמין)",
     submit: "כניסה",
     error: "סיסמה שגויה",
+    googleButton: "התחבר עם Google",
+    adminDivider: "או אדמין",
   },
 
   review: {

@@ -1,0 +1,1 @@
+alter table recordings add column if not exists title text;

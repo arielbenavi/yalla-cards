@@ -12,6 +12,7 @@ type Recording = {
   storage_path: string;
   duration_sec: number | null;
   tag: string | null;
+  title: string | null;
   created_at: string;
   lesson: { title: string | null; date: string } | null;
   clips: { count: number }[] | null;
@@ -146,7 +147,7 @@ export default function RecordingsPage() {
               className="border rounded p-3 flex justify-between hover:bg-gray-50"
             >
               <span className="flex items-center gap-2 flex-wrap">
-                {r.lesson?.title || r.lesson?.date || strings.inbox.noLesson}
+                {r.title || r.lesson?.title || r.lesson?.date || strings.inbox.noLesson}
                 {r.tag && (
                   <span className="text-xs bg-gray-100 border rounded-full px-2 py-0.5 text-gray-600">
                     {r.tag}
