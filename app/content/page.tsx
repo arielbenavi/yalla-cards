@@ -1,6 +1,14 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+// ---- Types ----
 type Resource = { name: string; url: string; note?: string };
 type Section = { title: string; emoji: string; items: Resource[] };
+type Progress = { sec: number; dur: number };
+type ProgressMap = Record<string, Progress>;
 
+// ---- Data ----
 const sections: Section[] = [
   {
     title: "סרטונים בערבית",
@@ -58,6 +66,176 @@ const sections: Section[] = [
   },
 ];
 
+// ---- YouTube URL parsing ----
+type YTInfo = { type: "video" | "playlist"; id: string };
+
+function parseYT(url: string): YTInfo | null {
+  const short = url.match(/youtu\.be\/([^?&/]+)/);
+  if (short) return { type: "video", id: short[1] };
+  const shorts = url.match(/\/shorts\/([^?&/]+)/);
+  if (shorts) return { type: "video", id: shorts[1] };
+  const watch = url.match(/[?&]v=([^&]+)/);
+  if (watch) return { type: "video", id: watch[1] };
+  const list = url.match(/[?&]list=([^&]+)/);
+  if (list) return { type: "playlist", id: list[1] };
+  return null;
+}
+
+// ---- Progress storage ----
+const STORAGE_KEY = "yc_content_progress";
+
+function loadAllProgress(): ProgressMap {
+  if (typeof window === "undefined") return {};
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}"); }
+  catch { return {}; }
+}
+
+function persistProgress(url: string, sec: number, dur: number) {
+  const all = loadAllProgress();
+  all[url] = { sec, dur };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+}
+
+function getPct(p: Progress | undefined): number {
+  if (!p?.dur) return 0;
+  return Math.min(100, Math.round((p.sec / p.dur) * 100));
+}
+
+// ---- YouTube IFrame API singleton ----
+let ytApiReady = false;
+const ytWaiters: Array<() => void> = [];
+
+function ensureYTApi(): Promise<void> {
+  return new Promise((resolve) => {
+    if (ytApiReady) { resolve(); return; }
+    ytWaiters.push(resolve);
+    if (document.querySelector('script[src*="youtube.com/iframe_api"]')) return;
+    const prev = (window as Record<string, unknown>).onYouTubeIframeAPIReady as (() => void) | undefined;
+    (window as Record<string, unknown>).onYouTubeIframeAPIReady = () => {
+      prev?.();
+      ytApiReady = true;
+      ytWaiters.forEach((cb) => cb());
+      ytWaiters.length = 0;
+    };
+    const s = document.createElement("script");
+    s.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(s);
+  });
+}
+
+// ---- YouTubePlayer component ----
+interface RawYTPlayer {
+  getCurrentTime(): number;
+  getDuration(): number;
+  seekTo(s: number, allowSeek: boolean): void;
+  destroy(): void;
+}
+
+function YouTubePlayer({
+  url, initialSec, onProgress, onClose,
+}: {
+  url: string;
+  initialSec: number;
+  onProgress: (sec: number, dur: number) => void;
+  onClose: () => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<RawYTPlayer | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onProgressRef = useRef(onProgress);
+  useEffect(() => { onProgressRef.current = onProgress; });
+
+  const yt = parseYT(url);
+
+  function saveNow() {
+    const p = playerRef.current;
+    if (!p) return;
+    try {
+      const dur = p.getDuration();
+      if (dur > 0) onProgressRef.current(p.getCurrentTime(), dur);
+    } catch { /* player might be destroyed */ }
+  }
+
+  useEffect(() => {
+    if (!yt || !containerRef.current) return;
+    let destroyed = false;
+
+    ensureYTApi().then(() => {
+      if (destroyed || !containerRef.current) return;
+      const YTApi = (window as Record<string, unknown>).YT as {
+        Player: new (el: HTMLElement, opts: Record<string, unknown>) => RawYTPlayer;
+      };
+
+      const playerVars: Record<string, unknown> = { rel: 0, modestbranding: 1, playsinline: 1 };
+      if (yt.type === "playlist") {
+        playerVars.listType = "playlist";
+        playerVars.list = yt.id;
+      }
+
+      playerRef.current = new YTApi.Player(containerRef.current, {
+        height: "100%",
+        width: "100%",
+        videoId: yt.type === "video" ? yt.id : undefined,
+        playerVars,
+        events: {
+          onReady: (e: { target: RawYTPlayer }) => {
+            if (yt.type === "video" && initialSec > 3) {
+              e.target.seekTo(initialSec, true);
+            }
+          },
+          onStateChange: (e: { data: number }) => {
+            if (e.data === 1 /* PLAYING */) {
+              if (!timerRef.current) {
+                timerRef.current = setInterval(saveNow, 5000);
+              }
+            } else {
+              if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+              saveNow();
+            }
+          },
+        },
+      });
+    });
+
+    return () => {
+      destroyed = true;
+      if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
+      saveNow();
+      try { playerRef.current?.destroy(); } catch { /* ignore */ }
+    };
+  }, [url]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!yt) return null;
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-gray-200 mt-1.5 mb-2 shadow-sm">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-gray-900 text-white text-xs">
+        <span className="text-gray-400">{yt.type === "playlist" ? "📋 פלייליסט" : "▶ סרטון"}</span>
+        <button
+          onClick={() => { saveNow(); onClose(); }}
+          className="hover:text-gray-300 transition-colors px-1"
+        >
+          ✕ סגור
+        </button>
+      </div>
+      <div className="relative bg-black" style={{ paddingBottom: "56.25%", height: 0 }}>
+        <div ref={containerRef} className="absolute inset-0 w-full h-full" />
+      </div>
+    </div>
+  );
+}
+
+// ---- Progress indicator ----
+function ProgressBadge({ value }: { value: number }) {
+  if (value === 0) return null;
+  const done = value >= 95;
+  return (
+    <span className={`text-xs font-semibold px-1.5 py-0.5 rounded-full ${done ? "bg-green-100 text-green-700" : "bg-blue-50 text-blue-600"}`}>
+      {done ? "✓" : `${value}%`}
+    </span>
+  );
+}
+
 function ExternalLinkIcon() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-40 shrink-0">
@@ -68,7 +246,29 @@ function ExternalLinkIcon() {
   );
 }
 
+// ---- Main page ----
 export default function ContentPage() {
+  const [progressMap, setProgressMap] = useState<ProgressMap>({});
+  const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setProgressMap(loadAllProgress());
+  }, []);
+
+  function handleProgress(url: string, sec: number, dur: number) {
+    persistProgress(url, sec, dur);
+    setProgressMap(loadAllProgress());
+  }
+
+  function handleItemClick(item: Resource) {
+    const yt = parseYT(item.url);
+    if (yt) {
+      setExpandedUrl((prev) => (prev === item.url ? null : item.url));
+    } else {
+      window.open(item.url, "_blank", "noopener,noreferrer");
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-8" dir="rtl">
       <div>
@@ -83,23 +283,58 @@ export default function ContentPage() {
             <span>{section.title}</span>
           </h2>
           <div className="flex flex-col gap-1.5">
-            {section.items.map((item) => (
-              <a
-                key={item.url}
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 hover:bg-gray-50 transition-colors group"
-              >
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span className="font-medium text-sm truncate">{item.name}</span>
-                  {item.note && (
-                    <span className="text-xs text-gray-400">{item.note}</span>
+            {section.items.map((item) => {
+              const yt = parseYT(item.url);
+              const p = progressMap[item.url];
+              const percentage = getPct(p);
+              const isExpanded = expandedUrl === item.url;
+
+              return (
+                <div key={item.url}>
+                  <button
+                    onClick={() => handleItemClick(item)}
+                    className={`relative w-full flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 transition-colors text-right overflow-hidden ${
+                      isExpanded
+                        ? "bg-gray-50 border-gray-300"
+                        : "hover:bg-gray-50 border-gray-200"
+                    }`}
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0 flex-1">
+                      <span className="font-medium text-sm truncate">{item.name}</span>
+                      {item.note && (
+                        <span className="text-xs text-gray-400">{item.note}</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {percentage > 0 && <ProgressBadge value={percentage} />}
+                      {yt ? (
+                        <span className="text-gray-400 text-xs w-3 text-center">
+                          {isExpanded ? "▲" : "▶"}
+                        </span>
+                      ) : (
+                        <ExternalLinkIcon />
+                      )}
+                    </div>
+                    {/* Progress bar strip at bottom */}
+                    {percentage > 0 && (
+                      <div
+                        className={`absolute bottom-0 right-0 h-0.5 transition-all ${percentage >= 95 ? "bg-green-500" : "bg-blue-400"}`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    )}
+                  </button>
+
+                  {isExpanded && yt && (
+                    <YouTubePlayer
+                      url={item.url}
+                      initialSec={p?.sec ?? 0}
+                      onProgress={(sec, dur) => handleProgress(item.url, sec, dur)}
+                      onClose={() => setExpandedUrl(null)}
+                    />
                   )}
                 </div>
-                <ExternalLinkIcon />
-              </a>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}

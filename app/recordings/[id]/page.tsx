@@ -39,6 +39,7 @@ export default function RecordingDetailPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [clips, setClips] = useState<Clip[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const stopAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     setIsMobile(isMobileDevice());
@@ -53,6 +54,19 @@ export default function RecordingDetailPage() {
         setClips(d.clips ?? []);
       });
   }, [id]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    function onTimeUpdate() {
+      if (stopAtRef.current !== null && audio!.currentTime >= stopAtRef.current) {
+        audio!.pause();
+        stopAtRef.current = null;
+      }
+    }
+    audio.addEventListener("timeupdate", onTimeUpdate);
+    return () => audio.removeEventListener("timeupdate", onTimeUpdate);
+  }, [audioUrl]);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -93,8 +107,9 @@ export default function RecordingDetailPage() {
     }
   }
 
-  function seekTo(t: number) {
+  function seekTo(t: number, stopAt?: number) {
     if (audioRef.current) {
+      stopAtRef.current = stopAt ?? null;
       audioRef.current.currentTime = t;
       audioRef.current.play();
     }
@@ -265,7 +280,7 @@ export default function RecordingDetailPage() {
               return (
                 <span key={i} title={isLinked ? `${linkedClip!.translit_nikud} — ${linkedClip!.hebrew_meaning}` : undefined}>
                   <button
-                    onClick={() => seekTo(w.start)}
+                    onClick={() => seekTo(w.start, w.end)}
                     onDoubleClick={() => selectWord(w)}
                     className={
                       isAnchor
@@ -303,7 +318,7 @@ export default function RecordingDetailPage() {
           <div className="flex items-center gap-2">
             <span>{strings.recordings.startLabel}:</span>
             <bdi>{start.toFixed(2)}s</bdi>
-            <button onClick={() => seekTo(start)} title="האזן מנקודת ההתחלה" className="border rounded px-2">🔊</button>
+            <button onClick={() => seekTo(start, end ?? undefined)} title="האזן לאורך הקטע" className="border rounded px-2">🔊</button>
             <button onClick={() => nudge("start", -config.audioNudgeSec)} className="border rounded px-2">
               {strings.recordings.nudgeBack}
             </button>
@@ -314,7 +329,7 @@ export default function RecordingDetailPage() {
           <div className="flex items-center gap-2">
             <span>{strings.recordings.endLabel}:</span>
             <bdi>{end.toFixed(2)}s</bdi>
-            <button onClick={() => seekTo(Math.max(0, end - 1.5))} title="האזן לפני נקודת הסיום" className="border rounded px-2">🔊</button>
+            <button onClick={() => seekTo(Math.max(0, end - 1))} title="קפוץ לסוף הקטע והמשך ניגון" className="border rounded px-2">🔊</button>
             <button onClick={() => nudge("end", -config.audioNudgeSec)} className="border rounded px-2">
               {strings.recordings.nudgeBack}
             </button>
