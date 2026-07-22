@@ -5,6 +5,7 @@ import { AUTH_COOKIE, isValidAuthCookie } from "@/lib/auth";
 
 const PUBLIC = ["/login", "/auth/callback"];
 const ADMIN_ONLY = ["/inbox", "/recordings", "/notes"];
+const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS ?? "").split(",").map((e) => e.trim()).filter(Boolean);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -31,6 +32,14 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("from", pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // Email allowlist: if configured, block users not on the list
+  if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(user.email ?? "")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.searchParams.set("error", "unauthorized");
     return NextResponse.redirect(url);
   }
 

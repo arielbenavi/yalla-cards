@@ -35,6 +35,8 @@ function LoginForm() {
     router.refresh();
   }
 
+  const unauthorizedError = searchParams.get("error") === "unauthorized";
+
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     const supabase = supabaseAuthBrowser();
@@ -51,6 +53,12 @@ function LoginForm() {
   return (
     <div className="flex w-full max-w-sm flex-col gap-4">
       <h1 className="text-xl font-bold">{strings.login.title}</h1>
+
+      {unauthorizedError && (
+        <p className="text-red-600 text-sm bg-red-50 border border-red-200 rounded px-3 py-2">
+          החשבון הזה לא מאושר לגישה לאפליקציה.
+        </p>
+      )}
 
       <button
         type="button"
