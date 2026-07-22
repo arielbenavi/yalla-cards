@@ -15,6 +15,7 @@ export const strings = {
     simulate: "שיחה",
     songs: "שירים",
     pictureGame: "משחק תמונות",
+    content: "תכנים",
   },
 
   login: {

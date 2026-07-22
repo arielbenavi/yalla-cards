@@ -18,6 +18,7 @@ const links: NavLink[] = [
   { href: "/songs", label: strings.nav.songs },
   { href: "/simulate", label: strings.nav.simulate },
   { href: "/picture-game", label: strings.nav.pictureGame },
+  { href: "/content", label: strings.nav.content },
 ];
 
 export default function NavBar() {
