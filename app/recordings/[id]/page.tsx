@@ -303,6 +303,7 @@ export default function RecordingDetailPage() {
           <div className="flex items-center gap-2">
             <span>{strings.recordings.startLabel}:</span>
             <bdi>{start.toFixed(2)}s</bdi>
+            <button onClick={() => seekTo(start)} title="האזן מנקודת ההתחלה" className="border rounded px-2">🔊</button>
             <button onClick={() => nudge("start", -config.audioNudgeSec)} className="border rounded px-2">
               {strings.recordings.nudgeBack}
             </button>
@@ -313,6 +314,7 @@ export default function RecordingDetailPage() {
           <div className="flex items-center gap-2">
             <span>{strings.recordings.endLabel}:</span>
             <bdi>{end.toFixed(2)}s</bdi>
+            <button onClick={() => seekTo(Math.max(0, end - 1.5))} title="האזן לפני נקודת הסיום" className="border rounded px-2">🔊</button>
             <button onClick={() => nudge("end", -config.audioNudgeSec)} className="border rounded px-2">
               {strings.recordings.nudgeBack}
             </button>
