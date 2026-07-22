@@ -9,16 +9,16 @@ type NavLink = { href: string; label: string; adminOnly?: boolean };
 
 const links: NavLink[] = [
   { href: "/review", label: strings.nav.review },
-  { href: "/inbox", label: strings.nav.inbox, adminOnly: true },
   { href: "/browse", label: strings.nav.browse },
-  { href: "/recordings", label: strings.nav.recordings, adminOnly: true },
-  { href: "/stats", label: strings.nav.stats },
-  { href: "/notes", label: strings.nav.notes, adminOnly: true },
-  { href: "/inflections", label: strings.nav.inflections },
   { href: "/songs", label: strings.nav.songs },
-  { href: "/simulate", label: strings.nav.simulate },
-  { href: "/picture-game", label: strings.nav.pictureGame },
   { href: "/content", label: strings.nav.content },
+  { href: "/simulate", label: strings.nav.simulate },
+  { href: "/inflections", label: strings.nav.inflections },
+  { href: "/picture-game", label: strings.nav.pictureGame },
+  { href: "/stats", label: strings.nav.stats },
+  { href: "/inbox", label: strings.nav.inbox, adminOnly: true },
+  { href: "/recordings", label: strings.nav.recordings, adminOnly: true },
+  { href: "/notes", label: strings.nav.notes, adminOnly: true },
 ];
 
 export default function NavBar() {
