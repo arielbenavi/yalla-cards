@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     .from("cards")
     .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, self_score, lessons(title, date), card_srs(id, direction)")
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(1000);
 
   if (q.trim()) {
     query = query.or(`hebrew_meaning.ilike.%${q}%,translit_nikud.ilike.%${q}%`);
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       .from("cards")
       .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, lessons(title, date), card_srs(id, direction)")
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(1000);
     if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
     data = (fallback.data ?? []).map((c) => ({ ...c, self_score: null })) as typeof data;
     error = null;
