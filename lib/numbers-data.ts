@@ -4,8 +4,9 @@ export type NumberEntry = {
   translit: string; // Hebrew-script nikud transliteration
 };
 
-// Base units 1–10
+// Base units 0–10
 const UNITS: NumberEntry[] = [
+  { value: 0,  arabic: "صفر",     translit: "צִפְר"       },
   { value: 1,  arabic: "واحد",    translit: "וָאחַד"      },
   { value: 2,  arabic: "اثنين",   translit: "אִתְנֵין"    },
   { value: 3,  arabic: "ثلاثة",   translit: "תְלָאתֶה"    },
@@ -33,7 +34,7 @@ const TENS: NumberEntry[] = [
 
 // 11–19: عشرة و + unit
 function buildTeens(): NumberEntry[] {
-  return UNITS.slice(0, 9).map((u) => ({
+  return UNITS.filter((u) => u.value >= 1 && u.value <= 9).map((u) => ({
     value: 10 + u.value,
     arabic: `عشرة و${u.arabic}`,
     translit: `עַשְׁרָה וְ${u.translit}`,
@@ -44,7 +45,7 @@ function buildTeens(): NumberEntry[] {
 function buildComposites(): NumberEntry[] {
   const result: NumberEntry[] = [];
   for (const ten of TENS.slice(0, 8)) { // 20–90 (not 100)
-    for (const unit of UNITS.slice(0, 9)) { // 1–9
+    for (const unit of UNITS.filter((u) => u.value >= 1 && u.value <= 9)) {
       result.push({
         value: ten.value + unit.value,
         arabic: `${ten.arabic} و${unit.arabic}`,
@@ -55,7 +56,7 @@ function buildComposites(): NumberEntry[] {
   return result;
 }
 
-// All numbers 1–100, sorted
+// All numbers 0–100, sorted
 export const ALL_NUMBERS: NumberEntry[] = [
   ...UNITS,
   ...buildTeens(),
@@ -63,10 +64,27 @@ export const ALL_NUMBERS: NumberEntry[] = [
   ...buildComposites(),
 ].sort((a, b) => a.value - b.value);
 
-export const BEGINNER_NUMBERS: NumberEntry[] = ALL_NUMBERS.filter(
-  (n) => n.value <= 20
+// Pool definitions per spec order:
+// Level 1 — base: 0–10 + round tens (0,10,20,...100)
+export const POOL_BASE: NumberEntry[] = ALL_NUMBERS.filter(
+  (n) => n.value <= 10 || (n.value > 10 && n.value % 10 === 0)
+);
+// Level 2 — teens: 11–19
+export const POOL_TEENS: NumberEntry[] = ALL_NUMBERS.filter(
+  (n) => n.value >= 11 && n.value <= 19
+);
+// Level 3 — composites: 21–99 (non-round)
+export const POOL_COMPOSITES: NumberEntry[] = ALL_NUMBERS.filter(
+  (n) => n.value >= 21 && n.value % 10 !== 0
 );
 
-export function getPool(difficulty: "beginner" | "advanced"): NumberEntry[] {
-  return difficulty === "beginner" ? BEGINNER_NUMBERS : ALL_NUMBERS;
+export type PoolLevel = "base" | "teens" | "composites" | "all";
+
+export function getPool(level: PoolLevel): NumberEntry[] {
+  switch (level) {
+    case "base": return POOL_BASE;
+    case "teens": return POOL_TEENS;
+    case "composites": return POOL_COMPOSITES;
+    case "all": return ALL_NUMBERS;
+  }
 }
