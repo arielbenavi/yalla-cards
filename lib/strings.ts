@@ -7,7 +7,7 @@ export const strings = {
     lessons: "מפגשים",
     recordings: "הקלטות",
     stats: "סטטיסטיקה",
-    browse: "עיון",
+    browse: "חזרה כללית",
     notes: "משימות",
     logout: "יציאה",
     teachers: "למורים",
