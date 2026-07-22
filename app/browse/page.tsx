@@ -64,7 +64,11 @@ export default function BrowsePage() {
     if (type) params.set("item_type", type);
     if (sc) params.set("score", sc);
     const data = await fetch(`/api/browse?${params}`).then((r) => r.json());
-    setCards(data.cards ?? []);
+    // Sort: unrated first (null→0), then שוב(1) קשה(2) טוב(3) קל(4)
+    const sorted = (data.cards ?? []).slice().sort((a: BrowseCard, b: BrowseCard) =>
+      (a.self_score ?? 0) - (b.self_score ?? 0)
+    );
+    setCards(sorted);
     setIndex(0);
     setRevealed(false);
     setLoading(false);
