@@ -108,8 +108,8 @@ function ensureYTApi(): Promise<void> {
     if (ytApiReady) { resolve(); return; }
     ytWaiters.push(resolve);
     if (document.querySelector('script[src*="youtube.com/iframe_api"]')) return;
-    const prev = (window as Record<string, unknown>).onYouTubeIframeAPIReady as (() => void) | undefined;
-    (window as Record<string, unknown>).onYouTubeIframeAPIReady = () => {
+    const prev = (window as unknown as Record<string, unknown>).onYouTubeIframeAPIReady as (() => void) | undefined;
+    (window as unknown as Record<string, unknown>).onYouTubeIframeAPIReady = () => {
       prev?.();
       ytApiReady = true;
       ytWaiters.forEach((cb) => cb());
@@ -160,7 +160,7 @@ function YouTubePlayer({
 
     ensureYTApi().then(() => {
       if (destroyed || !containerRef.current) return;
-      const YTApi = (window as Record<string, unknown>).YT as {
+      const YTApi = (window as unknown as Record<string, unknown>).YT as {
         Player: new (el: HTMLElement, opts: Record<string, unknown>) => RawYTPlayer;
       };
 
