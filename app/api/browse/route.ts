@@ -18,7 +18,11 @@ export async function GET(request: NextRequest) {
     .limit(1000);
 
   if (q.trim()) {
-    query = query.or(`hebrew_meaning.ilike.%${q}%,translit_nikud.ilike.%${q}%`);
+    // Split on whitespace so spaces in the query don't break PostgREST's or() parsing.
+    // Each term ANDs together; each term ORs across columns.
+    for (const term of q.trim().split(/\s+/).filter(Boolean)) {
+      query = query.or(`hebrew_meaning.ilike.%${term}%,translit_nikud.ilike.%${term}%`);
+    }
   }
   if (lessonId) {
     query = query.eq("lesson_id", lessonId);

@@ -28,6 +28,7 @@ export default function RecordingsPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState("");
   const [clipsFilter, setClipsFilter] = useState<"" | "has" | "none">("");
+  const [isAdmin, setIsAdmin] = useState(false);
 
   async function refresh() {
     const [lessonsRes, recordingsRes] = await Promise.all([
@@ -40,6 +41,10 @@ export default function RecordingsPage() {
 
   useEffect(() => {
     refresh();
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(Boolean(d.isAdmin)))
+      .catch(() => {});
   }, []);
 
   const statusLabels: Record<UploadStatus, string> = {
@@ -76,36 +81,38 @@ export default function RecordingsPage() {
     <div className="flex flex-col gap-6 p-4 max-w-2xl mx-auto">
       <h1 className="text-2xl font-bold">{strings.recordings.title}</h1>
 
-      <div className="flex flex-col gap-2 border rounded p-3">
-        <label className="flex flex-col gap-1">
-          <span>{strings.recordings.lessonLabel}</span>
-          <select
-            value={lessonId}
-            onChange={(e) => setLessonId(e.target.value)}
-            className="border rounded px-3 py-2"
+      {isAdmin && (
+        <div className="flex flex-col gap-2 border rounded p-3">
+          <label className="flex flex-col gap-1">
+            <span>{strings.recordings.lessonLabel}</span>
+            <select
+              value={lessonId}
+              onChange={(e) => setLessonId(e.target.value)}
+              className="border rounded px-3 py-2"
+            >
+              <option value="">{strings.inbox.noLesson}</option>
+              {lessons.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.title || l.date}
+                </option>
+              ))}
+            </select>
+          </label>
+          <FileDropZone
+            accept="audio/*"
+            value={file ? [file] : []}
+            onChange={(fs) => setFile(fs[0] ?? null)}
+            hint="קבצי MP3, M4A, WAV, OGG וכד׳"
+          />
+          <button
+            onClick={handleUpload}
+            disabled={!file || status !== null}
+            className="self-start bg-black text-white rounded px-4 py-2 disabled:opacity-50"
           >
-            <option value="">{strings.inbox.noLesson}</option>
-            {lessons.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.title || l.date}
-              </option>
-            ))}
-          </select>
-        </label>
-        <FileDropZone
-          accept="audio/*"
-          value={file ? [file] : []}
-          onChange={(fs) => setFile(fs[0] ?? null)}
-          hint="קבצי MP3, M4A, WAV, OGG וכד׳"
-        />
-        <button
-          onClick={handleUpload}
-          disabled={!file || status !== null}
-          className="self-start bg-black text-white rounded px-4 py-2 disabled:opacity-50"
-        >
-          {status ?? strings.recordings.upload}
-        </button>
-      </div>
+            {status ?? strings.recordings.upload}
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-3 items-center">
         {tags.length > 0 && (

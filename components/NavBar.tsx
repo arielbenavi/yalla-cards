@@ -17,8 +17,8 @@ const links: NavLink[] = [
   { href: "/picture-game", label: strings.nav.pictureGame },
   { href: "/stats", label: strings.nav.stats },
   { href: "/inbox", label: strings.nav.inbox, adminOnly: true },
-  { href: "/recordings", label: strings.nav.recordings, adminOnly: true },
-  { href: "/notes", label: strings.nav.notes, adminOnly: true },
+  { href: "/recordings", label: strings.nav.recordings },
+  { href: "/notes", label: strings.nav.notes },
 ];
 
 export default function NavBar() {

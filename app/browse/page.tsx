@@ -64,9 +64,10 @@ export default function BrowsePage() {
     if (type) params.set("item_type", type);
     if (sc) params.set("score", sc);
     const data = await fetch(`/api/browse?${params}`).then((r) => r.json());
-    // Sort: unrated first (null→0), then שוב(1) קשה(2) טוב(3) קל(4)
+    // Sort: שוב(1) first, then unrated, then קשה(2) טוב(3) קל(4)
+    const scoreOrder = (s: number | null) => s === 1 ? 0 : s === null ? 1 : s + 1;
     const sorted = (data.cards ?? []).slice().sort((a: BrowseCard, b: BrowseCard) =>
-      (a.self_score ?? 0) - (b.self_score ?? 0)
+      scoreOrder(a.self_score) - scoreOrder(b.self_score)
     );
     setCards(sorted);
     setIndex(0);
@@ -231,6 +232,13 @@ export default function BrowsePage() {
 
   return (
     <div className="flex flex-col flex-1 p-4 gap-3 pb-[calc(env(safe-area-inset-bottom)+1rem)] max-w-3xl mx-auto w-full">
+      {/* Back button */}
+      <button
+        onClick={() => router.back()}
+        className="self-start text-sm text-gray-500 hover:text-gray-800 flex items-center gap-1"
+      >
+        ← חזרה
+      </button>
       {/* Filters row 1 */}
       <div className="flex gap-2 flex-wrap">
         <select value={lessonId} onChange={(e) => setLessonId(e.target.value)} className="border rounded px-3 py-2 text-sm">
@@ -343,14 +351,15 @@ export default function BrowsePage() {
               );
             })}
           </div>
-          {/* Bulk action: visible only when a filter is active */}
-          {filterActive && (
+          {/* Bulk action: visible only when a filter is active and multiple cards */}
+          {filterActive && cards.length > 1 && (
             <button
               onClick={bulkEnableArToHe}
               disabled={bulkLoading}
+              title="מפעיל תרגול ערבית→עברית לכל הכרטיסים המסוננים כרגע"
               className="w-full rounded-xl bg-purple-600 py-4 text-base font-bold text-white disabled:opacity-50"
             >
-              {bulkLoading ? "מפעיל…" : `הפעל לכל המסוננים (${cards.length})`}
+              {bulkLoading ? "מפעיל…" : `הפעל ת→ע לכל המסוננים (${cards.length})`}
             </button>
           )}
         </div>

@@ -21,6 +21,20 @@ type Tab = "cards" | "sentences";
 
 const SESSION_KEY = "yalla_sentences_cache";
 
+function buildHint(word: string): string {
+  const NIKUD = /[֑-ׇ]/;
+  const baseLetters = [...word].filter((c) => !NIKUD.test(c)).length;
+  const take = baseLetters <= 4 ? 1 : 2;
+  let count = 0;
+  let i = 0;
+  while (i < word.length && count < take) {
+    if (!NIKUD.test(word[i])) count++;
+    i++;
+  }
+  while (i < word.length && NIKUD.test(word[i])) i++;
+  return word.slice(0, i) + "…";
+}
+
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -37,6 +51,7 @@ export default function SimulatePage() {
   const [cards, setCards] = useState<SimCard[]>([]);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  const [hintUsed, setHintUsed] = useState(false);
   const [cardsLoading, setCardsLoading] = useState(true);
 
   // Sentences tab state
@@ -53,6 +68,7 @@ export default function SimulatePage() {
     setCards(shuffle(all));
     setIndex(0);
     setRevealed(false);
+    setHintUsed(false);
     setCardsLoading(false);
   }, []);
 
@@ -180,12 +196,25 @@ export default function SimulatePage() {
                 )}
               </div>
 
+              {hintUsed && !revealed && (
+                <p className="text-center text-sm text-gray-400 nikud-text">
+                  רמז: {buildHint(current.translit_nikud.split(/\s+/)[0])}
+                </p>
+              )}
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setIndex((i) => Math.max(i - 1, 0)); setRevealed(false); }}
+                  onClick={() => { setIndex((i) => Math.max(i - 1, 0)); setRevealed(false); setHintUsed(false); }}
                   disabled={index === 0}
                   className="rounded-xl border py-4 px-6 text-xl font-bold disabled:opacity-30"
                 >←</button>
+                {!revealed && !hintUsed && (
+                  <button
+                    onClick={() => setHintUsed(true)}
+                    className="rounded-xl border border-gray-300 px-5 py-4 text-base font-bold text-gray-600"
+                  >
+                    רמז
+                  </button>
+                )}
                 <button
                   onClick={() => setRevealed(true)}
                   disabled={revealed}
@@ -194,7 +223,7 @@ export default function SimulatePage() {
                   {revealed ? "גלוי" : strings.review.showAnswer}
                 </button>
                 <button
-                  onClick={() => { setIndex((i) => Math.min(i + 1, cards.length - 1)); setRevealed(false); }}
+                  onClick={() => { setIndex((i) => Math.min(i + 1, cards.length - 1)); setRevealed(false); setHintUsed(false); }}
                   disabled={index === cards.length - 1}
                   className="rounded-xl border py-4 px-6 text-xl font-bold disabled:opacity-30"
                 >→</button>
