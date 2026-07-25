@@ -1,42 +1,56 @@
 @AGENTS.md
 
-## Session start checklist
+## Session start
 
-At the start of every session, before doing anything else:
-1. Run: `SELECT id, body, tag, created_at FROM notes WHERE status = 'open' ORDER BY created_at DESC`
-2. Address or triage each open משימה in your first reply — fix inline if straightforward, otherwise acknowledge and ask for priority.
-
----
-
-## Playwright — mandatory for interactive flows
-
-Before reporting any change to an interactive flow (inbox import, review, recordings) as done:
-
-1. Ensure the dev server is running (`npm run dev`).
-2. Run: `npx playwright test`
-3. All tests must pass. Fix the code if they don't — never skip or comment out a test.
-
-**Test fixture:** `tests/fixtures/wa-test.zip` is a minimal WhatsApp export with two WAV
-silence clips and a `_chat.txt` that includes the `‎` LRM prefix on attachment lines.
-Regenerate it with `npx tsx scripts/gen-wa-fixture.ts` if needed.
-
-**Writing new tests:** when adding a new interactive flow, add a corresponding spec under
-`tests/e2e/`. Use `login()` from `tests/e2e/helpers.ts` for auth; target FileDropZone file
-inputs with `input[accept="..."]` and `setInputFiles()`.
+Run this first, address open items before anything else:
+```sql
+SELECT id, body, tag, created_at FROM notes WHERE status = 'open' ORDER BY created_at DESC
+```
 
 ---
 
-## Migrations — your job, not the user's
+## Testing — mandatory for interactive flows
 
-Never ask the user to paste SQL into the Supabase dashboard.
+Before marking any change to inbox import, review, or recordings as done:
+```
+npx playwright test   # all must pass; never skip/comment out
+```
+Fixture: `tests/fixtures/wa-test.zip`. Regenerate: `npx tsx scripts/gen-wa-fixture.ts`.
 
-After creating a new `.sql` file under `supabase/migrations/`:
-1. Run: `npx tsx scripts/migrate.ts`
-2. Confirm the output shows `apply 00XX_...sql` (or `already up to date` on a re-run).
-3. Commit both the migration file and any code that depends on the new schema together.
+---
 
-**Setup (one-time):**
-`SUPABASE_ACCESS_TOKEN` must be set in `.env.local`:
-- Go to https://supabase.com/dashboard/account/tokens
-- Click **Generate new token**, give it a name (e.g. "yalla-cards local")
-- Add to `.env.local`: `SUPABASE_ACCESS_TOKEN=sbp_...`
+## FSRS review queue (`app/api/review/queue/route.ts`)
+
+- **Daily (default):** due cards + new cards up to `newCardsPerDay` (12)
+- **`mode=all`:** everything, `ORDER BY due ASC`
+- **`mode=selected`:** specific IDs, shuffled
+
+**Don't randomize new cards.** `ORDER BY due ASC` = insertion order = lesson progression. This is intentional.
+
+**Easy-today filter:** exclude `card_srs_id`s where `review_log.rating = Rating.Easy AND reviewed_at >= today`. Prevents same-day re-review of cards already called Easy (in any mode).
+
+---
+
+## Scripts (`scripts/*.ts`)
+
+Node 20 + supabase-js requires:
+```ts
+createClient(url, key, { auth: { persistSession: false }, realtime: { transport: class {} as any } })
+```
+Use `SUPABASE_URL` (not `NEXT_PUBLIC_...`). Load env: `config({ path: ".env.local" })`.
+
+---
+
+## PostgREST `.or()` with spaces
+
+Spaces in LIKE patterns break PostgREST when passed as one `.or()` string. Fix: split query on whitespace, chain multiple `.or()` calls. See `app/api/browse/route.ts`.
+
+---
+
+## Migrations
+
+Never ask the user to run SQL manually. After creating `supabase/migrations/00XX_....sql`:
+```
+npx tsx scripts/migrate.ts
+```
+Commit migration + dependent code together.

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("cards")
-    .select("id, hebrew_meaning, translit_nikud, item_type, recording_id")
+    .select("id, hebrew_meaning, translit_nikud, item_type, recording_id, clip_path")
     .order("created_at", { ascending: false })
     .limit(20);
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { State } from "@/lib/fsrs";
+import { Rating, State } from "@/lib/fsrs";
 import { config } from "@/lib/config";
 
 export async function GET(request: Request) {
@@ -46,26 +46,41 @@ export async function GET(request: Request) {
 
     const remainingNewAllowance = Math.max(0, config.newCardsPerDay - (newDoneToday ?? 0));
 
-    const { data: dueRows, error: dueError } = await supabase
+    // Cards rated Easy today (in any review mode) are skipped to avoid same-day double-review
+    const { data: easyTodayRows } = await supabase
+      .from("review_log")
+      .select("card_srs_id")
+      .eq("rating", Rating.Easy)
+      .gte("reviewed_at", startOfDay.toISOString());
+    const easyTodayIds = (easyTodayRows ?? []).map((r) => r.card_srs_id);
+
+    let dueQuery = supabase
       .from("card_srs")
       .select(cardSelect)
       .neq("state", State.New)
       .lte("due", now)
       .order("due", { ascending: true });
+    if (easyTodayIds.length > 0) dueQuery = dueQuery.not("id", "in", `(${easyTodayIds.join(",")})`);
+    const { data: dueRows, error: dueError } = await dueQuery;
 
     if (dueError) return NextResponse.json({ error: dueError.message }, { status: 500 });
 
-    const { data: newRows, error: newError } = await supabase
-      .from("card_srs")
-      .select(cardSelect)
-      .eq("state", State.New)
-      .lte("due", now)
-      .order("due", { ascending: true })
-      .limit(remainingNewAllowance);
+    let newRows: typeof dueRows = [];
+    if (remainingNewAllowance > 0) {
+      let newQuery = supabase
+        .from("card_srs")
+        .select(cardSelect)
+        .eq("state", State.New)
+        .lte("due", now)
+        .order("due", { ascending: true })
+        .limit(remainingNewAllowance);
+      if (easyTodayIds.length > 0) newQuery = newQuery.not("id", "in", `(${easyTodayIds.join(",")})`);
+      const { data: newCandidates, error: newError } = await newQuery;
+      if (newError) return NextResponse.json({ error: newError.message }, { status: 500 });
+      newRows = newCandidates ?? [];
+    }
 
-    if (newError) return NextResponse.json({ error: newError.message }, { status: 500 });
-
-    rows = [...(dueRows ?? []), ...(newRows ?? [])];
+    rows = [...(dueRows ?? []), ...newRows];
   }
 
   const withAudioUrl = await Promise.all(

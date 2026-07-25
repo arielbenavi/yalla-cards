@@ -17,7 +17,7 @@ type Recording = {
   title: string | null;
 };
 type Clip = { id: string; audio_start_sec: number; audio_end_sec: number; translit_nikud: string; hebrew_meaning: string };
-type CardResult = { id: string; hebrew_meaning: string; translit_nikud: string };
+type CardResult = { id: string; hebrew_meaning: string; translit_nikud: string; clip_path: string | null };
 
 export default function RecordingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +38,8 @@ export default function RecordingDetailPage() {
   const [titleInput, setTitleInput] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [clips, setClips] = useState<Clip[]>([]);
+  const [editingStart, setEditingStart] = useState(false);
+  const [editingEnd, setEditingEnd] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const stopAtRef = useRef<number | null>(null);
 
@@ -317,7 +319,19 @@ export default function RecordingDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <span>{strings.recordings.startLabel}:</span>
-            <bdi>{start.toFixed(2)}s</bdi>
+            {editingStart ? (
+              <input
+                type="number"
+                step="0.01"
+                autoFocus
+                defaultValue={start.toFixed(2)}
+                onBlur={(e) => { setStart(Math.max(0, parseFloat(e.target.value) || 0)); setEditingStart(false); }}
+                onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setEditingStart(false); }}
+                className="border rounded px-2 w-24 text-center"
+              />
+            ) : (
+              <bdi className="cursor-pointer hover:underline" title="לחץ לעריכה" onClick={() => setEditingStart(true)}>{start.toFixed(2)}s</bdi>
+            )}
             <button onClick={() => seekTo(start, end ?? undefined)} title="האזן לאורך הקטע" className="border rounded px-2">🔊</button>
             <button onClick={() => nudge("start", -config.audioNudgeSec)} className="border rounded px-2">
               {strings.recordings.nudgeBack}
@@ -328,7 +342,19 @@ export default function RecordingDetailPage() {
           </div>
           <div className="flex items-center gap-2">
             <span>{strings.recordings.endLabel}:</span>
-            <bdi>{end.toFixed(2)}s</bdi>
+            {editingEnd ? (
+              <input
+                type="number"
+                step="0.01"
+                autoFocus
+                defaultValue={end.toFixed(2)}
+                onBlur={(e) => { setEnd(Math.max(0, parseFloat(e.target.value) || 0)); setEditingEnd(false); }}
+                onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); if (e.key === "Escape") setEditingEnd(false); }}
+                className="border rounded px-2 w-24 text-center"
+              />
+            ) : (
+              <bdi className="cursor-pointer hover:underline" title="לחץ לעריכה" onClick={() => setEditingEnd(true)}>{end.toFixed(2)}s</bdi>
+            )}
             <button onClick={() => seekTo(Math.max(0, end - 1))} title="קפוץ לסוף הקטע והמשך ניגון" className="border rounded px-2">🔊</button>
             <button onClick={() => nudge("end", -config.audioNudgeSec)} className="border rounded px-2">
               {strings.recordings.nudgeBack}
@@ -366,9 +392,10 @@ export default function RecordingDetailPage() {
                   key={c.id}
                   onClick={() => attachToCard(c.id)}
                   disabled={attaching}
-                  className="text-start border rounded px-3 py-2 hover:bg-gray-50 disabled:opacity-50"
+                  className="text-start border rounded px-3 py-2 hover:bg-gray-50 disabled:opacity-50 flex items-center justify-between gap-2"
                 >
-                  {c.translit_nikud} — {c.hebrew_meaning}
+                  <span>{c.translit_nikud} — {c.hebrew_meaning}</span>
+                  {c.clip_path && <span title="כבר יש טווח מוקלט" className="text-yellow-500 shrink-0">🔗</span>}
                 </button>
               ))}
             </div>

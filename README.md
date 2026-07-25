@@ -1,34 +1,31 @@
 # Yalla Cards
 
-Personal spaced-repetition app for learning spoken Palestinian Arabic (Jerusalem/Jaffa dialect)
-via Hebrew transliteration with nikkud. Single user, password-gated, deployed on Vercel.
+Personal spaced-repetition app for spoken Palestinian Arabic (Jerusalem/Jaffa dialect) via Hebrew transliteration. Single user, deployed on Vercel.
 
 ## Stack
 
-- Next.js (App Router) + TypeScript on Vercel.
-- Supabase: Postgres + Storage (lesson recordings, per-card clips).
-- `ts-fsrs` for spaced-repetition scheduling.
-- Gemini (text + vision) for parsing lesson notes/photos in `/inbox`.
-- Groq (`whisper-large-v3`) for lesson recording transcription.
-- `ffmpeg.wasm` client-side for recording transcode and per-card clip cutting.
+- Next.js App Router + TypeScript, deployed on Vercel
+- Supabase: Postgres + Storage (lesson recordings + per-card audio clips)
+- `ts-fsrs` for spaced-repetition scheduling
+- Gemini for parsing lesson notes/photos in `/inbox`
+- Groq (`whisper-large-v3`) for transcription
+- `ffmpeg.wasm` (client-side) for recording transcode + clip cutting
 
 ## Setup
 
-1. Copy `.env.local.example` to `.env.local` and fill in all values (Supabase project URL/keys,
-   `APP_PASSWORD`, `AUTH_SECRET`, `GEMINI_API_KEY`, `GROQ_API_KEY`).
-2. Run the SQL files in `supabase/migrations/` against your Supabase project, in order.
-3. `npm install && npm run dev`.
+1. Copy `.env.local.example` → `.env.local`, fill all values
+2. `npm install && npm run dev`
+3. Migrations apply automatically via `scripts/migrate.ts`
 
-## Known limitation: Opus playback on iOS Safari
+## Key design decisions
 
-Full lesson recordings are transcoded client-side to mono 16kHz Opus (`.ogg`) before upload, to
-keep 60-90 minute lessons small. **iOS Safari cannot play Opus-in-Ogg**, so the full-recording
-player on a recording's detail page (`/recordings/[id]`) won't work on an iPhone/iPad.
+**FSRS queue:** new cards ordered by insertion date (= lesson order). Don't randomize. Cards marked Easy today are excluded from today's daily queue.
 
-This is accepted as-is: recording ingest (uploading, transcribing, selecting ranges, and cutting
-clips) is a desktop-only workflow in practice — see the in-app notice on mobile. The one thing
-that *must* work on a phone is `/review`, and per-card clips there are encoded as mono MP3
-specifically because MP3 plays everywhere, including iOS Safari.
+**Audio:** full recordings are Opus/Ogg (small, desktop-only). Per-card clips are MP3 (iOS-compatible). iOS Safari can't play Opus, so the recording detail page won't work on iPhone — that's accepted; review (`/review`) works everywhere.
 
-If full-recording playback on mobile is ever needed, transcode to AAC/M4A instead of Opus (larger
-files, but universally supported) or keep both an Opus and an AAC copy.
+**`songs.lyrics_parsed`** is `LyricLine[]`:
+```ts
+type LyricLine = { line: string; words: LyricWord[]; timestamp?: string }
+type LyricWord = { ar: string; he: string; translit: string }
+```
+Non-Arabic lines (English, German): set `words: []`.
