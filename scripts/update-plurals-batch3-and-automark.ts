@@ -155,8 +155,8 @@ async function main() {
   const chunkSize = 20;
   for (let i = 0; i < noPlural.length; i += chunkSize) {
     const chunk = noPlural.slice(i, i + chunkSize);
-    const { error, count } = await sb.from("cards").update({ plural_form: "—" })
-      .in("id", chunk).select("id", { count: "exact", head: true });
+    const { error } = await sb.from("cards").update({ plural_form: "—" })
+      .in("id", chunk);
     if (error) console.error(`chunk ${i}: ${error.message}`);
     else console.log(`✅ chunk ${i}-${i + chunkSize}: ${count} rows marked —`);
   }
