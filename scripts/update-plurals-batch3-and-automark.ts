@@ -158,7 +158,7 @@ async function main() {
     const { error } = await sb.from("cards").update({ plural_form: "—" })
       .in("id", chunk);
     if (error) console.error(`chunk ${i}: ${error.message}`);
-    else console.log(`✅ chunk ${i}-${i + chunkSize}: ${count} rows marked —`);
+    else console.log(`✅ chunk ${i}-${i + chunkSize}: marked —`);
   }
 
   // Final count
