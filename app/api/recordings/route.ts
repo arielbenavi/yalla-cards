@@ -19,8 +19,9 @@ export async function GET() {
     const linked = total === 0 ? 0 : words.filter((w) =>
       clips.some((c) => w.start < c.audio_end_sec && w.end > c.audio_start_sec)
     ).length;
+    const has_transcript = r.transcript_json !== null;
     const { transcript_json: _omit, ...rest } = r;
-    return { ...rest, coverage_total: total, coverage_linked: linked };
+    return { ...rest, has_transcript, coverage_total: total, coverage_linked: linked };
   });
 
   return NextResponse.json({ recordings });

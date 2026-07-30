@@ -16,6 +16,7 @@ type Recording = {
   created_at: string;
   lesson: { title: string | null; date: string } | null;
   clips: { audio_start_sec: number; audio_end_sec: number }[] | null;
+  has_transcript: boolean;
   coverage_total: number;
   coverage_linked: number;
 };
@@ -166,6 +167,11 @@ export default function RecordingsPage() {
                 {(r.clips?.length ?? 0) > 0 && (
                   <span className="text-xs bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 text-blue-600">
                     {r.clips!.length} קליפים
+                  </span>
+                )}
+                {!r.has_transcript && (
+                  <span className="text-xs bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5 text-orange-600">
+                    ללא תמלול
                   </span>
                 )}
                 {r.coverage_total > 0 && (
