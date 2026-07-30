@@ -14,7 +14,7 @@ const links: NavLink[] = [
   { href: "/content", label: strings.nav.content },
   { href: "/simulate", label: strings.nav.simulate },
   { href: "/inflections", label: strings.nav.inflections },
-  { href: "/picture-game", label: strings.nav.pictureGame },
+  { href: "/practice", label: strings.nav.practice },
   { href: "/stats", label: strings.nav.stats },
   { href: "/inbox", label: strings.nav.inbox, adminOnly: true },
   { href: "/recordings", label: strings.nav.recordings },

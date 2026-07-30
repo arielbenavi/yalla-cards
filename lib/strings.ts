@@ -16,6 +16,9 @@ export const strings = {
     songs: "שירים",
     pictureGame: "משחק תמונות",
     content: "תכנים",
+    practice: "תרגול",
+    letters: "אותיות",
+    numbers: "מספרים",
   },
 
   login: {
