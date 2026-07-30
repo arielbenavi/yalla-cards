@@ -33,7 +33,7 @@ export async function GET(request: Request) {
       .select(cardSelect)
       .order("due", { ascending: true });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    rows = data ?? [];
+    rows = (data ?? []).slice().sort(() => Math.random() - 0.5);
   } else {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);

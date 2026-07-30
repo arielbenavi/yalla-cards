@@ -288,7 +288,18 @@ export default function SongDetailPage() {
                   {line.timestamp}
                 </span>
               )}
-              <p className="text-lg font-medium leading-snug">{line.line}</p>
+              {/[؀-ۿ]/.test(line.line) && line.words.some((w) => w.translit) ? (
+                <>
+                  <p className="text-lg font-medium leading-snug ltr-text" dir="ltr">
+                    {line.words.map((w) => w.translit).filter(Boolean).join(" ")}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 leading-snug" dir="rtl">
+                    {line.line}
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg font-medium leading-snug">{line.line}</p>
+              )}
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
                 {line.words.map((w) => w.he).join(" ")}
               </p>

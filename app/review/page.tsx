@@ -69,6 +69,8 @@ function ReviewPageInner() {
   const [grading, setGrading] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
   const [dirFlipped, setDirFlipped] = useState(false);
+  const prevIndex = index > 0 ? index - 1 : null;
+  const nextIndex = queue && index < queue.cards.length - 1 ? index + 1 : null;
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const loadQueue = useCallback(async () => {
@@ -217,6 +219,15 @@ function ReviewPageInner() {
             </p>
           )}
           <div className="flex gap-2">
+            {prevIndex !== null && (
+              <button
+                onClick={() => { setIndex(prevIndex); setRevealed(false); setHintUsed(false); }}
+                className="rounded-xl border border-gray-300 px-4 py-5 text-base font-bold text-gray-600"
+                aria-label="מילה קודמת"
+              >
+                ←
+              </button>
+            )}
             {!hintUsed && (
               <button
                 onClick={() => setHintUsed(true)}
@@ -231,6 +242,15 @@ function ReviewPageInner() {
             >
               {strings.review.showAnswer}
             </button>
+            {nextIndex !== null && (
+              <button
+                onClick={() => { setIndex(nextIndex); setRevealed(false); setHintUsed(false); }}
+                className="rounded-xl border border-gray-300 px-4 py-5 text-base font-bold text-gray-600"
+                aria-label="מילה הבאה"
+              >
+                →
+              </button>
+            )}
           </div>
         </div>
       ) : hintUsed ? (
