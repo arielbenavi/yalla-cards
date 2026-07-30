@@ -78,6 +78,8 @@ export default function BrowsePage() {
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => search(q, lessonId, itemType, scoreFilter), 300);
+    // Reset selection when filters change so stale checkmarks don't linger
+    setSelectedSrsIds(new Set());
   }, [q, lessonId, itemType, scoreFilter, search]);
 
   const current = cards[index];
@@ -306,7 +308,7 @@ export default function BrowsePage() {
       ) : listMode ? (
         /* ── ar_to_he list view ── */
         <div className="flex flex-col flex-1 gap-2 overflow-hidden">
-          <div className="text-sm text-gray-500 text-center">{cards.length} כרטיסים</div>
+          <div className="text-sm text-gray-500 text-center">{cards.length} כרטיסים (הדלק ← לתרגול ערבית→עברית)</div>
           <div className="flex-1 overflow-y-auto divide-y border rounded-xl">
             {cards.map((card) => {
               const arToHeRow = card.card_srs?.find((s) => s.direction === "ar_to_he") ?? null;
@@ -366,8 +368,12 @@ export default function BrowsePage() {
       ) : selectMode ? (
         /* ── Selection list view ── */
         <div className="flex flex-col flex-1 gap-2 overflow-hidden">
-          <div className="text-sm text-gray-500 text-center">
-            {selectedSrsIds.size > 0 ? `${selectedSrsIds.size} נבחרו מתוך ${cards.length}` : `${cards.length} כרטיסים`}
+          <div className="text-sm text-center">
+            {selectedSrsIds.size > 0 ? (
+              <span className="font-semibold text-purple-700 dark:text-purple-300">{selectedSrsIds.size} נבחרו</span>
+            ) : (
+              <span className="text-gray-500">{cards.length} כרטיסים — סמן כדי לבחור</span>
+            )}
           </div>
           <div className="flex-1 overflow-y-auto divide-y border rounded-xl">
             {cards.map((card) => {
