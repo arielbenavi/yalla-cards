@@ -17,9 +17,19 @@ type Sentence = {
   he: string;
 };
 
-type Tab = "cards" | "sentences";
+type ConvoMessage = { role: "user" | "assistant"; content: string };
+
+type Tab = "cards" | "sentences" | "convo";
 
 const SESSION_KEY = "yalla_sentences_cache";
+
+const SCENARIOS: { key: string; emoji: string; label: string }[] = [
+  { key: "market", emoji: "🛒", label: "שוק" },
+  { key: "taxi", emoji: "🚕", label: "מונית" },
+  { key: "restaurant", emoji: "🍽️", label: "מסעדה" },
+  { key: "street", emoji: "🗺️", label: "רחוב" },
+  { key: "cafe", emoji: "☕", label: "קפה" },
+];
 
 function buildHint(word: string): string {
   const NIKUD = /[֑-ׇ]/;
@@ -61,6 +71,15 @@ export default function SimulatePage() {
   const [revealedSentences, setRevealedSentences] = useState<Set<number>>(new Set());
   const sentencesFetched = useRef(false);
 
+  // Conversation tab state
+  const [scenario, setScenario] = useState<string>("");
+  const [messages, setMessages] = useState<ConvoMessage[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [streaming, setStreaming] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
   const loadCards = useCallback(async () => {
     setCardsLoading(true);
     const data = await fetch("/api/browse?limit=500").then((r) => r.json());
@@ -101,13 +120,16 @@ export default function SimulatePage() {
     }
   }, []);
 
-  // Load sentences when tab first activated
   useEffect(() => {
     if (tab === "sentences" && !sentencesFetched.current) {
       sentencesFetched.current = true;
       loadSentences();
     }
   }, [tab, loadSentences]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streamingText]);
 
   function toggleReveal(i: number) {
     setRevealedSentences((prev) => {
@@ -120,6 +142,59 @@ export default function SimulatePage() {
   function regenerate() {
     sessionStorage.removeItem(SESSION_KEY);
     loadSentences(true);
+  }
+
+  async function sendMessage() {
+    const text = inputText.trim();
+    if (!text || streaming || !scenario) return;
+    setInputText("");
+    const newMessages: ConvoMessage[] = [...messages, { role: "user", content: text }];
+    setMessages(newMessages);
+    setStreaming(true);
+    setStreamingText("");
+
+    try {
+      const res = await fetch("/api/simulate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: newMessages, scenario }),
+      });
+      if (!res.ok || !res.body) {
+        setMessages((m) => [...m, { role: "assistant", content: "[שגיאה בשרת]" }]);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulated = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        accumulated += decoder.decode(value, { stream: true });
+        setStreamingText(accumulated);
+      }
+      setMessages((m) => [...m, { role: "assistant", content: accumulated }]);
+      setStreamingText("");
+    } catch {
+      setMessages((m) => [...m, { role: "assistant", content: "[שגיאת רשת]" }]);
+    } finally {
+      setStreaming(false);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function resetConvo() {
+    setScenario("");
+    setMessages([]);
+    setInputText("");
+    setStreamingText("");
+    setStreaming(false);
   }
 
   const current = cards[index];
@@ -145,17 +220,25 @@ export default function SimulatePage() {
             גנרט מחדש
           </button>
         )}
+        {tab === "convo" && scenario && (
+          <button
+            onClick={resetConvo}
+            className="text-sm text-gray-500 border rounded px-3 py-1 hover:bg-gray-50"
+          >
+            שנה תרחיש
+          </button>
+        )}
       </div>
 
       {/* Tabs */}
       <div className="flex rounded-xl overflow-hidden border border-gray-300 self-start">
-        {(["cards", "sentences"] as Tab[]).map((t) => (
+        {(["cards", "sentences", "convo"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2 text-sm font-bold transition-colors ${tab === t ? "bg-black text-white" : "bg-white text-gray-600"}`}
           >
-            {t === "cards" ? "כרטיסים" : "משפטים"}
+            {t === "cards" ? "כרטיסים" : t === "sentences" ? "משפטים" : "שיחה"}
           </button>
         ))}
       </div>
@@ -270,6 +353,102 @@ export default function SimulatePage() {
             </>
           )}
         </div>
+      )}
+
+      {/* Conversation Tab */}
+      {tab === "convo" && (
+        <>
+          {!scenario ? (
+            /* Scenario picker */
+            <div className="flex flex-col gap-4 flex-1 justify-center">
+              <p className="text-center text-gray-500 text-sm">בחר תרחיש לשיחה</p>
+              <div className="grid grid-cols-2 gap-3">
+                {SCENARIOS.map((s) => (
+                  <button
+                    key={s.key}
+                    onClick={() => setScenario(s.key)}
+                    className="flex flex-col items-center gap-2 border rounded-2xl p-5 hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-4xl">{s.emoji}</span>
+                    <span className="font-bold text-base">{s.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Chat view */
+            <div className="flex flex-col flex-1 gap-3 min-h-0">
+              <div className="text-xs text-center text-gray-400">
+                {SCENARIOS.find((s) => s.key === scenario)?.emoji}{" "}
+                {SCENARIOS.find((s) => s.key === scenario)?.label} — כתוב בעברית, הצ׳אטבוט יענה בערבית
+              </div>
+              <div className="flex-1 overflow-y-auto flex flex-col gap-3 min-h-0">
+                {messages.length === 0 && !streaming && (
+                  <p className="text-center text-gray-400 text-sm mt-8">שלח הודעה כדי להתחיל</p>
+                )}
+                {messages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed nikud-text whitespace-pre-wrap ${
+                        m.role === "user"
+                          ? "bg-black text-white rounded-br-sm"
+                          : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-sm"
+                      }`}
+                    >
+                      {m.content}
+                    </div>
+                  </div>
+                ))}
+                {streaming && streamingText && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed nikud-text whitespace-pre-wrap bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+                      {streamingText}
+                    </div>
+                  </div>
+                )}
+                {streaming && !streamingText && (
+                  <div className="flex justify-start">
+                    <div className="rounded-2xl rounded-bl-sm px-4 py-3 bg-gray-100 dark:bg-gray-800">
+                      <div className="flex gap-1">
+                        {[0, 1, 2].map((i) => (
+                          <span
+                            key={i}
+                            className="h-2 w-2 rounded-full bg-gray-400 animate-bounce"
+                            style={{ animationDelay: `${i * 0.15}s` }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+              <div className="flex gap-2 items-end">
+                <textarea
+                  ref={inputRef}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={streaming}
+                  placeholder="כתוב כאן..."
+                  rows={1}
+                  className="flex-1 border rounded-xl px-4 py-3 text-sm nikud-text resize-none disabled:opacity-50"
+                  style={{ maxHeight: "120px" }}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!inputText.trim() || streaming}
+                  className="rounded-xl bg-black text-white px-4 py-3 text-sm font-bold disabled:opacity-30 flex-shrink-0"
+                >
+                  שלח
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

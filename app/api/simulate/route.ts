@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { AUTH_COOKIE, isValidAuthCookie } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { supabaseAdmin } from "@/lib/supabase";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -13,8 +14,26 @@ const SCENARIO_LABELS: Record<string, string> = {
   cafe: "a cafe where the user is ordering drinks and making small talk",
 };
 
+async function fetchVocab(): Promise<string> {
+  try {
+    const supabase = supabaseAdmin();
+    const { data } = await supabase
+      .from("cards")
+      .select("hebrew_meaning, translit_nikud, arabic_script, item_type")
+      .in("item_type", ["word", "phrase"])
+      .order("created_at", { ascending: true })
+      .limit(250);
+    if (!data?.length) return "";
+    const lines = data.map((c) =>
+      `• ${c.translit_nikud}${c.arabic_script ? ` (${c.arabic_script})` : ""} — ${c.hebrew_meaning}`
+    );
+    return `\n\nמילים וביטויים שהלומד לומד (השתמש בהם בטבעיות כשמתאים):\n${lines.join("\n")}`;
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(request: NextRequest) {
-  // Auth check
   const cookieStore = await cookies();
   const authCookie = cookieStore.get(AUTH_COOKIE)?.value;
   if (!isValidAuthCookie(authCookie)) {
@@ -31,6 +50,7 @@ export async function POST(request: NextRequest) {
   }
 
   const scenarioDesc = SCENARIO_LABELS[scenario] ?? "a general conversation";
+  const vocab = await fetchVocab();
 
   const systemPrompt = `You are a Palestinian Arabic conversation partner for Israeli Hebrew speakers learning the language.
 The user writes in Hebrew. You respond ONLY in Palestinian Arabic dialect (Jerusalem/Jaffa colloquial — not Modern Standard Arabic).
@@ -40,13 +60,13 @@ Format every response like this:
 (תרגום עברי של התשובה שלך)
 
 Rules:
-- Use spoken Palestinian Arabic, not MSA. Use dialect words like "وين" (ויין), "شو" (שו), "هلق" (هלאק), etc.
+- Use spoken Palestinian Arabic, not MSA. Use dialect words like "وين" (ויין), "شو" (שו), "هلق" (הלאק), etc.
 - Write the Arabic using Hebrew letters with nikkud so the learner can pronounce it.
 - Immediately after the Arabic line, put the Hebrew translation in parentheses on the next line.
 - Keep responses short: 1–3 sentences.
 - Be warm, encouraging, and natural — like a friendly local.
 - If the user makes an Arabic mistake, gently correct it by modeling the right form in your response.
-- Scenario: ${scenarioDesc}.`;
+- Scenario: ${scenarioDesc}.${vocab}`;
 
   const encoder = new TextEncoder();
 
@@ -55,7 +75,7 @@ Rules:
       try {
         const anthropicStream = client.messages.stream({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: 256,
+          max_tokens: 300,
           system: systemPrompt,
           messages,
         });

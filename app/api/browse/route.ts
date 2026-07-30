@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("cards")
-    .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, self_score, lessons(title, date), card_srs(id, direction)")
+    .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, self_score, audio_start_sec, audio_end_sec, recording_id, lessons(title, date), card_srs(id, direction)")
     .order("created_at", { ascending: false })
     .limit(1000);
 
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   if (error?.message?.includes("self_score")) {
     const fallback = await supabase
       .from("cards")
-      .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, lessons(title, date), card_srs(id, direction)")
+      .select("id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, clip_path, lesson_id, audio_start_sec, audio_end_sec, recording_id, lessons(title, date), card_srs(id, direction)")
       .order("created_at", { ascending: false })
       .limit(1000);
     if (fallback.error) return NextResponse.json({ error: fallback.error.message }, { status: 500 });
