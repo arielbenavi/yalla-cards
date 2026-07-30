@@ -146,6 +146,9 @@ export const strings = {
     empty: "אין משימות פתוחות",
     dismiss: "בטל",
     done: "בוצע",
+    edit: "ערוך",
+    save: "שמור",
+    cancel: "ביטול",
   },
 
   recordings: {
