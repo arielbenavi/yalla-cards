@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const now = new Date().toISOString();
 
   const cardSelect =
-    "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path)";
+    "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path, lesson_id, audio_start_sec, audio_end_sec)";
 
   let rows;
 
@@ -67,17 +67,32 @@ export async function GET(request: Request) {
 
     let newRows: typeof dueRows = [];
     if (remainingNewAllowance > 0) {
+      // New cards are introduced newest-lesson-first. Ordering by `due` alone means
+      // insertion order, which drip-feeds the earliest lessons for months while the
+      // current lesson's words never surface. Within a lesson `due ASC` still holds,
+      // so lesson progression is preserved — that part is intentional.
       let newQuery = supabase
         .from("card_srs")
         .select(cardSelect)
         .eq("state", State.New)
         .lte("due", now)
-        .order("due", { ascending: true })
-        .limit(remainingNewAllowance);
+        .order("due", { ascending: true });
       if (easyTodayIds.length > 0) newQuery = newQuery.not("id", "in", `(${easyTodayIds.join(",")})`);
       const { data: newCandidates, error: newError } = await newQuery;
       if (newError) return NextResponse.json({ error: newError.message }, { status: 500 });
-      newRows = newCandidates ?? [];
+
+      const { data: lessonRows } = await supabase.from("lessons").select("id, date");
+      // Lessonless cards sort last, never ahead of a real lesson
+      const lessonDate = new Map((lessonRows ?? []).map((l) => [l.id, l.date ?? ""]));
+      const rank = (row: (typeof newCandidates)[number]) => {
+        const card = Array.isArray(row.card) ? row.card[0] : row.card;
+        return lessonDate.get(card?.lesson_id ?? "") ?? "";
+      };
+
+      newRows = (newCandidates ?? [])
+        .slice()
+        .sort((a, b) => rank(b).localeCompare(rank(a)))
+        .slice(0, remainingNewAllowance);
     }
 
     rows = [...(dueRows ?? []), ...newRows];
@@ -105,6 +120,8 @@ export async function GET(request: Request) {
         item_type: card?.item_type,
         notes: card?.notes,
         audio_url: audioUrl,
+        audio_start_sec: card?.audio_start_sec ?? null,
+        audio_end_sec: card?.audio_end_sec ?? null,
       };
     })
   );

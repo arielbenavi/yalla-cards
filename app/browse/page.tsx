@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { strings } from "@/lib/strings";
 import { PronunciationGuide } from "@/components/PronunciationGuide";
+import AudioRangeEditor, { AudioRangeEditButton } from "@/components/AudioRangeEditor";
 
 type CardSrs = { id: string; direction: "he_to_ar" | "ar_to_he" };
 
@@ -54,7 +55,6 @@ export default function BrowsePage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editStart, setEditStart] = useState("");
   const [editEnd, setEditEnd] = useState("");
-  const [editSaving, setEditSaving] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -215,27 +215,6 @@ export default function BrowsePage() {
     setEditingId(card.id);
     setEditStart(card.audio_start_sec?.toString() ?? "");
     setEditEnd(card.audio_end_sec?.toString() ?? "");
-  }
-
-  async function saveEdit() {
-    if (!editingId) return;
-    setEditSaving(true);
-    const body: Record<string, number | null> = {
-      audio_start_sec: editStart !== "" ? parseFloat(editStart) : null,
-      audio_end_sec: editEnd !== "" ? parseFloat(editEnd) : null,
-    };
-    await fetch(`/api/cards/${editingId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    setCards((prev) =>
-      prev.map((c) =>
-        c.id === editingId ? { ...c, audio_start_sec: body.audio_start_sec, audio_end_sec: body.audio_end_sec } : c
-      )
-    );
-    setEditingId(null);
-    setEditSaving(false);
   }
 
   const dotColor = current?.self_score != null ? SCORE_DOT_COLORS[current.self_score - 1] : null;
@@ -535,18 +514,7 @@ export default function BrowsePage() {
                         <path d="M8 5v14l11-7z" />
                       </svg>
                     </button>
-                    {isAdmin && (
-                      <button
-                        onClick={() => openEdit(current)}
-                        title="ערוך טווח הקלטה"
-                        className="flex h-8 w-8 items-center justify-center rounded-full border text-gray-500 hover:bg-gray-100"
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </button>
-                    )}
+                    {isAdmin && <AudioRangeEditButton onClick={() => openEdit(current)} />}
                   </div>
                 )}
               </div>
@@ -617,51 +585,19 @@ export default function BrowsePage() {
       )}
       {/* Audio range edit modal (admin-only) */}
       {editingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setEditingId(null)} />
-          <div className="relative w-full max-w-xs rounded-2xl bg-white dark:bg-gray-900 shadow-2xl p-6 flex flex-col gap-4">
-            <h2 className="font-bold text-base">ערוך טווח הקלטה</h2>
-            <div className="flex gap-3">
-              <label className="flex flex-col gap-1 flex-1">
-                <span className="text-xs text-gray-500">התחלה (שניות)</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={editStart}
-                  onChange={(e) => setEditStart(e.target.value)}
-                  className="border rounded-lg px-3 py-2 text-sm"
-                  placeholder="0.0"
-                />
-              </label>
-              <label className="flex flex-col gap-1 flex-1">
-                <span className="text-xs text-gray-500">סיום (שניות)</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={editEnd}
-                  onChange={(e) => setEditEnd(e.target.value)}
-                  className="border rounded-lg px-3 py-2 text-sm"
-                  placeholder="0.0"
-                />
-              </label>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setEditingId(null)}
-                className="border rounded-xl px-4 py-2 text-sm text-gray-600"
-              >
-                ביטול
-              </button>
-              <button
-                onClick={saveEdit}
-                disabled={editSaving}
-                className="bg-black text-white rounded-xl px-4 py-2 text-sm font-bold disabled:opacity-50"
-              >
-                {editSaving ? "שומר…" : "שמור"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <AudioRangeEditor
+          cardId={editingId}
+          initialStart={editStart !== "" ? parseFloat(editStart) : null}
+          initialEnd={editEnd !== "" ? parseFloat(editEnd) : null}
+          onSaved={(start, end) =>
+            setCards((prev) =>
+              prev.map((c) =>
+                c.id === editingId ? { ...c, audio_start_sec: start, audio_end_sec: end } : c
+              )
+            )
+          }
+          onClose={() => setEditingId(null)}
+        />
       )}
     </div>
   );

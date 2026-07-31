@@ -6,7 +6,7 @@ export async function GET() {
   const supabase = supabaseAdmin();
   const { data, error } = await supabase
     .from("recordings")
-    .select("id, lesson_id, storage_path, duration_sec, tag, title, created_at, transcript_json, lesson:lessons(title, date), clips:cards!recording_id(audio_start_sec,audio_end_sec)")
+    .select("id, lesson_id, storage_path, duration_sec, tag, title, source_filename, created_at, transcript_json, lesson:lessons(title, date), clips:cards!recording_id(audio_start_sec,audio_end_sec)")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

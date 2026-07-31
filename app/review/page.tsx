@@ -6,6 +6,7 @@ import { Rating } from "ts-fsrs";
 import { strings } from "@/lib/strings";
 import { PronunciationGuide } from "@/components/PronunciationGuide";
 import DailyTip from "@/components/DailyTip";
+import AudioRangeEditor, { AudioRangeEditButton } from "@/components/AudioRangeEditor";
 
 // Returns the first N base-letters of a nikud string + "…"
 // N = 1 for short words (≤4 base letters), 2 for longer ones.
@@ -33,6 +34,8 @@ type ReviewCard = {
   item_type: string;
   notes: string | null;
   audio_url: string | null;
+  audio_start_sec: number | null;
+  audio_end_sec: number | null;
 };
 
 type Queue = {
@@ -73,6 +76,8 @@ function ReviewPageInner() {
   const prevIndex = index > 0 ? index - 1 : null;
   const nextIndex = queue && index < queue.cards.length - 1 ? index + 1 : null;
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
   const loadQueue = useCallback(async () => {
     const url = modeSelected
@@ -91,6 +96,13 @@ function ReviewPageInner() {
   useEffect(() => {
     loadQueue();
   }, [loadQueue]);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(Boolean(d.isAdmin)))
+      .catch(() => {});
+  }, []);
 
   const current = queue?.cards[index];
   const effectiveDir: "he_to_ar" | "ar_to_he" = current
@@ -206,6 +218,9 @@ function ReviewPageInner() {
               <p className="text-2xl nikud-text">{current.hebrew_meaning}</p>
             )}
             {current.audio_url && !audioOnlyPrompt && <AudioIconButton onClick={playAudio} size="small" />}
+            {isAdmin && current.audio_url && (
+              <AudioRangeEditButton onClick={() => setEditingCardId(current.card_id)} />
+            )}
           </div>
         )}
 
@@ -278,6 +293,29 @@ function ReviewPageInner() {
             {strings.review.easy}
           </button>
         </div>
+      )}
+
+      {editingCardId && (
+        <AudioRangeEditor
+          cardId={editingCardId}
+          initialStart={current?.audio_start_sec ?? null}
+          initialEnd={current?.audio_end_sec ?? null}
+          onSaved={(start, end) =>
+            setQueue((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    cards: prev.cards.map((c) =>
+                      c.card_id === editingCardId
+                        ? { ...c, audio_start_sec: start, audio_end_sec: end }
+                        : c
+                    ),
+                  }
+                : prev
+            )
+          }
+          onClose={() => setEditingCardId(null)}
+        />
       )}
     </div>
   );

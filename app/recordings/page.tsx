@@ -13,6 +13,7 @@ type Recording = {
   duration_sec: number | null;
   tag: string | null;
   title: string | null;
+  source_filename: string | null;
   created_at: string;
   lesson: { title: string | null; date: string } | null;
   clips: { audio_start_sec: number; audio_end_sec: number }[] | null;
@@ -76,10 +77,38 @@ export default function RecordingsPage() {
       });
       setFile(null);
       setTitle("");
-      refresh();
+      await refresh();
+      await sweepUntitledAndUntranscribed();
     } finally {
       setStatus(null);
     }
+  }
+
+  // Runs after every upload so the list never accumulates recordings that are
+  // both untitled and untranscribed — the WhatsApp import path skips
+  // auto-transcription above its duration cap and never supplies a title.
+  async function sweepUntitledAndUntranscribed() {
+    const fresh: Recording[] = await fetch("/api/recordings")
+      .then((r) => r.json())
+      .then((d) => d.recordings ?? []);
+
+    const untitled = fresh.filter((r) => !r.title && r.source_filename);
+    for (const r of untitled) {
+      const derived = r.source_filename!.replace(/\.[^.]+$/, "").trim();
+      if (!derived) continue;
+      await fetch(`/api/recordings/${r.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: derived }),
+      });
+    }
+
+    const untranscribed = fresh.filter((r) => !r.has_transcript);
+    for (const r of untranscribed) {
+      await transcribeOne(r.id);
+    }
+
+    if (untitled.length > 0 || untranscribed.length > 0) await refresh();
   }
 
   async function transcribeOne(recordingId: string) {
