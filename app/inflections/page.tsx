@@ -10,15 +10,19 @@ type QueueItem = {
   verb_id: string;
   track: Track;
   root: string;
+  root_translit?: string | null;
   meaning_he: string;
   forms: Record<string, string>;
+  forms_translit?: Record<string, string>;
 };
 
 type VerbBrief = {
   id: string;
   root: string;
+  root_translit?: string | null;
   meaning_he: string;
   forms: Record<string, string>;
+  forms_translit?: Record<string, string>;
 };
 
 // Pronoun keys in display order
@@ -89,10 +93,19 @@ function buildAudioChoices(
 ): string[] {
   const distractors = allVerbs
     .filter((v) => v.id !== currentVerbId)
-    .map((v) => v.forms[pronoun])
+    .map((v) => formOf(v, pronoun))
     .filter((f): f is string => !!f && f !== correct);
   const picked = shuffle(distractors).slice(0, 3);
   return shuffle([correct, ...picked]);
+}
+
+/** The learner reads transliteration, not Arabic script — prefer it wherever a
+ *  verb has a chatifai paradigm, and fall back to Arabic for the seed verbs. */
+function formOf(
+  v: { forms: Record<string, string>; forms_translit?: Record<string, string> },
+  person: string
+): string {
+  return v.forms_translit?.[person] || v.forms[person] || "";
 }
 
 function normalise(s: string): string {
@@ -147,7 +160,7 @@ export default function InflectionsPage() {
     if (item.track === "recognition") {
       setChoices(buildRecognitionChoices(item.meaning_he, allVerbs, item.verb_id));
     } else if (item.track === "audio") {
-      const correct = item.forms[p] ?? "";
+      const correct = formOf(item, p);
       setChoices(buildAudioChoices(correct, p, allVerbs, item.verb_id));
     } else {
       setChoices([]);
@@ -166,7 +179,7 @@ export default function InflectionsPage() {
   const correct = item
     ? item.track === "recognition"
       ? item.meaning_he
-      : item.forms[pronoun] ?? ""
+      : formOf(item, pronoun)
     : "";
 
   async function submitGrade(rating: number) {
@@ -235,7 +248,7 @@ export default function InflectionsPage() {
       <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
         {item.track === "recognition" && (
           <RecognitionPrompt
-            form={item.forms[pronoun] ?? ""}
+            form={formOf(item, pronoun)}
             pronoun={pronoun}
           />
         )}
@@ -248,7 +261,7 @@ export default function InflectionsPage() {
         {item.track === "audio" && (
           <AudioPrompt
             pronoun={pronoun}
-            root={item.root}
+            root={item.root_translit || item.root}
           />
         )}
 
@@ -343,7 +356,7 @@ function RecognitionPrompt({ form, pronoun }: { form: string; pronoun: string })
   return (
     <div className="flex flex-col items-center gap-2">
       <p className="text-sm text-gray-500">
-        {PRONOUN_AR[pronoun]} — מה המשמעות?
+        {PRONOUN_HE[pronoun]} ({PRONOUN_AR[pronoun]}) — מה המשמעות?
       </p>
       <p className="text-4xl font-bold" dir="rtl" style={{ fontFamily: "serif" }}>
         {form}
@@ -370,7 +383,7 @@ function AudioPrompt({ pronoun, root }: { pronoun: string; root: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <p className="text-sm text-gray-500">
-        בחר את הצורה הנכונה עבור {PRONOUN_AR[pronoun]}
+        בחר את הצורה הנכונה עבור {PRONOUN_HE[pronoun]} ({PRONOUN_AR[pronoun]})
       </p>
       <p className="text-4xl font-bold" dir="rtl" style={{ fontFamily: "serif" }}>
         {root}
