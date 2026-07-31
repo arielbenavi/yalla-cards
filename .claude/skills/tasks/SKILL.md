@@ -74,6 +74,16 @@ is fine — inventing the Arabic is not. Use the `chatifai` agent.
 If chatifai is not logged in, **stop and ask Ariel to log in.** Do not run the
 email-verification-code flow in the agent file.
 
+**The chatifai agent has no Bash tool** — only the Chrome tools. Never send it a
+script to run or tell it to query the database; it cannot, and the round trip is
+wasted. Dump the rows yourself and paste the actual text into the message. Give
+it both the transliteration and the Arabic when both need checking, and ask about
+transliteration as its own explicit question — left implicit, chatifai answers
+only about naturalness and silently alters vocalisation without flagging it.
+
+It also tends to mark a line תקין and then quietly rewrite it in its "polished"
+version. Ask for the per-line verdict and the rewrite, and diff them.
+
 **Don't generate study sentences from his vocabulary.** Standing boundary, see
 the `project-yalla-cards-scope` memory.
 
