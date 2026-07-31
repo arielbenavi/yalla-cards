@@ -16,15 +16,11 @@ export async function uploadAndTranscribeRecording(
   file: File,
   opts: {
     lessonId?: string | null;
+    title?: string | null;
     onStatus?: (status: UploadStatus) => void;
     maxAutoTranscribeDurationSec?: number;
     sourceFilename?: string | null;
-    // Skip FFmpeg transcoding and upload the raw file directly. Use for short
-    // voice notes (WhatsApp) where the file is already compressed and small.
     skipTranscode?: boolean;
-    // If set, recordings at or under this duration get tagged (e.g. WhatsApp
-    // voice notes under a minute are auto-tagged "פתגם יומי"). Unset for the
-    // plain lesson-recording upload, which never auto-tags.
     autoTag?: { maxDurationSec: number; tag: string };
   } = {}
 ): Promise<{ id: string; durationSec: number; transcribed: boolean; deduplicated: boolean }> {
@@ -61,6 +57,7 @@ export async function uploadAndTranscribeRecording(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       lesson_id: opts.lessonId ?? null,
+      title: opts.title ?? null,
       storage_path: path,
       duration_sec: durationSec,
       tag,

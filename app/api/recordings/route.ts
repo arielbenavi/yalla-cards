@@ -28,7 +28,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { lesson_id, storage_path, duration_sec, tag, source_filename } = await request.json();
+  const { lesson_id, title, storage_path, duration_sec, tag, source_filename } = await request.json();
   const supabase = supabaseAdmin();
 
   // Dedup: if re-importing the same ZIP, skip re-uploading already-stored files
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("recordings")
-    .insert({ lesson_id: lesson_id || null, storage_path, duration_sec, tag: tag || null, source_filename: source_filename || null })
+    .insert({ lesson_id: lesson_id || null, title: title || null, storage_path, duration_sec, tag: tag || null, source_filename: source_filename || null })
     .select()
     .single();
 

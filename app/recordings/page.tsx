@@ -25,11 +25,14 @@ export default function RecordingsPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [lessonId, setLessonId] = useState("");
+  const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState("");
   const [clipsFilter, setClipsFilter] = useState<"" | "has" | "none">("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [transcribingIds, setTranscribingIds] = useState<Set<string>>(new Set());
+  const [bulkTranscribing, setBulkTranscribing] = useState(false);
 
   async function refresh() {
     const [lessonsRes, recordingsRes] = await Promise.all([
@@ -65,18 +68,62 @@ export default function RecordingsPage() {
 
   async function handleUpload() {
     if (!file) return;
-
     try {
       await uploadAndTranscribeRecording(file, {
         lessonId: lessonId || null,
+        title: title.trim() || null,
         onStatus: (s) => setStatus(statusLabels[s]),
       });
       setFile(null);
+      setTitle("");
       refresh();
     } finally {
       setStatus(null);
     }
   }
+
+  async function transcribeOne(recordingId: string) {
+    setTranscribingIds((prev) => new Set(prev).add(recordingId));
+    try {
+      const d = await fetch(`/api/recordings/${recordingId}`).then((r) => r.json());
+      const audioUrl: string | null = d.audio_url;
+      if (!audioUrl) return;
+      const blob = await fetch(audioUrl).then((r) => r.blob());
+      const form = new FormData();
+      form.append("chunk", blob, "audio.ogg");
+      form.append("offset_sec", "0");
+      const res = await fetch(`/api/recordings/${recordingId}/transcribe-chunk`, { method: "POST", body: form });
+      if (!res.ok) return;
+      const { words } = await res.json();
+      if (words?.length) {
+        await fetch(`/api/recordings/${recordingId}/save-transcript`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ words }),
+        });
+        setRecordings((prev) =>
+          prev.map((r) => (r.id === recordingId ? { ...r, has_transcript: true } : r))
+        );
+      }
+    } finally {
+      setTranscribingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(recordingId);
+        return next;
+      });
+    }
+  }
+
+  async function transcribeAll() {
+    const untranscribed = recordings.filter((r) => !r.has_transcript);
+    setBulkTranscribing(true);
+    for (const r of untranscribed) {
+      await transcribeOne(r.id);
+    }
+    setBulkTranscribing(false);
+  }
+
+  const untranscribedCount = recordings.filter((r) => !r.has_transcript).length;
 
   return (
     <div className="flex flex-col gap-6 p-4 max-w-2xl mx-auto">
@@ -99,19 +146,44 @@ export default function RecordingsPage() {
               ))}
             </select>
           </label>
+          <label className="flex flex-col gap-1">
+            <span>שם ההקלטה</span>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="למשל: שיעור 12 — בשוק"
+              className="border rounded px-3 py-2"
+            />
+          </label>
           <FileDropZone
             accept="audio/*"
             value={file ? [file] : []}
-            onChange={(fs) => setFile(fs[0] ?? null)}
+            onChange={(fs) => {
+              const f = fs[0] ?? null;
+              setFile(f);
+              if (f && !title) setTitle(f.name.replace(/\.[^.]+$/, ""));
+            }}
             hint="קבצי MP3, M4A, WAV, OGG וכד׳"
           />
-          <button
-            onClick={handleUpload}
-            disabled={!file || status !== null}
-            className="self-start bg-black text-white rounded px-4 py-2 disabled:opacity-50"
-          >
-            {status ?? strings.recordings.upload}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleUpload}
+              disabled={!file || status !== null}
+              className="self-start bg-black text-white rounded px-4 py-2 disabled:opacity-50"
+            >
+              {status ?? strings.recordings.upload}
+            </button>
+            {untranscribedCount > 0 && (
+              <button
+                onClick={transcribeAll}
+                disabled={bulkTranscribing}
+                className="text-sm border rounded px-3 py-2 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {bulkTranscribing ? "מתמלל..." : `תמלל הכל (${untranscribedCount})`}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -155,7 +227,7 @@ export default function RecordingsPage() {
             <Link
               key={r.id}
               href={`/recordings/${r.id}`}
-              className="border rounded p-3 flex justify-between hover:bg-gray-50"
+              className="border rounded p-3 flex justify-between hover:bg-gray-50 dark:hover:bg-gray-900"
             >
               <span className="flex items-center gap-2 flex-wrap">
                 {r.title || r.lesson?.title || r.lesson?.date || strings.inbox.noLesson}
@@ -169,9 +241,9 @@ export default function RecordingsPage() {
                     {r.clips!.length} קליפים
                   </span>
                 )}
-                {!r.has_transcript && (
-                  <span className="text-xs bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5 text-orange-600">
-                    ללא תמלול
+                {transcribingIds.has(r.id) && (
+                  <span className="text-xs bg-blue-50 border border-blue-200 rounded-full px-2 py-0.5 text-blue-600">
+                    בתהליך תמלול
                   </span>
                 )}
                 {r.coverage_total > 0 && (

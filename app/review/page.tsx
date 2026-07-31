@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Rating } from "ts-fsrs";
 import { strings } from "@/lib/strings";
 import { PronunciationGuide } from "@/components/PronunciationGuide";
+import DailyTip from "@/components/DailyTip";
 
 // Returns the first N base-letters of a nikud string + "…"
 // N = 1 for short words (≤4 base letters), 2 for longer ones.
@@ -285,6 +286,9 @@ function ReviewPageInner() {
 export default function ReviewPage() {
   return (
     <Suspense fallback={<div className="flex flex-1 items-center justify-center">{strings.common.loading}</div>}>
+      {/* Mounted here, not in the root layout: as a full-screen modal it would
+          otherwise cover /login and block the sign-in form. */}
+      <DailyTip />
       <ReviewPageInner />
     </Suspense>
   );

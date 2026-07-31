@@ -25,7 +25,7 @@ async function main() {
   for (const [prefix, arabic] of Object.entries(mapping)) {
     const fullId = prefixToId[prefix];
     if (!fullId) { console.warn(`⚠ no match for ${prefix}`); continue; }
-    const { error } = await sb.from("cards").update({ arabic_script: arabic }).eq("id", fullId);
+    const { error } = await sb.from("cards").update({ arabic_script: arabic, chatifai_verified: true }).eq("id", fullId);
     if (error) console.error(`✗ ${prefix}: ${error.message}`);
     else { console.log(`✅ ${prefix} → ${arabic}`); updated++; }
   }

@@ -1,0 +1,2 @@
+2026-07-26 02:00:28  watcher armed; idle threshold 25m, giving up after 5h
+2026-07-26 02:56:30  idle 26m, no active processes — shutting down.

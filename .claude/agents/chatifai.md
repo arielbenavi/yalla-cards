@@ -16,10 +16,20 @@ You are querying the chatifai.io Arabic course chatbot to get precise Palestinia
 
 ## Setup (first time per session)
 
-1. Load the chrome tools: `ToolSearch select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__find,mcp__claude-in-chrome__form_input,mcp__claude-in-chrome__javascript_tool`
-2. Check if chatifai.io is already open in Chrome: use `tabs_context_mcp` to list open tabs.
-3. If not open — tell the user: "אנא פתח את https://app.chatifai.io ב-Chrome והתחבר עם ariel5rols@gmail.com, ואז תגיד לי שסיימת."
-4. Once the user confirms they're logged in, proceed.
+1. Load chrome tools: `ToolSearch select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__find,mcp__claude-in-chrome__form_input,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__javascript_tool`
+2. `tabs_context_mcp` — list open tabs.
+3. If a tab already shows `app.chatifai.io` and is NOT on the sign-in page → skip to "Sending a query".
+4. Otherwise — auto-login flow:
+   a. Navigate the tab to `https://app.chatifai.io`
+   b. Take a screenshot to confirm the sign-in page is visible.
+   c. Click/type the email field → enter `ariel5rols@gmail.com` → click Continue.
+   d. Wait ~3s. Screenshot to confirm "check your email" screen.
+   e. Open a new tab, navigate to `https://mail.google.com` (the user's Gmail).
+   f. Wait ~5s for Gmail to load, then `read_page` to find the latest email from chatifai/noreply containing a verification code (6-digit number).
+   g. Copy the code, navigate back to the chatifai tab, enter the code in the OTP field.
+   h. Wait for redirect to `app.chatifai.io/` (the main chat screen).
+   i. Close the Gmail tab if it was newly opened.
+5. Confirm logged in: screenshot should show "Ariel / member" in top-right and an empty chat input.
 
 ## Sending a query
 
