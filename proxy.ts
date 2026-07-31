@@ -5,7 +5,12 @@ import { AUTH_COOKIE, isValidAuthCookie } from "@/lib/auth";
 
 const PUBLIC = ["/login", "/auth/callback"];
 const ADMIN_ONLY = ["/inbox", "/recordings", "/notes"];
-const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS ?? "").split(",").map((e) => e.trim()).filter(Boolean);
+// Lowercased on both sides: the list is hand-edited, and an address typed with
+// a capital (Jonikremer1@gmail.com) would never match what the provider returns.
+const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS ?? "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -35,8 +40,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Email allowlist: if configured, block users not on the list
-  if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(user.email ?? "")) {
+  // Email allowlist: if configured, block users not on the list.
+  // Note the app is open to any Google account whenever ALLOWED_EMAILS is unset.
+  if (ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes((user.email ?? "").toLowerCase())) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("error", "unauthorized");
