@@ -19,7 +19,35 @@ type Sentence = {
 
 type ConvoMessage = { role: "user" | "assistant"; content: string };
 
-type Tab = "cards" | "sentences" | "convo";
+type Tab = "cards" | "sentences" | "convo" | "dialogue";
+
+type DialogueCell = { translit?: string; ar?: string; he?: string };
+type DialogueTurn = DialogueCell & { speaker?: string; options?: DialogueCell[] };
+type Dialogue = {
+  id: number;
+  key: string;
+  verified: boolean;
+  turn_count: number;
+  turns: DialogueTurn[];
+};
+
+const DIALOGUE_LABELS: Record<string, { emoji: string; label: string }> = {
+  shawarma: { emoji: "🌯", label: "דוכן שווארמה" },
+  market: { emoji: "🛒", label: "שוק" },
+  taxi: { emoji: "🚕", label: "מונית" },
+  restaurant: { emoji: "🍽️", label: "מסעדה" },
+  cafe: { emoji: "☕", label: "בית קפה" },
+  bank: { emoji: "🏦", label: "בנק" },
+  doctor: { emoji: "🩺", label: "רופא" },
+  directions: { emoji: "🗺️", label: "הכוונה בדרך" },
+  clothes_shop: { emoji: "👕", label: "חנות בגדים" },
+  gas_station: { emoji: "⛽", label: "תחנת דלק" },
+  car_trouble: { emoji: "🔧", label: "תקלה ברכב" },
+  family_chat: { emoji: "👨‍👩‍👧", label: "שיחה משפחתית" },
+  phone_appointment: { emoji: "📞", label: "תור בטלפון" },
+  meet_stranger: { emoji: "🤝", label: "היכרות" },
+  self_intro: { emoji: "🙋", label: "הצגה עצמית" },
+};
 
 const SESSION_KEY = "yalla_sentences_cache";
 
@@ -70,6 +98,30 @@ export default function SimulatePage() {
   const [sentencesError, setSentencesError] = useState<string | null>(null);
   const [revealedSentences, setRevealedSentences] = useState<Set<number>>(new Set());
   const sentencesFetched = useRef(false);
+
+  // Dialogue tab state (stored, chatifai-verified conversations)
+  const [dialogues, setDialogues] = useState<Dialogue[]>([]);
+  const [dialoguesLoading, setDialoguesLoading] = useState(false);
+  const [activeDialogue, setActiveDialogue] = useState<Dialogue | null>(null);
+  const [turnIndex, setTurnIndex] = useState(0);
+  const [shownHe, setShownHe] = useState<Set<number>>(new Set());
+  const [chosen, setChosen] = useState<Record<number, number>>({});
+
+  useEffect(() => {
+    if (tab !== "dialogue" || dialogues.length > 0) return;
+    setDialoguesLoading(true);
+    fetch("/api/dialogues")
+      .then((r) => r.json())
+      .then((d) => setDialogues(d.dialogues ?? []))
+      .finally(() => setDialoguesLoading(false));
+  }, [tab, dialogues.length]);
+
+  function openDialogue(d: Dialogue) {
+    setActiveDialogue(d);
+    setTurnIndex(0);
+    setShownHe(new Set());
+    setChosen({});
+  }
 
   // Conversation tab state
   const [scenario, setScenario] = useState<string>("");
@@ -232,13 +284,13 @@ export default function SimulatePage() {
 
       {/* Tabs */}
       <div className="flex rounded-xl overflow-hidden border border-gray-300 self-start">
-        {(["cards", "sentences", "convo"] as Tab[]).map((t) => (
+        {(["cards", "sentences", "convo", "dialogue"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-4 py-2 text-sm font-bold transition-colors ${tab === t ? "bg-black text-white" : "bg-white text-gray-600"}`}
           >
-            {t === "cards" ? "כרטיסים" : t === "sentences" ? "משפטים" : "שיחה"}
+            {t === "cards" ? "כרטיסים" : t === "sentences" ? "משפטים" : t === "convo" ? "שיחה" : "דו-שיח"}
           </button>
         ))}
       </div>
@@ -350,6 +402,152 @@ export default function SimulatePage() {
                   </button>
                 ))}
               </div>
+            </>
+          )}
+        </div>
+      )}
+
+
+      {/* Dialogue Tab — stored, chatifai-verified conversations */}
+      {tab === "dialogue" && (
+        <div className="flex flex-col gap-4 flex-1">
+          {dialoguesLoading && (
+            <div className="flex flex-1 items-center justify-center text-gray-500">
+              {strings.common.loading}
+            </div>
+          )}
+
+          {!dialoguesLoading && !activeDialogue && (
+            <>
+              <p className="text-center text-gray-500 text-sm">
+                דו-שיחים מאומתים — קרא שורה שורה, ובנקודות בחירה תבחר מה היית עונה
+              </p>
+              {dialogues.length === 0 ? (
+                <p className="text-center text-sm text-gray-400 leading-relaxed">
+                  אין עדיין דו-שיח מאומת.
+                  <br />
+                  דו-שיחים מוצגים רק אחרי שchatifai עבר עליהם.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {dialogues.map((d) => {
+                    const meta = DIALOGUE_LABELS[d.key] ?? { emoji: "💬", label: d.key };
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => openDialogue(d)}
+                        className="flex flex-col items-center gap-2 border rounded-2xl p-5 hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="text-3xl">{meta.emoji}</span>
+                        <span className="text-sm font-bold">{meta.label}</span>
+                        <span className="text-xs text-gray-400">{d.turn_count} שורות</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {!dialoguesLoading && activeDialogue && (
+            <>
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setActiveDialogue(null)}
+                  className="text-xs text-gray-500 underline underline-offset-2"
+                >
+                  חזרה לרשימה
+                </button>
+                <span className="text-xs text-gray-400">
+                  {Math.min(turnIndex + 1, activeDialogue.turns.length)} / {activeDialogue.turns.length}
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {activeDialogue.turns.slice(0, turnIndex + 1).map((turn, i) => {
+                  const isUser = turn.speaker === "user";
+                  const picked = chosen[i];
+
+                  if (turn.options?.length) {
+                    return (
+                      <div key={i} className="flex flex-col gap-2 items-end">
+                        <span className="text-xs text-gray-400">מה היית עונה?</span>
+                        {turn.options.map((opt, oi) => {
+                          const isPicked = picked === oi;
+                          return (
+                            <button
+                              key={oi}
+                              onClick={() =>
+                                setChosen((prev) => (prev[i] != null ? prev : { ...prev, [i]: oi }))
+                              }
+                              disabled={picked != null}
+                              className={`w-full text-right rounded-2xl p-3 border transition-colors ${
+                                picked == null
+                                  ? "hover:bg-gray-50"
+                                  : isPicked
+                                  ? "bg-black text-white border-black"
+                                  : "opacity-40"
+                              }`}
+                            >
+                              <p className="nikud-text text-base leading-relaxed">{opt.translit}</p>
+                              {picked != null && (
+                                <p
+                                  className={`text-xs mt-1 ${
+                                    isPicked ? "text-gray-300" : "text-gray-500"
+                                  }`}
+                                >
+                                  {opt.he}
+                                </p>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={i}
+                      onClick={() =>
+                        setShownHe((prev) => {
+                          const next = new Set(prev);
+                          next.has(i) ? next.delete(i) : next.add(i);
+                          return next;
+                        })
+                      }
+                      className={`text-right rounded-2xl p-3 max-w-[85%] border ${
+                        isUser ? "self-end bg-gray-50" : "self-start"
+                      }`}
+                    >
+                      <p className="nikud-text text-base leading-relaxed">{turn.translit}</p>
+                      {shownHe.has(i) && (
+                        <p className="text-xs text-gray-500 mt-1 border-t pt-1">{turn.he}</p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {turnIndex < activeDialogue.turns.length - 1 ? (
+                <button
+                  onClick={() => setTurnIndex((i) => i + 1)}
+                  disabled={
+                    !!activeDialogue.turns[turnIndex]?.options?.length && chosen[turnIndex] == null
+                  }
+                  className="rounded-xl bg-black py-4 text-base font-bold text-white disabled:opacity-40"
+                >
+                  {activeDialogue.turns[turnIndex]?.options?.length && chosen[turnIndex] == null
+                    ? "בחר תשובה כדי להמשיך"
+                    : "הבא"}
+                </button>
+              ) : (
+                <p className="text-center text-sm text-gray-400">סוף הדו-שיח</p>
+              )}
+
+              <p className="text-center text-[11px] text-gray-400">
+                לחיצה על שורה מגלה את התרגום
+              </p>
             </>
           )}
         </div>
