@@ -46,30 +46,33 @@ export default function SongsPage() {
       {songs.length === 0 ? (
         <p className="text-gray-500 text-center py-12">אין עדיין שירים. הוסף שיר ראשון!</p>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {songs.map((song) => (
             <Link
               key={song.id}
               href={`/songs/${song.id}`}
-              className="block border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="group flex flex-col gap-2"
             >
-              <div className="flex items-center gap-4">
+              {/* YouTube thumbnails are 16:9 and album art is square, so the
+                  frame is fixed and the image is cropped to fill it */}
+              <div className="aspect-square w-full overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
                 {song.cover_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={song.cover_url}
                     alt={song.title}
-                    className="w-12 h-12 rounded object-cover flex-shrink-0"
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                    <span className="text-2xl">🎵</span>
+                  <div className="flex h-full w-full items-center justify-center">
+                    <span className="text-4xl">🎵</span>
                   </div>
                 )}
-                <div>
-                  <div className="font-semibold">{song.title}</div>
-                  <div className="text-sm text-gray-500">{song.artist}</div>
-                </div>
+              </div>
+              <div className="min-w-0">
+                <div className="truncate font-semibold leading-tight">{song.title}</div>
+                <div className="truncate text-sm text-gray-500">{song.artist}</div>
               </div>
             </Link>
           ))}

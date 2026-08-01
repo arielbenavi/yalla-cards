@@ -6,6 +6,14 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+/** The conversation tab is the only feature needing ANTHROPIC_API_KEY, and it
+ *  was set locally but never in Vercel — so it worked in development and threw
+ *  a raw SDK exception into the chat bubble in production. Checked up front so
+ *  the message says what is actually wrong. */
+function missingApiKey(): boolean {
+  return !process.env.ANTHROPIC_API_KEY?.trim();
+}
+
 const SCENARIO_LABELS: Record<string, string> = {
   market: "a market scene where the user is buying and the AI is selling (haggling is expected)",
   taxi: "a taxi ride where the user is the passenger giving directions",
@@ -49,6 +57,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "messages required" }, { status: 400 });
   }
 
+  if (missingApiKey()) {
+    return NextResponse.json(
+      {
+        error:
+          "מסך השיחה דורש ANTHROPIC_API_KEY. הוא מוגדר ב-.env.local אבל לא ב-Vercel — " +
+          "צריך להוסיף אותו ב-Settings → Environment Variables ואז לפרוס מחדש.",
+      },
+      { status: 503 }
+    );
+  }
+
   const scenarioDesc = SCENARIO_LABELS[scenario] ?? "a general conversation";
   const vocab = await fetchVocab();
 
@@ -89,7 +108,12 @@ Rules:
           }
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Stream error";
+        const raw = err instanceof Error ? err.message : "Stream error";
+        // Don't leak SDK internals into the chat bubble — the auth message in
+        // particular reads as gibberish to someone practising Arabic
+        const msg = /authentication|api[_ -]?key|apiKey/i.test(raw)
+          ? "מסך השיחה לא מוגדר — חסר ANTHROPIC_API_KEY בסביבת הפרודקשן."
+          : raw;
         controller.enqueue(encoder.encode(`\n[שגיאה: ${msg}]`));
       } finally {
         controller.close();
