@@ -58,6 +58,12 @@ Nothing is done because the code looks right.
 
 - Touching inbox import, review, or recordings → `npx playwright test`, all green.
   This is in CLAUDE.md and it is not optional.
+- **`npx next build` before pushing.** A pre-push hook runs it, and it type-checks
+  more strictly than `npx tsc --noEmit` — a Supabase `upsert` over an array whose
+  elements have different shapes passes `tsc` and fails the build.
+- Playwright reuses a running dev server (`reuseExistingServer: true`). After
+  changing an API route, restart it or the tests run against the old code — that
+  cost a false failure once.
 - Changed something visible → screenshot it and look. The verb paradigms loaded
   correctly and the screen still showed pure Arabic script; only a screenshot
   caught that.

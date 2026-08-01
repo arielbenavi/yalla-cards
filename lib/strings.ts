@@ -4,6 +4,7 @@ export const strings = {
   nav: {
     review: "חזרה יומית",
     focused: "אימון ממוקד",
+    inflectionDrill: "התאמת הטיות",
     inbox: "ייבוא",
     lessons: "מפגשים",
     recordings: "הקלטות",
