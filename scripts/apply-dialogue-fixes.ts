@@ -39,8 +39,57 @@ const GLOBAL_WORDS: [string, string][] = [
 // than a TS source literal, so identical-looking strings compare unequal.
 const norm = (s: string) => s.normalize("NFC");
 
+/** Pass 1: mechanical corrections that need no per-dialogue audit, applied to
+ *  EVERY simulation dialogue. ض written as ד׳ turned up in four out of four
+ *  audited dialogues, so it is a property of the generator, not a coincidence —
+ *  waiting for chatifai to reach each dialogue would leave known-wrong text
+ *  sitting there. This does not mark anything verified. */
+async function applyGlobalWordFixes(): Promise<number> {
+  const { data } = await sb
+    .from("paradigms")
+    .select("id, slug, data")
+    .like("slug", "simulation_%");
+
+  let changed = 0;
+  for (const row of data ?? []) {
+    const d = row.data as { turns?: Turn[] };
+    const turns: Turn[] = structuredClone(d.turns ?? []);
+    let touched = false;
+
+    for (const t of turns) {
+      for (const cell of [t, ...(t.options ?? [])]) {
+        for (const [from, to] of [...DAD_WORDS, ...GLOBAL_WORDS]) {
+          for (const field of ["translit", "ar", "he"] as const) {
+            const v = cell[field];
+            if (v?.includes(from)) {
+              cell[field] = v.split(from).join(to);
+              console.log(`  ${row.slug}: ${from} → ${to}`);
+              touched = true;
+              changed++;
+            }
+          }
+        }
+      }
+    }
+
+    if (touched && APPLY) {
+      const { error } = await sb
+        .from("paradigms")
+        .update({ data: { ...(row.data as object), turns } })
+        .eq("id", row.id);
+      if (error) throw error;
+    }
+  }
+  return changed;
+}
+
 async function main() {
   let totalChanges = 0;
+
+  console.log("■ תיקונים מכניים לכל הדו-שיחים");
+  const globalChanges = await applyGlobalWordFixes();
+  console.log(`  ${globalChanges} change(s)\n`);
+  totalChanges += globalChanges;
 
   for (const dialogue of DIALOGUE_FIXES) {
     const { data: row, error } = await sb
