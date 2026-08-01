@@ -9,6 +9,7 @@ type NavLink = { href: string; label: string; adminOnly?: boolean };
 
 const links: NavLink[] = [
   { href: "/review", label: strings.nav.review },
+  { href: "/focused", label: strings.nav.focused },
   { href: "/browse", label: strings.nav.browse },
   { href: "/songs", label: strings.nav.songs },
   { href: "/content", label: strings.nav.content },

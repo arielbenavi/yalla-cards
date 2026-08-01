@@ -3,6 +3,7 @@ export const strings = {
 
   nav: {
     review: "חזרה יומית",
+    focused: "אימון ממוקד",
     inbox: "ייבוא",
     lessons: "מפגשים",
     recordings: "הקלטות",
