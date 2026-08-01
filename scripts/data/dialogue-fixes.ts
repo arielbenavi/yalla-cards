@@ -22,11 +22,58 @@ export type DialogueFix = {
   /** chatifai's overall verdict, stored on the row */
   verdict: string;
   fixes: LineFix[];
-  /** cells chatifai did not settle; keeps the row unverified if non-empty */
+  /** Unresolved errors — chatifai did not settle these, so the row stays
+   *  unverified and unserved until it does. */
   flags?: string[];
+  /** Observations that do NOT block verification: style preferences chatifai
+   *  offered on lines it marked correct, or questions that span the whole card
+   *  set rather than this dialogue. Recorded so the reasoning survives. */
+  notes?: string[];
 };
 
 export const DIALOGUE_FIXES: DialogueFix[] = [
+  {
+    slug: "simulation_market",
+    verdict:
+      "chatifai: needs line fixes — המבנה, המשלב והזרימה תקינים. 6 מתוך 10 שורות עברו נקי. " +
+      "השורה החמורה: 'לַחַיִּן' אינה מילה קיימת בהקשר הזה.",
+    fixes: [
+      {
+        match: "אִלְ-כִּילוֹ בְּ-חַ'מְסֵה שֵׁקֶל, בַּס בַּנְדוֹרַה לַחַיִּן.",
+        reason:
+          "chatifai: \"המילה 'לַחַיִּן' אינה קיימת בהקשר הזה\" — הערבית אף נכתבה במרכאות, " +
+          "סימן שגם הכותב לא היה בטוח. הביטוי נמחק ולא הוחלף: chatifai הציע לַקְטַה או לַוְזִין, " +
+          "אבל אף אחד מהם לא אושש, והמצאה גרועה ממחיקה.",
+        to: {
+          translit: "אִלְ-כִּילוֹ בְּ-חַ'מְסֵה שֵׁקֶל.",
+          ar: "الكيلو بخمسة شقل.",
+          he: "קילו ב-5 שקלים.",
+        },
+      },
+      {
+        match: "עַלַא רַאסִי. שׁוּף אִלְ-פַוַאכֵּה, עִנְדִי מַנְגַא זַאי אִלְ-עַסַל.",
+        reason: "העמודות לא תואמות: העברית פותחת ב-עַלַא רַאסִי והערבית מדלגת עליו",
+        to: { ar: "على راسي. شوف الفواكه، عندي منجا زي العسل." },
+      },
+      {
+        match: "מַאשִי. אִלְ-חִסַאבּ כֻּלּוֹ חַ'מְסֵה וּאַרְבַּעִין שֵׁקֶל.",
+        reason:
+          "chatifai: \"אומרים חַ'מְסֵה וְאַרְבְּעִין\" — גם ה-ו׳ וגם תנועת ה-ב׳ משתנות",
+        to: {
+          translit: "מַאשִי. אִלְ-חִסַאבּ כֻּלּוֹ חַ'מְסֵה וְאַרְבְּעִין שֵׁקֶל.",
+          he: "בסדר. החשבון הכל 45 שקל.",
+        },
+      },
+    ],
+    notes: [
+      "register — chatifai מעדיף יַא חַבִּיבִּי על יַא עַזִיזִי בשוק, ו-בְּקַדֵּיש על שׁוּ סִעֵר. " +
+        "לא הוחל: אלה העדפות סגנון ולא שגיאות, והוא סימן את שתי השורות תקינות.",
+      "שקל — chatifai מציע שֵׁיכֵּל / شيكل במקום שֵׁקֶל / شقل. לא הוחל: זו מוסכמה שרצה " +
+        "לרוחב כל מאגר הכרטיסים ולא החלטה של דו-שיח בודד. נשלחה שאלה ייעודית.",
+      "chatifai סימן את שורה 7 (חֻ'צְ'רַה) כטעונת תיקון ל-צ׳ — אבל היא כבר הייתה צ׳. " +
+        "התרעת שווא שלו, לא שגיאה בנתונים.",
+    ],
+  },
   {
     slug: "simulation_shawarma",
     verdict:

@@ -96,6 +96,7 @@ async function main() {
       verified_at: new Date().toISOString().slice(0, 10),
       verification_note: dialogue.verdict,
       ...(dialogue.flags?.length ? { verification_flags: dialogue.flags } : {}),
+      ...(dialogue.notes?.length ? { verification_notes: dialogue.notes } : {}),
     };
     const { error: upErr } = await sb.from("paradigms").update({ data: newData }).eq("id", row.id);
     if (upErr) throw upErr;

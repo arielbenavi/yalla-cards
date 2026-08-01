@@ -93,9 +93,11 @@ export async function GET() {
     if (Array.isArray(data?.rows) && data.rows.length >= 3) {
       // Skip Arabic-script columns: the learner reads transliteration, so a
       // drill that asks them to place عني in a box tests nothing they know yet.
-      const ARABIC_COLS = new Set(["ar", "arabic", "arabic_script"]);
+      // Skip Arabic script, and skip "variant" columns: an alternate form is a
+      // note on the main answer, not a paradigm of its own to drill.
+      const SKIP_COLS = new Set(["ar", "arabic", "arabic_script", "variant", "note"]);
       const columns = Object.keys(data.rows[0]).filter(
-        (k) => k !== "person" && !ARABIC_COLS.has(k)
+        (k) => k !== "person" && !SKIP_COLS.has(k)
       );
       for (const col of columns) {
         const slots = data.rows
@@ -107,6 +109,9 @@ export async function GET() {
           source: "paradigm",
           title: data.translations?.[col]
             ? `${col} — ${data.translations[col]}`
+            : columns.length === 1
+            // Single-column paradigm: the column name adds nothing
+            ? (data.description?.split(/[—.]/)[0].trim() || p.slug)
             : `${p.slug} — ${col}`,
           subtitle: data.description ?? null,
           slots,
