@@ -26,6 +26,15 @@ type Turn = Cell & { speaker?: string; options?: Cell[] };
 // ذ keeps ד׳ (אַחַ׳ד׳), so this maps only the specific words chatifai settled.
 const DAD_WORDS: [string, string][] = [["תְפַדַּ'ל", "תְפַצַּ'ל"], ["פַאדִי", "פַאצִ'י"]];
 
+/** Corrections that apply to every dialogue, not one line of one of them.
+ *  شقل appears in zero cards — only in these generated dialogues — which is
+ *  itself more evidence they did not come through the same pipeline. chatifai
+ *  gives شيكل / שֵׁיכֵּל as the form actually used. */
+const GLOBAL_WORDS: [string, string][] = [
+  ["شقل", "شيكل"],
+  ["שֵׁקֶל", "שֵׁיכֵּל"],
+];
+
 // Nikud combining marks come back from Postgres in a different normalisation
 // than a TS source literal, so identical-looking strings compare unequal.
 const norm = (s: string) => s.normalize("NFC");
@@ -74,6 +83,16 @@ async function main() {
             const before = cell.translit;
             cell.translit = cell.translit.split(from).join(to);
             applied.push(`  ${before}\n    → ${cell.translit}\n    ض is צ׳ in the cards table, not ד׳`);
+          }
+        }
+
+        for (const [from, to] of GLOBAL_WORDS) {
+          for (const field of ["translit", "ar", "he"] as const) {
+            const v = cell[field];
+            if (v?.includes(from)) {
+              cell[field] = v.split(from).join(to);
+              applied.push(`  ${v}\n    → ${cell[field]}\n    ${from} → ${to} (chatifai)`);
+            }
           }
         }
       }
