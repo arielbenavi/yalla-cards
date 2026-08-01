@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
+import { checkSong } from "@/lib/song-schema";
 
 export type LyricWord = { ar: string; he: string; translit: string };
 export type LyricLine = { line: string; words: LyricWord[] };
@@ -83,8 +84,18 @@ export async function POST(request: NextRequest) {
   }
 
   let lyrics_parsed: LyricLine[] | null = null;
+  let schema_issues: ReturnType<typeof checkSong> = [];
   try {
     lyrics_parsed = await parseLyrics(lyrics_raw);
+    // Note efbd5595: two of the eight existing songs landed with Arabic in the
+    // transliteration field or Hebrew in the Arabic field, because nothing
+    // checked. The song is still saved — a partly-glossed song beats none — but
+    // the problems come back in the response instead of being discovered months
+    // later.
+    schema_issues = checkSong(lyrics_parsed ?? []);
+    if (schema_issues.length) {
+      console.warn(`[songs] ${title}: ${schema_issues.length} schema issue(s)`);
+    }
   } catch (err) {
     console.error("lyrics parse error", err);
     // Save without parsed lyrics — can be retried later
@@ -98,5 +109,8 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ id: data.id });
+  return NextResponse.json({
+    id: data.id,
+    ...(schema_issues.length ? { schema_issues } : {}),
+  });
 }
