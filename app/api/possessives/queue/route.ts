@@ -19,11 +19,16 @@ import {
  *  point. כְּבִּיר agrees with the noun, not the possessor, so it cannot leak
  *  which person the suffix encodes. */
 const PREDICATES = [
-  { translit: "כְּבִּיר", he: "גדול" },
-  { translit: "זְעִ'יר", he: "קטן" },
-  { translit: "גְ'דִיד", he: "חדש" },
-  { translit: "בְּעִיד", he: "רחוק" },
+  { translit: "כְּבִּיר", he_m: "גדול", he_f: "גדולה" },
+  { translit: "זְעִ'יר", he_m: "קטן", he_f: "קטנה" },
+  { translit: "גְ'דִיד", he_m: "חדש", he_f: "חדשה" },
+  { translit: "בְּעִיד", he_m: "רחוק", he_f: "רחוקה" },
 ];
+
+/** The Hebrew gloss has to agree with the Hebrew noun — "מכונית שלו חדש" reads
+ *  as broken Hebrew even though the Arabic is correct. The Arabic adjective is
+ *  the same either way, so this changes only the prompt. */
+const FEMININE_HE = new Set(["מכונית", "דירה", "שכונה", "עיר"]);
 
 export async function GET(request: Request) {
   const size = Math.min(20, Number(new URL(request.url).searchParams.get("size") ?? 10));
@@ -83,7 +88,11 @@ export async function GET(request: Request) {
     const [, formsForBase] = bases[Math.floor(Math.random() * bases.length)];
     const a = formsForBase.get(featA)!;
     const b = formsForBase.get(featB)!;
-    const predicate = PREDICATES[Math.floor(Math.random() * PREDICATES.length)];
+    const p = PREDICATES[Math.floor(Math.random() * PREDICATES.length)];
+    const predicate = {
+      translit: p.translit,
+      he: FEMININE_HE.has(a.base_he) ? p.he_f : p.he_m,
+    };
 
     const pair = buildPair(a, b, predicate);
     if (!pair) continue;
