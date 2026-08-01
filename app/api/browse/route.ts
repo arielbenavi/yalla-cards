@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { focusedMastery } from "@/lib/focused-practice";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
@@ -50,6 +51,32 @@ export async function GET(request: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Focused-practice performance, computed at read time. This is what lets a
+  // drill affect how a card is classified here without writing self_score,
+  // card_srs or review_log — see lib/focused-practice.ts for why.
+  const cardIds = (data ?? []).map((c) => c.id);
+  const srsToCard = new Map<string, string>();
+  for (const c of data ?? []) {
+    for (const s of (c.card_srs ?? []) as { id: string }[]) srsToCard.set(s.id, c.id);
+  }
+
+  // Fetch the whole log and join in memory rather than filtering by id: an
+  // .in() over ~850 card_srs ids overflows the PostgREST URL and comes back
+  // empty, and this table is small by construction.
+  const attemptsByCard = new Map<string, { outcome: number; practiced_at: string }[]>();
+  if (srsToCard.size > 0) {
+    const { data: fp } = await supabase
+      .from("focused_practice_log")
+      .select("card_srs_id, outcome, practiced_at");
+    for (const row of fp ?? []) {
+      const cardId = srsToCard.get(row.card_srs_id);
+      if (!cardId) continue;
+      if (!attemptsByCard.has(cardId)) attemptsByCard.set(cardId, []);
+      attemptsByCard.get(cardId)!.push({ outcome: row.outcome, practiced_at: row.practiced_at });
+    }
+  }
+  void cardIds;
+
   // Generate signed audio URLs for cards with clips
   const withAudio = await Promise.all(
     (data ?? []).map(async (card) => {
@@ -60,7 +87,8 @@ export async function GET(request: NextRequest) {
           .createSignedUrl(card.clip_path, 60 * 10);
         audio_url = signed?.signedUrl ?? null;
       }
-      return { ...card, audio_url };
+      const mastery = focusedMastery(attemptsByCard.get(card.id) ?? []);
+      return { ...card, audio_url, focused: mastery };
     })
   );
 

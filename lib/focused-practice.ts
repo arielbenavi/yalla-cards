@@ -210,3 +210,84 @@ export function reinsertOffset(outcome: number, attemptIndex: number, rand = Mat
 
 /** Four presentations is the ceiling; past that, stop hammering the item. */
 export const MAX_PRESENTATIONS = 4;
+
+// ---------------------------------------------------------------------------
+// Feeding focused-practice results back into browse (חזרה כללית).
+//
+// The user asked for strong focused-practice performance to affect how cards
+// are classified in browse. It is done as a DERIVED signal computed at read
+// time — not by writing self_score, card_srs or review_log.
+//
+// That is deliberate. The research is explicit that success in an auxiliary
+// drill is not equivalent to a scheduled review and must not automatically
+// become a rating, and self_score is covered by the project's reversibility
+// guard. A derived signal gives the same effect on ordering, stays reversible
+// by deleting one table, and keeps daily review untouched.
+// ---------------------------------------------------------------------------
+
+export type FocusedAttempt = { outcome: number; practiced_at: string };
+
+export type FocusedMastery = {
+  attempts: number;
+  /** 0–1, recency-weighted share of Good/Easy outcomes */
+  score: number;
+  /** consecutive Good/Easy from the most recent attempt backwards */
+  streak: number;
+  /** true once the card looks genuinely solid in focused practice */
+  strong: boolean;
+  /** true when it keeps failing there */
+  struggling: boolean;
+};
+
+/**
+ * Recency-weighted mastery over a card's focused-practice history.
+ * A 14-day half-life so a card that was solid two months ago does not keep
+ * claiming to be solid today.
+ */
+export function focusedMastery(attempts: FocusedAttempt[], now = Date.now()): FocusedMastery {
+  if (attempts.length === 0) {
+    return { attempts: 0, score: 0, streak: 0, strong: false, struggling: false };
+  }
+
+  const sorted = [...attempts].sort(
+    (a, b) => new Date(b.practiced_at).getTime() - new Date(a.practiced_at).getTime()
+  );
+
+  let weighted = 0;
+  let total = 0;
+  for (const a of sorted) {
+    const days = (now - new Date(a.practiced_at).getTime()) / 86_400_000;
+    const w = Math.pow(0.5, days / 14);
+    total += w;
+    if (a.outcome >= 3) weighted += w;
+  }
+  const score = total > 0 ? weighted / total : 0;
+
+  let streak = 0;
+  for (const a of sorted) {
+    if (a.outcome >= 3) streak++;
+    else break;
+  }
+
+  return {
+    attempts: sorted.length,
+    score,
+    streak,
+    // Three clean passes in a row over at least three attempts — one lucky
+    // Good should not reclassify anything
+    strong: streak >= 3 && score >= 0.8,
+    struggling: sorted.length >= 3 && score < 0.4,
+  };
+}
+
+/**
+ * Browse ordering: worst first. self_score stays the primary signal because it
+ * is the learner's own explicit judgement; focused practice only nudges within
+ * that, so a card cannot jump the queue on drill performance alone.
+ */
+export function browseRank(selfScore: number | null, m: FocusedMastery): number {
+  const base = selfScore === 1 ? 0 : selfScore === null ? 1 : selfScore + 1;
+  if (m.struggling) return base - 0.5; // surface sooner
+  if (m.strong) return base + 0.5; // push back
+  return base;
+}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { strings } from "@/lib/strings";
 import { PronunciationGuide } from "@/components/PronunciationGuide";
 import AudioRangeEditor, { AudioRangeEditButton } from "@/components/AudioRangeEditor";
+import { browseRank, type FocusedMastery } from "@/lib/focused-practice";
 
 type CardSrs = { id: string; direction: "he_to_ar" | "ar_to_he" };
 
@@ -23,6 +24,7 @@ type BrowseCard = {
   recording_id: string | null;
   lesson_id: string | null;
   self_score: number | null;
+  focused?: FocusedMastery;
   lessons: { title: string | null; date: string } | null;
   card_srs: CardSrs[] | null;
 };
@@ -75,10 +77,13 @@ export default function BrowsePage() {
     if (type) params.set("item_type", type);
     if (sc) params.set("score", sc);
     const data = await fetch(`/api/browse?${params}`).then((r) => r.json());
-    // Sort: שוב(1) first, then unrated, then קשה(2) טוב(3) קל(4)
-    const scoreOrder = (s: number | null) => s === 1 ? 0 : s === null ? 1 : s + 1;
+    // Sort: שוב(1) first, then unrated, then קשה(2) טוב(3) קל(4).
+    // Focused-practice results nudge within that — a card failing in focused
+    // practice surfaces sooner, a consistently solid one is pushed back — but
+    // self_score stays primary, since it is the learner's own judgement.
+    const EMPTY: FocusedMastery = { attempts: 0, score: 0, streak: 0, strong: false, struggling: false };
     const sorted = (data.cards ?? []).slice().sort((a: BrowseCard, b: BrowseCard) =>
-      scoreOrder(a.self_score) - scoreOrder(b.self_score)
+      browseRank(a.self_score, a.focused ?? EMPTY) - browseRank(b.self_score, b.focused ?? EMPTY)
     );
     setCards(sorted);
     setIndex(0);
