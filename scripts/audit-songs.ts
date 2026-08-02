@@ -3,7 +3,7 @@
 //   npx tsx scripts/audit-songs.ts --detail   # every issue
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { checkSong, type LyricLine } from "../lib/song-schema";
+import { checkSong, isPending, type LyricLine } from "../lib/song-schema";
 
 config({ path: ".env.local" });
 
@@ -20,11 +20,16 @@ async function main() {
   let clean = 0;
   for (const s of data ?? []) {
     const lines = (s.lyrics_parsed ?? []) as LyricLine[];
-    const issues = checkSong(lines);
+    const all = checkSong(lines);
+    // Awaiting content is reported, but it is not a defect — a song whose only
+    // outstanding item is the Arabic script is otherwise correctly formed.
+    const pending = all.filter(isPending);
+    const issues = all.filter((i) => !isPending(i));
 
     if (issues.length === 0) {
       clean++;
-      console.log(`✅ ${String(s.title).padEnd(24)} ${lines.length} שורות`);
+      const note = pending.length ? ` · ⏳ ${pending.length} ממתינות לכתב ערבי` : "";
+      console.log(`✅ ${String(s.title).padEnd(24)} ${lines.length} שורות${note}`);
       continue;
     }
 

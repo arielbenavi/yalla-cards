@@ -204,12 +204,18 @@ export default function SongDetailPage() {
 
         <div className="border rounded-xl p-8 text-center mb-6">
           <p className="text-sm text-gray-400 mb-2">מה המשמעות של</p>
-          <p className="text-4xl font-bold mb-1" dir="rtl">
-            {current.ar}
+          {/* Some songs have no Arabic script collected yet (سوولنا was stored
+              with the Hebrew transliteration in its ar slots, which showed
+              Hebrew here as though it were the Arabic spelling). Fall back to
+              the transliteration rather than prompting with an empty word. */}
+          <p className="text-4xl font-bold mb-1" dir={current.ar ? "rtl" : "ltr"}>
+            {current.ar || current.translit}
           </p>
-          <p className="text-gray-500 text-sm" dir="ltr">
-            {current.translit}
-          </p>
+          {current.ar && (
+            <p className="text-gray-500 text-sm" dir="ltr">
+              {current.translit}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">

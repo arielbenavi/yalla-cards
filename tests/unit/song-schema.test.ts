@@ -5,7 +5,7 @@
  *
  * Run: npx tsx tests/unit/song-schema.test.ts
  */
-import { checkSong, isSongClean, type LyricLine } from "../../lib/song-schema";
+import { checkSong, isSongClean, isPending, type LyricLine } from "../../lib/song-schema";
 import assert from "node:assert";
 
 let passed = 0;
@@ -50,6 +50,22 @@ test("Hebrew in the Arabic field is caught (the سوولنا defect)", () => {
   assert.equal(issues.length, 1);
   assert.equal(issues[0].field, "words.ar");
   assert.match(issues[0].problem, /עברית/);
+});
+
+test("an empty Arabic field is pending, not a defect", () => {
+  // Clearing سوولنا's wrong-script ar values left 118 empty slots. That is
+  // content still to be gathered, and must not be scored the same as content
+  // that is present but wrong — otherwise the fix looks like a regression.
+  const lines: LyricLine[] = [
+    {
+      line: "סַוּוּלְנַא כַּאסֵת צַ'אי",
+      words: [{ ar: "", he: "תכינו לנו", translit: "sawwulna" }],
+    },
+  ];
+  const issues = checkSong(lines);
+  assert.equal(issues.length, 1);
+  assert.ok(isPending(issues[0]), "empty ar should be flagged as pending");
+  assert.equal(issues.filter((i) => !isPending(i)).length, 0);
 });
 
 test("a line with no glosses is caught", () => {

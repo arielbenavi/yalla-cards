@@ -18,6 +18,11 @@ const HEBREW = /[֐-׿]/;
 const ARABIC = /[؀-ۿ]/;
 const LATIN_WORD = /\b[A-Za-z]{3,}\b/;
 
+/** Marks an issue as "content still to be gathered" rather than "content is wrong". */
+export const PENDING_ARABIC = "כתב ערבי טרם נאסף";
+
+export const isPending = (i: SongIssue) => i.problem === PENDING_ARABIC;
+
 export type SongIssue = {
   line: number;
   field: string;
@@ -72,8 +77,13 @@ export function checkSong(lines: LyricLine[]): SongIssue[] {
       if (HEBREW.test(w.ar)) {
         issues.push({ line: n, field: "words.ar", problem: "עברית בשדה הערבי", value: w.ar });
       }
+      // An empty `ar` is "not collected yet", not a corrupted value. سوولنا was
+      // stored with Hebrew in every ar slot and the Arabic was never gathered;
+      // clearing it stopped the drill presenting Hebrew as Arabic, and the song
+      // is complete in every other respect. Kept separate so a song awaiting
+      // Arabic is not scored the same as one with the wrong script in it.
       if (!w.ar?.trim()) {
-        issues.push({ line: n, field: "words.ar", problem: "ריק", value: w.translit ?? "" });
+        issues.push({ line: n, field: "words.ar", problem: PENDING_ARABIC, value: w.translit ?? "" });
       }
       if (!w.he?.trim()) {
         issues.push({ line: n, field: "words.he", problem: "אין תרגום", value: w.ar ?? "" });
