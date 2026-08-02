@@ -133,6 +133,11 @@ Check these before trusting any count:
   chosen by review history, but audio lives independently of it — copy the
   losing card's `recording_id`/`audio_start_sec`/`audio_end_sec`/`clip_path`
   onto the survivor before deleting, or a clip is lost.
+- **A blank turn in a dialogue is usually the branch point, not a gap.** Every
+  `simulation_*` row has exactly one turn whose `translit`/`ar`/`he` are empty
+  and whose `options` hold the choices. I "repaired" one and broke the choice.
+  Run `scripts/scan-dialogue-gaps.ts`. When a defect appears in *every* row
+  including untouched ones, suspect the check, not the data.
 - **Data in the DB is not necessarily chatifai's.** `paradigms` has no
   verification column, and its dialogues transliterate ض inconsistently while the
   cards table is uniform. Check provenance before putting content in front of the
