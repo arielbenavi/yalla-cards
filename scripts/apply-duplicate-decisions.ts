@@ -75,12 +75,16 @@ async function main() {
   await loadCards();
 
   for (const d of DECISIONS) {
+    // Idempotent: a decision applied in an earlier run has no losing card left.
+    if (!ALL.some((c) => c.id.startsWith(d.drop))) continue;
     const keep = byPrefix(d.keep);
     const drop = byPrefix(d.drop);
 
-    const { count } = await reviewCount(drop.id);
-    if (count > 0) throw new Error(`${d.drop} (${drop.translit_nikud}) has ${count} reviews`);
-    const { ids: srsIds } = await reviewCount(drop.id);
+    const { ids: srsIds, count } = await reviewCount(drop.id);
+    if (count > 0 && !d.dropReviewed) {
+      throw new Error(`${d.drop} (${drop.translit_nikud}) has ${count} reviews`);
+    }
+    if (count > 0) console.log(`  ⚠️  ${drop.translit_nikud}: ${count} חזרות יימחקו — ${d.dropReviewed}`);
 
     const patch: Record<string, unknown> = {};
     if (keep.hebrew_meaning !== d.meaning) patch.hebrew_meaning = d.meaning;

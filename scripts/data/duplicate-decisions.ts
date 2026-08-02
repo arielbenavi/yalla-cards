@@ -9,12 +9,31 @@
 //   מַרַّה (پעם) vs מַרַה (אישה)      — the shadda is the whole difference
 //   חַמַّאם (שירותים) vs חַמַאם (יונים)
 //   שַמַאל (צפון) vs שְמַאל (שמאל)
-//   קַמִיצ (חולצה) vs (חולצה מכופתרת) — both reviewed, needs Ariel
 //   بيحكي stored for both "אני מדבר" and "מדבר" — one of the two Arabic
 //     spellings is wrong (بحكي vs بيحكي); needs chatifai, not a merge.
-export type Decision = { keep: string; drop: string; meaning: string; why?: string };
+//
+// `dropReviewed` overrides the refuse-to-delete-reviewed-cards guard. It exists
+// for the one case where both sides have history and keeping both is worse than
+// losing the weaker card's log. It must never be set without a stated reason.
+export type Decision = {
+  keep: string;
+  drop: string;
+  meaning: string;
+  why?: string;
+  dropReviewed?: string;
+};
 
 export const DECISIONS: Decision[] = [
+  {
+    keep: "4ba5fedf",
+    drop: "d6796339",
+    meaning: "חולצה מכופתרת",
+    why: "قميص הוא חולצה מכופתרת ספציפית, להבדיל מטי-שירט — הגלוסה המדויקת יותר נשמרת",
+    dropReviewed:
+      "שני הכרטיסים עם 3 חזרות, אבל היציבות שונה מאוד: 86.6 מול 21.0. " +
+      "הכרטיס הנשמר הוא הזיכרון החזק; נמחקות 3 שורות review_log מהחלש. " +
+      "אריאל אישר להפעיל שיקול דעת.",
+  },
   { keep: "82e5d569", drop: "2fad9999", meaning: "מורה (ז)" },
   { keep: "970d237e", drop: "3496dd40", meaning: "מזכיר של גוף רשמי / ישר, אמין / שם של גבר" },
   { keep: "4a9411f2", drop: "5624b62a", meaning: "עורך דין" },
