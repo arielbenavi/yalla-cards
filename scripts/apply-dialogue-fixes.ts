@@ -111,15 +111,39 @@ async function main() {
     const present = new Set(
       turns.flatMap((t) => [t, ...(t.options ?? [])]).map((c) => norm(c.translit ?? ""))
     );
+    // The global word pass rewrites stored text after a per-dialogue fix landed
+    // (שֵׁקֶל → שֵׁיכֵּל), so the fix's literal target no longer appears. Compare
+    // against the globally-corrected form or already-applied fixes read as drift.
+    const globalized = (s: string) => {
+      let out = s;
+      for (const [from, to] of [...DAD_WORDS, ...GLOBAL_WORDS]) out = out.split(from).join(to);
+      return norm(out);
+    };
+    const presentGlobalized = new Set([...present].map((p) => globalized(p)));
     for (const f of dialogue.fixes) {
-      if (f.to.translit && present.has(norm(f.to.translit))) unmatched.delete(f.match);
+      if (!f.to.translit) continue;
+      if (present.has(norm(f.to.translit)) || presentGlobalized.has(globalized(f.to.translit))) {
+        unmatched.delete(f.match);
+      }
     }
 
     for (const t of turns) {
       for (const cell of [t, ...(t.options ?? [])]) {
-        if (!cell.translit) continue;
+        // A blank cell is a missing line, not a line with nothing wrong with it —
+        // simulation_doctor turn 4 was empty in all three columns. Only a fix
+        // whose match is "" may target one; everything below needs real text.
+        if (!cell.translit) {
+          const blankFix = dialogue.fixes.find((f) => f.match === "");
+          if (blankFix) {
+            unmatched.delete("");
+            applied.push(`  (שורה ריקה)\n    → ${blankFix.to.translit}\n    ${blankFix.reason}`);
+            Object.assign(cell, blankFix.to);
+          }
+          continue;
+        }
 
         for (const fix of dialogue.fixes) {
+          if (!fix.match) continue;
           if (norm(cell.translit) === norm(fix.match)) {
             unmatched.delete(fix.match);
             applied.push(`  ${fix.match}\n    → ${fix.to.translit ?? cell.translit}\n    ${fix.reason}`);
