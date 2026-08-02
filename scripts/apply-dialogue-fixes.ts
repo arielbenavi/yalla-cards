@@ -129,21 +129,12 @@ async function main() {
 
     for (const t of turns) {
       for (const cell of [t, ...(t.options ?? [])]) {
-        // A blank cell is a missing line, not a line with nothing wrong with it —
-        // simulation_doctor turn 4 was empty in all three columns. Only a fix
-        // whose match is "" may target one; everything below needs real text.
-        if (!cell.translit) {
-          const blankFix = dialogue.fixes.find((f) => f.match === "");
-          if (blankFix) {
-            unmatched.delete("");
-            applied.push(`  (שורה ריקה)\n    → ${blankFix.to.translit}\n    ${blankFix.reason}`);
-            Object.assign(cell, blankFix.to);
-          }
-          continue;
-        }
+        // A turn carrying `options` is deliberately blank — it is the branch
+        // point where the learner chooses, and the text lives in the options.
+        // Never fill one.
+        if (!cell.translit) continue;
 
         for (const fix of dialogue.fixes) {
-          if (!fix.match) continue;
           if (norm(cell.translit) === norm(fix.match)) {
             unmatched.delete(fix.match);
             applied.push(`  ${fix.match}\n    → ${fix.to.translit ?? cell.translit}\n    ${fix.reason}`);
