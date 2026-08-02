@@ -121,6 +121,18 @@ Check these before trusting any count:
   content, create the SRS row too, then verify.
 - **Seed migrations without `ON CONFLICT` get re-applied.** `0013_seed_verbs.sql`
   ran seven times. `scripts/migrate.ts` now tracks applied migrations.
+- **A plain `select()` returns at most 1000 rows.** `review_log` is well past
+  that, so an unpaged read silently undercounts. It reported 0 reviews for a
+  card that had 2 and nearly caused a merge to delete the reviewed side. Page
+  every read of a table that can grow.
+- **`LIKE` against a uuid column errors outright** — "operator does not exist:
+  uuid ~~ unknown". Fetch and prefix-match in JS.
+- **Duplicate cards.** The "מפגש N - ספר" import duplicated words that already
+  existed as "שיעור N"; 62 pairs were merged on 2026-08-02.
+  `scripts/find-duplicate-cards.ts` re-scans. When merging, the survivor is
+  chosen by review history, but audio lives independently of it — copy the
+  losing card's `recording_id`/`audio_start_sec`/`audio_end_sec`/`clip_path`
+  onto the survivor before deleting, or a clip is lost.
 - **Data in the DB is not necessarily chatifai's.** `paradigms` has no
   verification column, and its dialogues transliterate ض inconsistently while the
   cards table is uniform. Check provenance before putting content in front of the
