@@ -1,3 +1,7 @@
+> **Superseded by `docs/handoff-2026-08-01.md`.** Kept for the deep-research
+> prompts in the appendices, which were run — results in
+> `docs/research-2026-07-31-four-features.md`. Note status below is stale.
+
 # מלאי משימות מקובץ לפי נושא — 2026-07-31
 
 כל 16 הפתקים הפתוחים + הפריטים התלויים מה-handoff, מקובצים לפי הפיצ'ר שהם נוגעים בו.

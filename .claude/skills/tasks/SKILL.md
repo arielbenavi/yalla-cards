@@ -71,6 +71,18 @@ Nothing is done because the code looks right.
 
 ## 4. Content rules that override convenience
 
+**chatifai invents things — corroborate before applying.** Four fabrications
+caught in one session: `לַוְזִין`/`לַקְטַה` (uncorroborated), `עַ-בַּלַאש` (glossed
+"meanwhile", means *for free*), `מוחד` (not a word, in both columns), `מַיַّאתִי`
+(not a real inflection). When a replacement cannot be corroborated, **delete the
+phrase rather than substitute** — a shorter correct sentence beats a longer
+invented one.
+
+**Never paste chatifai's "polished version".** It marks lines תקין and then drops
+shaddas from them. It once wrote `וַקֵע` for `וַקֵّע` on a line it called "תקין
+מאוד" — turning *sign here* into *fall here*. Take the per-line verdicts only.
+Its summary counts are unreliable too; it reported ض in ض-free lines three times.
+
 **chatifai is the only authority on Arabic.** Never invent, correct, or "fix"
 vocalisation from general Arabic knowledge, and never substitute another model.
 Doubtful cells go in a `flags` field with `chatifai_verified = false` until
