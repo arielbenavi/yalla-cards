@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Rating } from "ts-fsrs";
+import { buildPersonChoices, personsMatching, formOf } from "@/lib/inflections";
 
 type Track = "recognition" | "production" | "audio";
 
@@ -24,9 +25,6 @@ type VerbBrief = {
   forms: Record<string, string>;
   forms_translit?: Record<string, string>;
 };
-
-// Pronoun keys in display order
-const PRONOUN_KEYS = ["ana", "inta", "inti", "huwwe", "hiyye", "ihna", "intu", "hum"] as const;
 
 // Arabic display labels for each pronoun
 const PRONOUN_AR: Record<string, string> = {
@@ -73,18 +71,6 @@ function pickPronoun(forms: Record<string, string>): string {
   return keys[Math.floor(Math.random() * keys.length)];
 }
 
-function buildRecognitionChoices(
-  correct: string,
-  allVerbs: VerbBrief[],
-  currentVerbId: string
-): string[] {
-  const distractors = allVerbs
-    .filter((v) => v.id !== currentVerbId && v.meaning_he !== correct)
-    .map((v) => v.meaning_he);
-  const picked = shuffle(distractors).slice(0, 3);
-  return shuffle([correct, ...picked]);
-}
-
 function buildAudioChoices(
   correct: string,
   pronoun: string,
@@ -97,15 +83,6 @@ function buildAudioChoices(
     .filter((f): f is string => !!f && f !== correct);
   const picked = shuffle(distractors).slice(0, 3);
   return shuffle([correct, ...picked]);
-}
-
-/** The learner reads transliteration, not Arabic script — prefer it wherever a
- *  verb has a chatifai paradigm, and fall back to Arabic for the seed verbs. */
-function formOf(
-  v: { forms: Record<string, string>; forms_translit?: Record<string, string> },
-  person: string
-): string {
-  return v.forms_translit?.[person] || v.forms[person] || "";
 }
 
 function normalise(s: string): string {
@@ -158,7 +135,7 @@ export default function InflectionsPage() {
     setGrading(false);
 
     if (item.track === "recognition") {
-      setChoices(buildRecognitionChoices(item.meaning_he, allVerbs, item.verb_id));
+      setChoices(buildPersonChoices(item, p, shuffle));
     } else if (item.track === "audio") {
       const correct = formOf(item, p);
       setChoices(buildAudioChoices(correct, p, allVerbs, item.verb_id));
@@ -178,9 +155,14 @@ export default function InflectionsPage() {
   const item = items[index];
   const correct = item
     ? item.track === "recognition"
-      ? item.meaning_he
+      ? pronoun
       : formOf(item, pronoun)
     : "";
+
+  // Syncretic persons share a spelling, so more than one option can be right.
+  const acceptedPersons = item && item.track === "recognition"
+    ? personsMatching(item, pronoun)
+    : null;
 
   async function submitGrade(rating: number) {
     if (!item || grading) return;
@@ -198,9 +180,11 @@ export default function InflectionsPage() {
     if (answered) return;
     setSelected(choice);
     setAnswered(true);
-    // Auto-grade: correct → Good, wrong → Again
-    const rating = choice === correct ? Rating.Good : Rating.Again;
-    submitGrade(rating);
+    // Auto-grade: correct → Good, wrong → Again. For recognition, any person
+    // sharing the target's spelling is correct — marking a syncretic form wrong
+    // would penalise the learner for the language's own ambiguity.
+    const ok = acceptedPersons ? acceptedPersons.has(choice) : choice === correct;
+    submitGrade(ok ? Rating.Good : Rating.Again);
   }
 
   function handleProductionSubmit(e: React.FormEvent) {
@@ -249,7 +233,7 @@ export default function InflectionsPage() {
         {item.track === "recognition" && (
           <RecognitionPrompt
             form={formOf(item, pronoun)}
-            pronoun={pronoun}
+            meaningHe={item.meaning_he}
           />
         )}
         {item.track === "production" && (
@@ -271,9 +255,13 @@ export default function InflectionsPage() {
             wasCorrect={
               item.track === "production"
                 ? normalise(typed) === normalise(correct)
+                : acceptedPersons
+                ? !!selected && acceptedPersons.has(selected)
                 : selected === correct
             }
-            correctForm={correct}
+            correctForm={
+              item.track === "recognition" ? PRONOUN_HE[correct] ?? correct : correct
+            }
             track={item.track}
           />
         )}
@@ -290,7 +278,16 @@ export default function InflectionsPage() {
                   onClick={() => handleMcSelect(ch)}
                   className="rounded-xl border border-gray-200 dark:border-gray-700 py-4 text-base font-medium active:bg-gray-50 dark:active:bg-gray-800"
                 >
-                  {ch}
+                  {item.track === "recognition" ? (
+                    <>
+                      {PRONOUN_HE[ch] ?? ch}{" "}
+                      <span className="text-gray-400" style={{ fontFamily: "serif" }}>
+                        {PRONOUN_AR[ch] ?? ""}
+                      </span>
+                    </>
+                  ) : (
+                    ch
+                  )}
                 </button>
               ))}
             </div>
@@ -352,13 +349,12 @@ export default function InflectionsPage() {
 
 /* ── Sub-components ── */
 
-function RecognitionPrompt({ form, pronoun }: { form: string; pronoun: string }) {
+function RecognitionPrompt({ form, meaningHe }: { form: string; meaningHe: string }) {
   return (
     <div className="flex flex-col items-center gap-2">
-      <p className="text-sm text-gray-500">
-        {PRONOUN_HE[pronoun]} ({PRONOUN_AR[pronoun]}) — מה המשמעות?
-      </p>
-      <p className="text-4xl font-bold" dir="rtl" style={{ fontFamily: "serif" }}>
+      {/* The meaning is given so the puzzle is the person, not the vocabulary. */}
+      <p className="text-sm text-gray-500">{meaningHe} — מי?</p>
+      <p className="nikud-text text-4xl font-bold" dir="rtl">
         {form}
       </p>
     </div>
