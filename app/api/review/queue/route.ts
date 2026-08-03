@@ -15,6 +15,30 @@ export async function GET(request: Request) {
   const cardSelect =
     "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path, lesson_id, audio_start_sec, audio_end_sec)";
 
+  // PostgREST returns at most 1000 rows per request. card_srs is at ~974 and
+  // growing, so these reads are about to start truncating silently. Paging
+  // changes no behaviour today — it keeps each query returning everything it
+  // already intends to return.
+  //
+  // The new-card query is the one that would break worst: it fetches `due ASC`
+  // and then re-ranks newest-lesson-first in memory, so a cap would drop the
+  // newest lessons — precisely the cards that ranking exists to surface —
+  // before the ranking ever ran.
+  type Paged<T> = { data: T[] | null; error: { message: string } | null };
+  async function fetchAll<T>(
+    build: () => { range: (a: number, b: number) => PromiseLike<Paged<T>> }
+  ): Promise<Paged<T>> {
+    const out: T[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await build().range(from, from + 999);
+      if (error) return { data: null, error };
+      if (!data?.length) break;
+      out.push(...data);
+      if (data.length < 1000) break;
+    }
+    return { data: out, error: null };
+  }
+
   let rows;
 
   if (modeSelected && idsParam) {
@@ -28,10 +52,9 @@ export async function GET(request: Request) {
     const shuffled = (data ?? []).slice().sort(() => Math.random() - 0.5);
     rows = shuffled;
   } else if (modeAll) {
-    const { data, error } = await supabase
-      .from("card_srs")
-      .select(cardSelect)
-      .order("due", { ascending: true });
+    const { data, error } = await fetchAll(() =>
+      supabase.from("card_srs").select(cardSelect).order("due", { ascending: true })
+    );
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     rows = (data ?? []).slice().sort(() => Math.random() - 0.5);
   } else {
@@ -54,14 +77,17 @@ export async function GET(request: Request) {
       .gte("reviewed_at", startOfDay.toISOString());
     const easyTodayIds = (easyTodayRows ?? []).map((r) => r.card_srs_id);
 
-    let dueQuery = supabase
-      .from("card_srs")
-      .select(cardSelect)
-      .neq("state", State.New)
-      .lte("due", now)
-      .order("due", { ascending: true });
-    if (easyTodayIds.length > 0) dueQuery = dueQuery.not("id", "in", `(${easyTodayIds.join(",")})`);
-    const { data: dueRows, error: dueError } = await dueQuery;
+    const buildDue = () => {
+      let q = supabase
+        .from("card_srs")
+        .select(cardSelect)
+        .neq("state", State.New)
+        .lte("due", now)
+        .order("due", { ascending: true });
+      if (easyTodayIds.length > 0) q = q.not("id", "in", `(${easyTodayIds.join(",")})`);
+      return q;
+    };
+    const { data: dueRows, error: dueError } = await fetchAll(buildDue);
 
     if (dueError) return NextResponse.json({ error: dueError.message }, { status: 500 });
 
@@ -71,20 +97,23 @@ export async function GET(request: Request) {
       // insertion order, which drip-feeds the earliest lessons for months while the
       // current lesson's words never surface. Within a lesson `due ASC` still holds,
       // so lesson progression is preserved — that part is intentional.
-      let newQuery = supabase
-        .from("card_srs")
-        .select(cardSelect)
-        .eq("state", State.New)
-        .lte("due", now)
-        .order("due", { ascending: true });
-      if (easyTodayIds.length > 0) newQuery = newQuery.not("id", "in", `(${easyTodayIds.join(",")})`);
-      const { data: newCandidates, error: newError } = await newQuery;
+      const buildNew = () => {
+        let q = supabase
+          .from("card_srs")
+          .select(cardSelect)
+          .eq("state", State.New)
+          .lte("due", now)
+          .order("due", { ascending: true });
+        if (easyTodayIds.length > 0) q = q.not("id", "in", `(${easyTodayIds.join(",")})`);
+        return q;
+      };
+      const { data: newCandidates, error: newError } = await fetchAll(buildNew);
       if (newError) return NextResponse.json({ error: newError.message }, { status: 500 });
 
       const { data: lessonRows } = await supabase.from("lessons").select("id, date");
       // Lessonless cards sort last, never ahead of a real lesson
       const lessonDate = new Map((lessonRows ?? []).map((l) => [l.id, l.date ?? ""]));
-      const rank = (row: (typeof newCandidates)[number]) => {
+      const rank = (row: NonNullable<typeof newCandidates>[number]) => {
         const card = Array.isArray(row.card) ? row.card[0] : row.card;
         return lessonDate.get(card?.lesson_id ?? "") ?? "";
       };
