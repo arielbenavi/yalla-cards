@@ -21,11 +21,17 @@ const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
   realtime: { transport: class {} as any },
 });
 
+// Final letter forms have to be folded, or the clitic check silently never
+// matches: כִּיפַכּ strips to כיפכ, whose base is כיפ — while the card that
+// already exists is כיף. Same letter, different codepoint, no match.
+const FINALS: Record<string, string> = { ך: "כ", ם: "מ", ן: "נ", ף: "פ", ץ: "צ" };
+
 const strip = (w: string) =>
   w
     .normalize("NFC")
     .replace(/[֑-ׇ]/g, "")
     .replace(/[.,?!״"'’—…]/g, "")
+    .replace(/[ךםןףץ]/g, (c) => FINALS[c])
     .replace(/^[ובלכשמ]?-?(?:אל|אִל|א)-/, "")
     .trim();
 
@@ -51,6 +57,38 @@ const FUNCTION_WORDS = new Set([
   "לו", "הון", "הנאכ", "אלכ", "בדכ", "בדי", "ענדכ", "ענדי", "ענדנא", "מעו",
   "אלה", "אללה", "ואללה", "ל", "ב", "עלי", "עליك",
 ]);
+
+// Clitics that attach to a word in this transliteration. The first pass counted
+// כִּיפַכּ, אִסְמִי and עַלֵיכּ as three words needing cards while כִּיף, אִסֵם and
+// עַלַא all already had one — inflection is not missing vocabulary, and a list
+// that cannot tell the difference is not actionable.
+const SUFFIXES = ["כם", "הם", "כי", "הא", "נא", "ני", "כ", "ו", "י", "ה"];
+const PREFIXES = ["ו", "ב", "ל", "כ", "ע", "פ"];
+
+/**
+ * True if the word is `base + clitic` (or `clitic + base`) for a word that
+ * already has a card. Only strips when the residue is a real card, so a word
+ * that merely happens to end in י is never dropped.
+ */
+function reducesToOwned(w: string, owned: Set<string>): boolean {
+  for (const s of SUFFIXES) {
+    if (w.length > s.length + 1 && w.endsWith(s) && owned.has(w.slice(0, -s.length))) return true;
+  }
+  for (const p of PREFIXES) {
+    if (w.length > p.length + 1 && w.startsWith(p) && owned.has(w.slice(p.length))) return true;
+  }
+  // Both at once — וְעַלֵיכּ.
+  for (const p of PREFIXES) {
+    if (!w.startsWith(p)) continue;
+    const mid = w.slice(p.length);
+    for (const s of SUFFIXES) {
+      if (mid.length > s.length + 1 && mid.endsWith(s) && owned.has(mid.slice(0, -s.length))) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 async function all<T>(table: string, cols: string): Promise<T[]> {
   const out: T[] = [];
@@ -79,6 +117,7 @@ async function main() {
   const score = new Map<string, { phrases: number; dialogues: number; example: string }>();
   const bump = (w: string, key: "phrases" | "dialogues", example: string) => {
     if (!w || owned.has(w) || NAMES.has(w) || FUNCTION_WORDS.has(w)) return;
+    if (reducesToOwned(w, owned)) return;
     const e = score.get(w) ?? { phrases: 0, dialogues: 0, example: example };
     e[key]++;
     score.set(w, e);
