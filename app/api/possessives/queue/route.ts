@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import {
   nextContrast,
+  buildMastery,
   buildPair,
   checkMinimalPair,
   FEATURE_LABEL,
-  type ContrastMastery,
   type Feature,
   type PossessiveForm,
 } from "@/lib/possessives";
@@ -52,28 +52,7 @@ export async function GET(request: Request) {
     });
   }
 
-  const mastery = new Map<string, ContrastMastery>();
-  for (const a of attempts ?? []) {
-    if (!a.contrast_with) continue;
-    const key = [a.target_feature, a.contrast_with].sort().join(">");
-    const m = mastery.get(key) ?? { trials: 0, correct: 0 };
-    m.trials++;
-    if (a.correct) m.correct++;
-    mastery.set(key, m);
-  }
-  // nextContrast keys on the ordered pair, so mirror the sorted keys onto it
-  const ordered = new Map<string, ContrastMastery>();
-  for (const [a, b] of [
-    ["his", "her"],
-    ["your_m", "your_f"],
-    ["my", "our"],
-    ["your_pl", "their"],
-  ] as [Feature, Feature][]) {
-    const m = mastery.get([a, b].sort().join(">"));
-    if (m) ordered.set(`${a}>${b}`, m);
-  }
-
-  const [featA, featB] = nextContrast(ordered);
+  const [featA, featB] = nextContrast(buildMastery(attempts ?? []));
 
   const byBase = new Map<string, Map<Feature, PossessiveForm>>();
   for (const f of forms as PossessiveForm[]) {

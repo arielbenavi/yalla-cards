@@ -12,6 +12,9 @@ import {
   nextContrast,
   CONTRAST_ORDER,
   type ContrastMastery,
+  buildMastery,
+  solidContrasts,
+  gradeProduction,
 } from "../../lib/possessives";
 
 let passed = 0;
@@ -86,6 +89,53 @@ test("progression starts at his/her and stays until solid", () => {
   // Solid — move on to the next contrast, not to the full paradigm
   mastery.set("his>her", { trials: 10, correct: 10 });
   assert.deepEqual(nextContrast(mastery), CONTRAST_ORDER[1]);
+});
+
+
+test("buildMastery counts his>her and her>his as one contrast", () => {
+  // Attempts store whichever feature happened to be the target. Counting them
+  // as two contrasts halves every total and pins the learner on contrast one.
+  const m = buildMastery([
+    { target_feature: "his", contrast_with: "her", correct: true },
+    { target_feature: "her", contrast_with: "his", correct: true },
+    { target_feature: "her", contrast_with: "his", correct: false },
+  ]);
+  assert.deepEqual(m.get("his>her"), { trials: 3, correct: 2 });
+});
+
+test("buildMastery ignores attempts with no contrast recorded", () => {
+  const m = buildMastery([{ target_feature: "his", contrast_with: null, correct: true }]);
+  assert.equal(m.size, 0);
+});
+
+test("stage 3 unlocks nothing until a contrast is solid", () => {
+  assert.deepEqual(solidContrasts(new Map()), []);
+  const m = new Map<string, ContrastMastery>([["his>her", { trials: 10, correct: 7 }]]);
+  assert.deepEqual(solidContrasts(m), []);
+});
+
+test("stage 3 unlocks exactly the contrasts that are solid", () => {
+  const m = new Map<string, ContrastMastery>([
+    ["his>her", { trials: 10, correct: 10 }],
+    ["my>our", { trials: 10, correct: 6 }],
+  ]);
+  assert.deepEqual(solidContrasts(m), [["his", "her"]]);
+});
+
+test("typed production grades on consonants, not on nikud", () => {
+  assert.equal(gradeProduction("ביתהא", "בֵּיתְהַא"), true);
+  assert.equal(gradeProduction("בֵּיתְהַא", "בֵּיתְהַא"), true);
+  assert.equal(gradeProduction("  ביתהא  ", "בֵּיתְהַא"), true);
+});
+
+test("typed production still rejects the wrong suffix", () => {
+  // The whole point of the drill — ביתו and ביתהא differ only in the morpheme.
+  assert.equal(gradeProduction("ביתו", "בֵּיתְהַא"), false);
+});
+
+test("an empty answer is never correct", () => {
+  assert.equal(gradeProduction("", "בֵּיתְהַא"), false);
+  assert.equal(gradeProduction("   ", "בֵּיתְהַא"), false);
 });
 
 console.log(`\n${passed} passed`);

@@ -135,6 +135,40 @@ export function buildPair(
 export type ContrastMastery = { trials: number; correct: number };
 
 /**
+ * Mastery per contrast, keyed the way CONTRAST_ORDER writes it.
+ *
+ * Attempts are stored with whichever feature happened to be the target, so
+ * his>her and her>his are the same contrast and must be counted together. The
+ * sort-then-rekey is what makes that true; getting it wrong halves every count
+ * and keeps the learner on contrast one forever.
+ */
+export function buildMastery(
+  attempts: { target_feature: string; contrast_with: string | null; correct: boolean }[]
+): Map<string, ContrastMastery> {
+  const bySorted = new Map<string, ContrastMastery>();
+  for (const a of attempts) {
+    if (!a.contrast_with) continue;
+    const k = [a.target_feature, a.contrast_with].sort().join(">");
+    const m = bySorted.get(k) ?? { trials: 0, correct: 0 };
+    m.trials++;
+    if (a.correct) m.correct++;
+    bySorted.set(k, m);
+  }
+
+  const ordered = new Map<string, ContrastMastery>();
+  for (const pair of CONTRAST_ORDER) {
+    const m = bySorted.get([...pair].sort().join(">"));
+    if (m) ordered.set(pair.join(">"), m);
+  }
+  return ordered;
+}
+
+/** Eight trials at 85% — the bar for calling a contrast learned. */
+export function isContrastSolid(m: ContrastMastery | undefined): boolean {
+  return !!m && m.trials >= 8 && m.correct / m.trials >= 0.85;
+}
+
+/**
  * Which contrast to drill. Work down CONTRAST_ORDER and stay on the first one
  * that is not yet solid — non-paradigmatic progression, one contrast at a time.
  */
@@ -142,9 +176,41 @@ export function nextContrast(
   mastery: Map<string, ContrastMastery>
 ): [Feature, Feature] {
   for (const pair of CONTRAST_ORDER) {
-    const m = mastery.get(pair.join(">"));
-    if (!m || m.trials < 8 || m.correct / m.trials < 0.85) return pair;
+    if (!isContrastSolid(mastery.get(pair.join(">")))) return pair;
   }
   // Everything solid — cycle for maintenance
   return CONTRAST_ORDER[Math.floor(Math.random() * CONTRAST_ORDER.length)];
+}
+
+/**
+ * Contrasts that stage 3 may draw on.
+ *
+ * The spec gates production on the identification row reaching FSRS state
+ * Review. This drill deliberately writes no FSRS state at all — it is a practice
+ * layer — so the same gate is expressed with the mastery signal the drill does
+ * record. The ordering principle is what matters and it is preserved: you cannot
+ * be asked to produce a contrast you cannot yet recognise.
+ */
+export function solidContrasts(mastery: Map<string, ContrastMastery>): [Feature, Feature][] {
+  return CONTRAST_ORDER.filter((pair) => isContrastSolid(mastery.get(pair.join(">"))));
+}
+
+/**
+ * Grading form for typed production. Nikud is stripped: a learner who types the
+ * right consonants has produced the right word, and failing him over a missing
+ * dot would punish the keyboard rather than the grammar. The fully-pointed form
+ * is still what gets shown on reveal.
+ */
+export function normaliseTyped(s: string): string {
+  return s
+    .normalize("NFC")
+    .replace(/[֑-ׇ]/g, "")
+    .replace(/[ًٌٍَُِّْٰ]/g, "")
+    .replace(/[.,?!״"'’\-־]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function gradeProduction(typed: string, expected: string): boolean {
+  return !!normaliseTyped(typed) && normaliseTyped(typed) === normaliseTyped(expected);
 }
