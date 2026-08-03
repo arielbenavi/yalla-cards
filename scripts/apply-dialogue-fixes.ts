@@ -33,11 +33,41 @@ const DAD_WORDS: [string, string][] = [["תְפַדַּ'ל", "תְפַצַּ'ל"
 const GLOBAL_WORDS: [string, string][] = [
   ["شقل", "شيكل"],
   ["שֵׁקֶל", "שֵׁיכֵּל"],
+
+  // Rulings chatifai gave during the simulation_doctor audit (2026-08-02) that
+  // are conventions, not one-line corrections, so they apply everywhere the
+  // same defect appears. Nothing here is my own judgement about Arabic.
+  //
+  // ظ is ט׳ in the cards table; the generator wrote ז׳. chatifai: "ז׳ יוצר
+  // הגייה לא מדויקת", and confirmed ט׳ matches the existing convention.
+  ["יִחְפַזַ'כּ", "יִחְפַטַ'כּ"],
+  // الله is אַללַّה with patah in all three cards that contain it; the
+  // generator wrote אִללַّה.
+  ["אִללַּה", "אַללַּה"],
+  // أنا is אַנַא with patah, not חטף פתח — chatifai corrected this silently in
+  // doctor line 2 and it recurs across the dialogues.
+  ["אֲנַא", "אַנַא"],
 ];
 
 // Nikud combining marks come back from Postgres in a different normalisation
 // than a TS source literal, so identical-looking strings compare unequal.
 const norm = (s: string) => s.normalize("NFC");
+
+/** Applies the pass-1 word corrections to a string. */
+const globalizeText = (s: string) => {
+  let out = s;
+  for (const [from, to] of [...DAD_WORDS, ...GLOBAL_WORDS]) out = out.split(from).join(to);
+  return out;
+};
+
+/** Same, over every text field of a fix's replacement cell. */
+const globalizeCell = <T extends Record<string, unknown>>(cell: T): T => {
+  const out: Record<string, unknown> = { ...cell };
+  for (const k of ["translit", "ar", "he"]) {
+    if (typeof out[k] === "string") out[k] = globalizeText(out[k] as string);
+  }
+  return out as T;
+};
 
 /** Pass 1: mechanical corrections that need no per-dialogue audit, applied to
  *  EVERY simulation dialogue. ض written as ד׳ turned up in four out of four
@@ -52,9 +82,27 @@ async function applyGlobalWordFixes(): Promise<number> {
 
   let changed = 0;
   for (const row of data ?? []) {
-    const d = row.data as { turns?: Turn[] };
+    const d = row.data as { turns?: Turn[]; vocab?: { he?: string; meaning?: string }[] };
     const turns: Turn[] = structuredClone(d.turns ?? []);
+    // Each dialogue also carries a `vocab` list shown alongside it. It was
+    // missed by every earlier pass, so simulation_cafe's vocabulary still
+    // taught פַאדִי with ד׳ for ض long after the dialogue lines were fixed.
+    const vocab = structuredClone(d.vocab ?? []);
     let touched = false;
+
+    for (const v of vocab) {
+      for (const [from, to] of [...DAD_WORDS, ...GLOBAL_WORDS]) {
+        for (const field of ["he", "meaning"] as const) {
+          const val = v[field];
+          if (val?.includes(from)) {
+            v[field] = val.split(from).join(to);
+            console.log(`  ${row.slug} (vocab): ${from} → ${to}`);
+            touched = true;
+            changed++;
+          }
+        }
+      }
+    }
 
     for (const t of turns) {
       for (const cell of [t, ...(t.options ?? [])]) {
@@ -75,7 +123,7 @@ async function applyGlobalWordFixes(): Promise<number> {
     if (touched && APPLY) {
       const { error } = await sb
         .from("paradigms")
-        .update({ data: { ...(row.data as object), turns } })
+        .update({ data: { ...(row.data as object), turns, vocab } })
         .eq("id", row.id);
       if (error) throw error;
     }
@@ -114,11 +162,7 @@ async function main() {
     // The global word pass rewrites stored text after a per-dialogue fix landed
     // (שֵׁקֶל → שֵׁיכֵּל), so the fix's literal target no longer appears. Compare
     // against the globally-corrected form or already-applied fixes read as drift.
-    const globalized = (s: string) => {
-      let out = s;
-      for (const [from, to] of [...DAD_WORDS, ...GLOBAL_WORDS]) out = out.split(from).join(to);
-      return norm(out);
-    };
+    const globalized = (s: string) => norm(globalizeText(s));
     const presentGlobalized = new Set([...present].map((p) => globalized(p)));
     for (const f of dialogue.fixes) {
       if (!f.to.translit) continue;
@@ -137,8 +181,21 @@ async function main() {
         for (const fix of dialogue.fixes) {
           if (norm(cell.translit) === norm(fix.match)) {
             unmatched.delete(fix.match);
+            // A fix that only corrects `ar` or `he` leaves the translit alone,
+            // so it keeps matching after it has landed. Skip it once the cell
+            // already says what the fix wants, or every run reports a change.
+            const want = globalizeCell(fix.to) as Record<string, string>;
+            const settled = Object.entries(want).every(
+              ([k, v]) => norm((cell as Record<string, string>)[k] ?? "") === norm(v)
+            );
+            if (settled) continue;
             applied.push(`  ${fix.match}\n    → ${fix.to.translit ?? cell.translit}\n    ${fix.reason}`);
-            Object.assign(cell, fix.to);
+            // The per-dialogue fixes were written before the global word
+            // corrections existed, so their literals still say شقل / שֵׁקֶל /
+            // אִללַّה. Pass 1 fixes those in the stored data and this pass used
+            // to write them straight back, so the two passes fought each run.
+            // Route the replacement through the same table before assigning.
+            Object.assign(cell, globalizeCell(fix.to));
           }
         }
 
