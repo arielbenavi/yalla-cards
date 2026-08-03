@@ -8,10 +8,22 @@ test.describe("stored dialogues on /simulate", () => {
     const verified = await page.request.get("/api/dialogues").then((r) => r.json());
     const all = await page.request.get("/api/dialogues?all=1").then((r) => r.json());
 
-    expect(all.total).toBeGreaterThan(verified.dialogues.length);
+    // The invariant is that nothing unverified is ever served. This used to be
+    // checked as `all.total > served`, which only held while some dialogues were
+    // still unverified — once all 15 were verified it started failing on
+    // success. Assert the filter directly instead, so it keeps working whatever
+    // the verified count is.
+    expect(verified.dialogues.length).toBeLessThanOrEqual(all.total);
     for (const d of verified.dialogues) {
       expect(d.verified, `${d.key} served without verification`).toBe(true);
     }
+
+    const unverified = (all.dialogues ?? []).filter((d: { verified: boolean }) => !d.verified);
+    const servedKeys = new Set(verified.dialogues.map((d: { key: string }) => d.key));
+    for (const d of unverified) {
+      expect(servedKeys.has(d.key), `${d.key} is unverified but served`).toBe(false);
+    }
+    expect(verified.dialogues.length).toBe(all.total - unverified.length);
   });
 
   test("walking a dialogue requires answering the choice point", async ({ page }) => {
