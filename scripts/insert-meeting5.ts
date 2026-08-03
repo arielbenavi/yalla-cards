@@ -11,6 +11,7 @@
 //   npx tsx scripts/insert-meeting5.ts          # dry run
 //   npx tsx scripts/insert-meeting5.ts --apply
 import { config } from "dotenv";
+import { normalizeMarks, assertClean } from "./lib/normalize-marks";
 import { createClient } from "@supabase/supabase-js";
 import { NOTES, COLOURS, COLOURS_EXTRA, BOOK, type V } from "./data/meeting5-verified";
 
@@ -54,12 +55,11 @@ async function main() {
 
   // Validate before touching anything — a Hebrew word in the Arabic column has
   // slipped through three times on this project.
+  // Normalise codepoints BEFORE validating, then refuse anything still mixed.
   for (const r of rows) {
-    if (!r.translit || !r.ar || !r.he) throw new Error(`שדה ריק: ${JSON.stringify(r)}`);
-    if (!ARABIC.test(r.ar) || HEBREW.test(r.ar)) throw new Error(`ערבית פגומה: ${r.ar}`);
-    if (!HEBREW.test(r.translit) || ARABIC.test(r.translit)) {
-      throw new Error(`תעתיק פגום: ${r.translit}`);
-    }
+    r.translit = normalizeMarks(r.translit);
+    assertClean(r.translit.slice(0, 30), r.translit, r.ar);
+    if (!r.he?.trim()) throw new Error(`אין פירוש עברי: ${r.translit}`);
   }
 
   const known = new Set<string>();
