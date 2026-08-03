@@ -57,6 +57,44 @@ async function main() {
     if (data.length < 1000) break;
   }
 
+  // verbs — forms/forms_full are nested {translit, arabic} per person
+  const { data: verbs } = await sb
+    .from("verb_conjugations")
+    .select("id, root_translit, meaning_he, forms, forms_full");
+  for (const v of verbs ?? []) {
+    for (const f of ["root_translit", "meaning_he"] as const) {
+      const why = mixed((v as Record<string, string>)[f] ?? "");
+      if (why) report(`verb ${v.id}`, f, (v as Record<string, string>)[f], why);
+    }
+    JSON.stringify(v.forms ?? {}, (k, val) => {
+      if (typeof val === "string" && k === "translit") {
+        const why = mixed(val);
+        if (why) report(`verb ${v.id}`, `forms.${k}`, val, why);
+      }
+      return val;
+    });
+  }
+
+  // possessives
+  const { data: poss } = await sb
+    .from("possessive_forms")
+    .select("id, base_translit, base_he, form_translit, form_he");
+  for (const p of poss ?? []) {
+    for (const f of ["base_translit", "base_he", "form_translit", "form_he"] as const) {
+      const why = mixed((p as Record<string, string>)[f] ?? "");
+      if (why) report(`poss ${p.id}`, f, (p as Record<string, string>)[f], why);
+    }
+  }
+
+  // songs — `line` is the Hebrew transliteration, words[].he the gloss
+  const { data: songs } = await sb.from("songs").select("id, title, lyrics_parsed");
+  for (const s of songs ?? []) {
+    for (const [i, l] of ((s.lyrics_parsed as Record<string, unknown>[]) ?? []).entries()) {
+      const why = mixed((l.line as string) ?? "");
+      if (why) report(`song ${s.title} שורה ${i + 1}`, "line", l.line as string, why);
+    }
+  }
+
   // dialogues
   const { data: rows } = await sb.from("paradigms").select("slug, data").like("slug", "simulation_%");
   for (const r of rows ?? []) {
