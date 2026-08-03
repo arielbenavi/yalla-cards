@@ -95,9 +95,13 @@ export async function GET() {
       // drill that asks them to place عني in a box tests nothing they know yet.
       // Skip Arabic script, and skip "variant" columns: an alternate form is a
       // note on the main answer, not a paradigm of its own to drill.
+      // Match the suffix too, not just the exact name: the colours paradigm
+      // carries m_ar / f_ar / pl_ar alongside its transliteration columns, and
+      // an exact-match list would have turned each of those into a drill that
+      // asks the learner to place أحمر in a box.
       const SKIP_COLS = new Set(["ar", "arabic", "arabic_script", "variant", "note"]);
       const columns = Object.keys(data.rows[0]).filter(
-        (k) => k !== "person" && !SKIP_COLS.has(k)
+        (k) => k !== "person" && !SKIP_COLS.has(k) && !k.endsWith("_ar")
       );
       for (const col of columns) {
         const slots = data.rows
