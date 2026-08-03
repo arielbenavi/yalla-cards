@@ -50,7 +50,12 @@ export const DECISIONS: Decision[] = [
   { keep: "9f620112", drop: "1047972c", meaning: "קו (גם קו אוטובוס)" },
   { keep: "2a984190", drop: "f41ee385", meaning: "עַם / אומה" },
   { keep: "538efd3c", drop: "87884ddb", meaning: "מאחורי", why: "ورا המדובר, לא وراء הספרותי" },
-  { keep: "fc22d87e", drop: "b202999f", meaning: "טוב / בסדר", why: "مناح שגוי, منيح נכון" },
+  // REVERTED 2026-08-03 — this merge was wrong and the card has been restored
+  // by scripts/restore-manah-card.ts. مناح is not a misspelling of منيح, it is
+  // its PLURAL, and chatifai was explicit that they are not interchangeable:
+  // منيح for a singular person or a general state, مناح only for a group.
+  // I made that call myself instead of asking. Left here as the record.
+  // { keep: "fc22d87e", drop: "b202999f", meaning: "טוב / בסדר" },
   { keep: "4fbb0275", drop: "491d3f02", meaning: "ילד / בן" },
   { keep: "b1545d68", drop: "9de1121d", meaning: "חבר / בעל מקום" },
   { keep: "58171ee2", drop: "ecb06cca", meaning: "אשר / ש..." },

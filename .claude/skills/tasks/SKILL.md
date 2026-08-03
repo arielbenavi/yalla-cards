@@ -83,8 +83,26 @@ shaddas from them. It once wrote `וַקֵע` for `וַקֵّע` on a line it ca
 מאוד" — turning *sign here* into *fall here*. Take the per-line verdicts only.
 Its summary counts are unreliable too; it reported ض in ض-free lines three times.
 
-**chatifai is the only authority on Arabic.** Never invent, correct, or "fix"
-vocalisation from general Arabic knowledge, and never substitute another model.
+**chatifai is the only authority on Arabic — including when two cards look like
+duplicates.** On 2026-08-03 I judged `مناح` a misspelling of `منيح` and deleted
+the card. It is the **plural**, and the two are not interchangeable. Deciding
+which of two spellings is "wrong" is an Arabic ruling, and merging duplicates is
+where that decision hides in what looks like a data-cleanup task. Ask first,
+every time. Three other calls I made the same day happened to be right — that is
+not the point, because I could not know which was which.
+
+Corollary: when two cards share a transliteration and differ only in Arabic,
+suspect an inflected form before suspecting an error.
+
+**Take chatifai's output as characters, not as a reading of it.** Its replies are
+read from the DOM (`read_page` / `get_page_text`) — the agent has no screenshot
+tool and nothing is ever OCR'd. Paste what it printed. The one adjustment that is
+permitted is codepoint identity: its Hebrew transliteration often carries Arabic
+shadda U+0651 where Hebrew dagesh U+05BC belongs. `apply-dialogue-fixes.ts` maps
+those automatically — same mark, right codepoint, no change to its wording.
+
+**Never invent, correct, or "fix"** vocalisation from general Arabic knowledge,
+and never substitute another model.
 Doubtful cells go in a `flags` field with `chatifai_verified = false` until
 chatifai rules on them. Composing a scenario or picking which words to ask about
 is fine — inventing the Arabic is not. Use the `chatifai` agent.
