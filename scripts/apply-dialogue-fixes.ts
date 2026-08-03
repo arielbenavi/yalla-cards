@@ -53,9 +53,30 @@ const GLOBAL_WORDS: [string, string][] = [
 // than a TS source literal, so identical-looking strings compare unequal.
 const norm = (s: string) => s.normalize("NFC");
 
+// chatifai's replies mix Arabic shadda (U+0651) into Hebrew transliteration
+// where Hebrew dagesh (U+05BC) belongs — they render identically, so pasting
+// its text verbatim carries the wrong codepoint in silently, and U+0651
+// survives translit_normalized and breaks dedup. This is a character-identity
+// correction, not an edit to what chatifai said: same mark, right codepoint.
+const AR_TO_HE_MARK: [RegExp, string][] = [
+  [/ّ/g, "ּ"],
+  [/َ/g, "ַ"],
+  [/ُ/g, "ֻ"],
+  [/ِ/g, "ִ"],
+  [/ْ/g, "ְ"],
+];
+const HEBREW_LETTER = /[א-ת]/;
+const ARABIC_LETTER = /[ء-ي]/;
+
+/** Only for text that is Hebrew — an Arabic line keeps its own marks. */
+const normalizeMarks = (s: string) => {
+  if (!HEBREW_LETTER.test(s) || ARABIC_LETTER.test(s)) return s;
+  return AR_TO_HE_MARK.reduce((acc, [re, to]) => acc.replace(re, to), s);
+};
+
 /** Applies the pass-1 word corrections to a string. */
 const globalizeText = (s: string) => {
-  let out = s;
+  let out = normalizeMarks(s);
   for (const [from, to] of [...DAD_WORDS, ...GLOBAL_WORDS]) out = out.split(from).join(to);
   return out;
 };
@@ -179,7 +200,9 @@ async function main() {
         if (!cell.translit) continue;
 
         for (const fix of dialogue.fixes) {
-          if (norm(cell.translit) === norm(fix.match)) {
+          // Compare through the same normalisation, so a match string pasted
+          // from chatifai with an Arabic shadda still finds its line.
+          if (globalized(cell.translit) === globalized(fix.match)) {
             unmatched.delete(fix.match);
             // A fix that only corrects `ar` or `he` leaves the translit alone,
             // so it keeps matching after it has landed. Skip it once the cell
