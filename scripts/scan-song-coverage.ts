@@ -53,7 +53,18 @@ async function main() {
     const noAr = words.filter((w) => !(w.ar ?? "").trim()).length;
     const arInLine = parsed.filter((l) => /[ء-ي]/.test(l.line ?? "")).length;
 
-    const covered = new Set(words.map((w) => key(w.ar ?? "")));
+    // A gloss entry may cover several words at once — `يا عمري` is stored as one
+    // entry meaning "חיי שלי", which is better than glossing يا and عمري apart,
+    // since the phrase does not mean the sum of them. Comparing entry-for-word
+    // therefore reports covered words as missing: it claimed 37 gaps across six
+    // songs when almost all of them were multi-word glosses. Split each entry on
+    // whitespace as well as keeping it whole.
+    const covered = new Set<string>();
+    for (const w of words) {
+      const ar = w.ar ?? "";
+      covered.add(key(ar));
+      for (const part of ar.split(/\s+/)) covered.add(key(part));
+    }
     covered.delete("");
     const rawWords: string[] = raw.flatMap((l: string) => l.split(/\s+/));
     const missing = [...new Set(rawWords.filter((w) => key(w) && !covered.has(key(w))))];
