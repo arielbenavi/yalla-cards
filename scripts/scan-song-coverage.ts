@@ -18,6 +18,14 @@
 // Words survive both. They are also the unit that matters: an unglossed word is
 // the thing a learner actually hits.
 //
+// **This produces candidates, not defects.** It cannot resolve spelling variants,
+// and the lyrics use them freely: كله against كلو, مهدومة against محضومة, وأنا
+// against a line that already glosses و and أنا separately. Every one of those
+// reads as a gap here and is not one. Filling a reported gap without first
+// checking the line for the same word under another spelling produces duplicate
+// glosses — which is exactly what happened, and had to be reverted from backup.
+// Reconciling spellings is an Arabic judgement, not a string comparison.
+//
 //   npx tsx scripts/scan-song-coverage.ts            # summary
 //   npx tsx scripts/scan-song-coverage.ts YAMA       # the missing words themselves
 import { config } from "dotenv";
@@ -76,7 +84,7 @@ async function main() {
 
     const flags = [
       !rawIsArabic ? "lyrics_raw אינו בכתב ערבי — אי אפשר להשוות כיסוי" : null,
-      missing.length ? `${missing.length} מילים ללא פירוש` : null,
+      missing.length ? `${missing.length} מועמדים לפירוש חסר` : null,
       noAr ? `${noAr} מילים בלי ערבית` : null,
       arInLine ? `${arInLine} שורות שבהן השדה translit הוא ערבית` : null,
     ].filter(Boolean);
@@ -87,7 +95,7 @@ async function main() {
     );
 
     if (WANTED && s.title === WANTED && missing.length) {
-      console.log(`\nמילים שאין להן פירוש ב-lyrics_parsed:`);
+      console.log(`\nמועמדים — עלולים להיות וריאציות כתיב של מילים שכבר מפורשות:`);
       for (const l of missing) console.log(`  ${l}`);
       console.log();
     }
