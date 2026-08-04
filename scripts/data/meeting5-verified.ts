@@ -21,7 +21,7 @@ export type V = {
 export const NOTES: V[] = [
   { translit: "כְּוַיֵּס", ar: "كويس", he: "טוב / בסדר" },
   { translit: "מַלַאנֵה", ar: "ملانة", he: "מלאה", note: "נקבה של מַלַאן" },
-  { translit: "דַ'בַּאח", ar: "ذباح", he: "שוחט" },
+  { translit: "דַ'בַּאח", ar: "ذباح", he: "שוחט", was: "דבאח" },
   { translit: "פִכְּרַה", ar: "فكرة", he: "רעיון" },
   { translit: "נַצִיחַה", ar: "نصيحة", he: "עצה", was: "מציחה", note: "chatifai: ص ולכן צ בלי גרש" },
   { translit: "שַׁרַף", ar: "شرف", he: "כבוד" },
@@ -39,7 +39,7 @@ export const NOTES: V[] = [
     note: "chatifai: נגזר מ-צַ'דַא. 'יַא מְצַ'דִּי' הוא לעג קל — לא קללה, אבל לא מנומס",
   },
   { translit: "צַ'דַא", ar: "صدأ", he: "חלודה", note: "chatifai: האות ص, אבל נשמעת נחצית ליד ד ולכן צ'" },
-  { translit: "דַ'הַבּ", ar: "ذهب", he: "זהב" },
+  { translit: "דַ'הַבּ", ar: "ذهب", he: "זהב", was: "דהב" },
   { translit: "אַצִיר", ar: "قصير", he: "קצר" },
   { translit: "עַצִיר", ar: "عصير", he: "מיץ" },
   { translit: "שַׁאטֵר", ar: "شاطر", he: "חכם", plural: "שַׁאטְרִין" },

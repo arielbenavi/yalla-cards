@@ -1,7 +1,14 @@
 // What of מפגש 5 is already in the database, and what is genuinely new.
 //
-// Run this before sending anything to chatifai — there is no point asking it to
-// vocalise words that already have verified cards.
+// Written before the chatifai pass, to avoid asking it to vocalise words that
+// already had cards. That made it compare the **book's own spellings** against
+// the cards — which is now wrong, because what went into the database is
+// chatifai's corrected form, not the book's.
+//
+// Left as-is it reported 36 words missing, including משקפיים, which is present
+// as נַצַّ'ארַאת while the book writes נַצַّארַאת. Every book entry is therefore
+// resolved through its correction in meeting5-verified.ts (`was`) before being
+// called missing.
 //
 //   npx tsx scripts/check-meeting5-coverage.ts
 //   npx tsx scripts/check-meeting5-coverage.ts --new   # just the new ones
@@ -15,6 +22,7 @@ import {
   COLOUR_ADJECTIVES,
   type Vocab,
 } from "./data/meeting5";
+import { NOTES, COLOURS as V_COLOURS, COLOURS_EXTRA as V_EXTRA, BOOK } from "./data/meeting5-verified";
 
 config({ path: ".env.local" });
 
@@ -24,9 +32,28 @@ const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
 });
 
 const ONLY_NEW = process.argv.includes("--new");
-const strip = (s: string) => s.normalize("NFC").replace(/[֑-ׇ]/g, "").replace(/\s+/g, " ").trim();
+// Arabic marks have to come out too, not just Hebrew ones. The book transcription
+// carries Arabic shadda U+0651 where the cards carry Hebrew dagesh U+05BC — they
+// render identically, so stripping only [֑-ׇ] left טַיֵّבּ and טַיֵּבּ comparing
+// unequal and reported nine words as missing that were sitting right there.
+const strip = (s: string) =>
+  s
+    .normalize("NFC")
+    .replace(/[֑-ׇ]/g, "")
+    .replace(/[ًٌٍَُِّْٰ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 async function main() {
+  // book spelling → the corrected spelling chatifai gave for it
+  const corrected = new Map<string, string>();
+  for (const v of [...NOTES, ...V_EXTRA, ...BOOK] as { translit: string; was?: string }[]) {
+    if (v.was) corrected.set(strip(v.was), strip(v.translit));
+  }
+  for (const c of V_COLOURS as unknown as { translit: string; was?: string }[]) {
+    if (c.was) corrected.set(strip(c.was), strip(c.translit));
+  }
+
   const known = new Map<string, string>();
   for (let from = 0; ; from += 1000) {
     const { data } = await sb
@@ -63,7 +90,12 @@ async function main() {
 
   let newTotal = 0;
   for (const [label, list] of groups) {
-    const missing = list.filter((v) => !known.has(strip(v.translit)));
+    // Covered if the book form itself has a card, or the correction does.
+    const covered = (v: { translit: string }) => {
+      const k = strip(v.translit);
+      return known.has(k) || known.has(corrected.get(k) ?? "\u0000");
+    };
+    const missing = list.filter((v) => !covered(v));
     const have = list.length - missing.length;
     newTotal += missing.length;
     console.log(`\n### ${label} — ${list.length} סה"כ · ${have} קיימים · ${missing.length} חדשים\n`);
@@ -72,13 +104,16 @@ async function main() {
       console.log(`  ${v.translit.padEnd(20)} ${v.he}${flag}`);
     }
     if (!ONLY_NEW && have) {
-      const existing = list.filter((v) => known.has(strip(v.translit)));
+      const existing = list.filter(covered);
       console.log(`\n  כבר קיימים: ${existing.map((v) => v.translit).join(" · ")}`);
     }
   }
 
   const needNikud = NOTES_VOCAB.filter(
-    (v) => v.needsNikud && !known.has(strip(v.translit))
+    (v) =>
+      v.needsNikud &&
+      !known.has(strip(v.translit)) &&
+      !known.has(corrected.get(strip(v.translit)) ?? "\u0000")
   ).length;
   console.log(`\n${newTotal} כרטיסים חדשים · ${needNikud} מהם צריכים ניקוד מ-chatifai`);
 }
