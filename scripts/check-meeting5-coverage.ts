@@ -23,6 +23,7 @@ import {
   type Vocab,
 } from "./data/meeting5";
 import { NOTES, COLOURS as V_COLOURS, COLOURS_EXTRA as V_EXTRA, BOOK } from "./data/meeting5-verified";
+import { REMAINDER, HELD_ON_QAF } from "./data/meeting5-remainder";
 
 config({ path: ".env.local" });
 
@@ -53,6 +54,13 @@ async function main() {
   for (const c of V_COLOURS as unknown as { translit: string; was?: string }[]) {
     if (c.was) corrected.set(strip(c.was), strip(c.translit));
   }
+  for (const v of REMAINDER) if (v.was) corrected.set(strip(v.was), strip(v.translit));
+
+  // Ruled, but deliberately not inserted until the ق convention is decided —
+  // reported separately so they do not read as work still to be done.
+  const heldOnQaf = new Set(
+    HELD_ON_QAF.flatMap((v) => [strip(v.translit), ...(v.was ? [strip(v.was)] : [])])
+  );
 
   const known = new Map<string, string>();
   for (let from = 0; ; from += 1000) {
@@ -95,7 +103,11 @@ async function main() {
       const k = strip(v.translit);
       return known.has(k) || known.has(corrected.get(k) ?? "\u0000");
     };
-    const missing = list.filter((v) => !covered(v));
+    const missing = list.filter((v) => !covered(v) && !heldOnQaf.has(strip(v.translit)));
+    const held = list.filter((v) => heldOnQaf.has(strip(v.translit)));
+    if (held.length) {
+      console.log(`   ⏸ ${held.length} מוחזקות עד להכרעת ה-ق: ${held.map((v) => v.translit).join(" · ")}`);
+    }
     const have = list.length - missing.length;
     newTotal += missing.length;
     console.log(`\n### ${label} — ${list.length} סה"כ · ${have} קיימים · ${missing.length} חדשים\n`);
@@ -113,7 +125,8 @@ async function main() {
     (v) =>
       v.needsNikud &&
       !known.has(strip(v.translit)) &&
-      !known.has(corrected.get(strip(v.translit)) ?? "\u0000")
+      !known.has(corrected.get(strip(v.translit)) ?? "\u0000") &&
+      !heldOnQaf.has(strip(v.translit))
   ).length;
   console.log(`\n${newTotal} כרטיסים חדשים · ${needNikud} מהם צריכים ניקוד מ-chatifai`);
 }
