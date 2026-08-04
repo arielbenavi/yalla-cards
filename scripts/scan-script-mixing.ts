@@ -29,7 +29,13 @@ function mixed(s: string): string | null {
   const hasAr = ARABIC_LETTER.test(s);
   if (hasHeb && !hasAr && ARABIC_MARK.test(s)) return "סימן ערבי בטקסט עברי";
   if (hasAr && !hasHeb && HEBREW_MARK.test(s)) return "ניקוד עברי בטקסט ערבי";
-  if (hasHeb && hasAr) return "שני הכתבים באותו שדה";
+  if (hasHeb && hasAr) {
+    // A Hebrew gloss may legitimately cite the Arabic source word in brackets —
+    // "נכון (קיצור של صحيح)" is correct and useful, not a swapped field. Only
+    // Arabic outside the brackets means the two scripts are genuinely mixed.
+    if (!ARABIC_LETTER.test(s.replace(/\([^)]*\)/g, ""))) return null;
+    return "שני הכתבים באותו שדה";
+  }
   return null;
 }
 
