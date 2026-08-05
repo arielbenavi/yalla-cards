@@ -83,9 +83,42 @@ shaddas from them. It once wrote `וַקֵע` for `וַקֵّע` on a line it ca
 מאוד" — turning *sign here* into *fall here*. Take the per-line verdicts only.
 Its summary counts are unreliable too; it reported ض in ض-free lines three times.
 
-**chatifai is the only authority on Arabic — including when two cards look like
-duplicates.** On 2026-08-03 I judged `مناح` a misspelling of `منيح` and deleted
-the card. It is the **plural**, and the two are not interchangeable. Deciding
+### The course outranks chatifai — argue for the lesson first
+
+**Ariel's teacher is a person in a room; chatifai is a chatbot.** When Ariel
+brings notes from a מפגש בעל פה and they contradict chatifai, the default is
+**the way it was said in the lesson**, not chatifai's correction.
+
+The procedure, in order:
+
+1. Take the lesson form as the proposal, not as a question.
+2. Put it to chatifai *as the form to confirm* — "in the lesson they said X, is
+   that right / can you confirm X" — not "what is the correct form?". Asked
+   openly it will volunteer a different vocalisation and then defend it.
+3. If chatifai agrees, or offers only a small difference (a vowel, a dagesh, a
+   tā marbūṭa), **keep the lesson form** and record what chatifai said in the
+   note field.
+4. Only if the two are **drastically** different — a different word, a different
+   root, a meaning that does not match — go with chatifai, and say so explicitly
+   in the report.
+
+Mark these cards `course_verified = true`. That column is what a lesson form is
+worth: it says a teacher said this out loud, which is stronger evidence about
+spoken Palestinian than a chatbot's preference. `chatifai_verified` stays
+independent — a card can be both, either, or neither, and the two columns
+disagreeing is information, not a defect to reconcile.
+
+**Never quietly "fix" a lesson form to match chatifai.** If you change one, the
+change and its reason belong in the message to Ariel, not just in the notes
+field.
+
+This rule is narrower than it sounds: it applies to forms Ariel heard in class.
+For words with no lesson provenance — book vocabulary, song lyrics, dialogue
+audits — chatifai remains the authority, and everything below still holds.
+
+**chatifai is the authority on Arabic that has no lesson provenance — including
+when two cards look like duplicates.** On 2026-08-03 I judged `مناح` a
+misspelling of `منيح` and deleted the card. It is the **plural**, and the two are not interchangeable. Deciding
 which of two spellings is "wrong" is an Arabic ruling, and merging duplicates is
 where that decision hides in what looks like a data-cleanup task. Ask first,
 every time. Three other calls I made the same day happened to be right — that is
