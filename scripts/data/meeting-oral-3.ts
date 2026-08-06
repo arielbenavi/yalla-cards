@@ -159,17 +159,67 @@ export const GREETINGS: Heard[] = [
 ];
 
 /**
- * Lines I am not inserting, because guessing at them would be exactly the thing
- * I am not allowed to do. Each needs one word from Ariel.
+ * קציר / אציר — resolved by Ariel on 2026-08-06.
+ *
+ * The word for "short" is قصير: written `קציר` under the ק convention and
+ * pronounced `אציר` in urban speech, which is why the existing card
+ * `אַצִיר` = "קצר" is right rather than mislabelled.
+ *
+ * The lesson's `אציר` = "אהיה" is a **different word** — أصير — that happens to
+ * sound the same. Both cards exist and each carries a note pointing at the other,
+ * because a learner who meets one without the other will merge them.
+ *
+ * Tomer's note that אַכּוּן is preferred over אַצִיר for "אהיה" rides along with
+ * the أصير card.
  */
-export const NEEDS_ARIEL = [
-  "אמת = — הוא כתב 'כזב = שקר' ואז 'אמת = ' בלי ערך. מה המילה הערבית לאמת?",
-  "שו סח — נרשם בלי תרגום.",
-  "דור מין עיסא = ? — הוא כתב סימן שאלה בעצמו.",
-  "מֻקַאבַּלֵה = אישה או רעיון — מֻקַאבַּלֵה כבר קיים אצלנו כ'פגישה / ראיון'. " +
-    "'אישה או רעיון' לא מתיישב עם זה; ייתכן שנפלה שורה או שזו מילה אחרת.",
-  "נוסחה לפעלים בעבר בגוף נקבה: 'שחמט (מבחינת הניקוד)' — לא ברור לי מה " +
-    "'שחמט' מציין כאן. משקל? ראשי תיבות? הדוגמאות (דחלת, טאלבאת, וואפאקאת) נכנסו.",
+/** Goes on the قصير card — points at the other word. */
+export const HOMOPHONE_NOTE_QASIR =
+  "נכתבת קציר (قصير) ונהגית אַצִיר. יש מילה נוספת בהגייה זהה: أصير = אהיה.";
+/** Goes on the أصير card — points back. */
+export const HOMOPHONE_NOTE_ASIR =
+  "יש מילה נוספת בהגייה זהה: قصير = קצר. אריאל מתומר: עדיף אַכּוּן על אַצִיר ל'אהיה'.";
+
+/**
+ * Lines Ariel left incomplete. He said to decide rather than wait, so each has a
+ * call recorded here — but "decide" cannot mean invent Arabic, so the calls are
+ * about *whether to keep the line*, never about what the word is.
+ */
+export const RESOLVED_GAPS = [
+  {
+    line: "אמת = (ריק)",
+    decision: "מדלגים",
+    why:
+      "הוא כתב 'כזב = שקר' ואז 'אמת =' בלי ערך. המילה הערבית לאמת לא נאמרה " +
+      "בהערות, ולהמציא אותה זה בדיוק מה שאסור. כזב נכנס; אמת תיכנס כשהמילה תגיע.",
+  },
+  {
+    line: "שו סח",
+    decision: "מדלגים",
+    why: "נרשם בלי תרגום. בלי לדעת מה נאמר בשיעור אין מה לאשר מול chatifai.",
+  },
+  {
+    line: "דור מין עיסא = ?",
+    decision: "מדלגים",
+    why:
+      "אריאל עצמו שם סימן שאלה. 'דור מין' (תור מי?) כן נכנס — הוא רשם לו תרגום " +
+      "מלא, ורק ההמשך נשאר פתוח.",
+  },
+  {
+    line: "מֻקַאבַּלֵה = אישה או רעיון",
+    decision: "שומרים את הכרטיס הקיים, לא משנים אותו",
+    why:
+      "מֻאַאבַּלֵה כבר קיים אצלנו כ'פגישה / ראיון', מאומת chatifai. " +
+      "'אישה או רעיון' לא מתיישב עם זה בשום קריאה, וסביר שנפלה שורה בהעתקה. " +
+      "לשנות פירוש קיים על סמך שורה שלא מתפענחת יזיק יותר משיועיל.",
+  },
+  {
+    line: "נוסחה לפעלים בעבר בגוף נקבה: 'שחמט (מבחינת הניקוד)'",
+    decision: "הדוגמאות נכנסות, הכלל לא",
+    why:
+      "דַחַלַת, טַאלַבַּאת ווַאפַאקַאת נכנסות ככרטיסים ומלמדות את התבנית בפועל. " +
+      "מה ש'שחמט' מציין — משקל, ראשי תיבות, או שם של תבנית — לא ברור לי, " +
+      "ולנסח כלל דקדוקי שלא הבנתי גרוע מלא לנסח אותו בכלל.",
+  },
 ];
 
 export const ALL_GROUPS: [string, Heard[]][] = [
