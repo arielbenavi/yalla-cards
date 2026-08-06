@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { DialogueScene, DIALOGUE_SCENE_KEYS } from "@/lib/dialogue-scenes";
 import { strings } from "@/lib/strings";
 
 type SimCard = {
@@ -438,7 +439,14 @@ export default function SimulatePage() {
                         onClick={() => openDialogue(d)}
                         className="flex flex-col items-center gap-2 border rounded-2xl p-5 hover:bg-gray-50 transition-colors"
                       >
-                        <span className="text-3xl">{meta.emoji}</span>
+                        {DIALOGUE_SCENE_KEYS.includes(d.key) ? (
+                          <DialogueScene
+                            dialogueKey={d.key}
+                            className="w-full h-16 rounded-lg overflow-hidden"
+                          />
+                        ) : (
+                          <span className="text-3xl">{meta.emoji}</span>
+                        )}
                         <span className="text-sm font-bold">{meta.label}</span>
                         <span className="text-xs text-gray-400">{d.turn_count} שורות</span>
                       </button>
