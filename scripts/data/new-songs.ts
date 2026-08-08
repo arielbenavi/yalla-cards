@@ -8,13 +8,20 @@
 // Hebrew-pointed transliteration and the word glosses. Nothing here guesses at
 // either.
 //
-// **Dialect warning, and it matters for a Palestinian learner.** Neither of
-// these is Palestinian:
-//   - براحة يا شيخة is Egyptian — دي, ازاي, بقوا, and ج pronounced g.
-//   - كنا نتلاقى is Lebanese — شو حكيوا عليّا, تا أركد, and the ـي endings.
-// Both are worth listening to and worth understanding; neither should be a model
-// for how Ariel speaks. Cards drawn from them need that noted, or he will learn
-// Cairo forms as if Tomer had said them.
+// **Dialect policy — Ariel's ruling, 2026-08-07.**
+//
+// None of these three is Palestinian: براحة يا شيخة is Egyptian, the other two
+// Lebanese. His call on that: *"אין מה לעשות, יהיה שירים בלהג אחר, צריך כמה
+// שיותר שזה ידמה לפלסטינית אבל אם זה מילה שונה לגמרי זה מילה שונה לגמרי."*
+//
+// So songs are not filtered or dropped for being in another dialect, and words
+// are not quietly Palestinianised to fit. What is required instead is that every
+// divergence be **marked**: where Palestinian says it differently, the card
+// carries the Palestinian form beside the song's. A song word that is simply a
+// different word stays a different word.
+//
+// The failure this prevents is specific — learning دي and ازاي as if Tomer had
+// said them, because nothing on the card said otherwise.
 
 export type NewSong = {
   title: string;
