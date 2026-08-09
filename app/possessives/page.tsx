@@ -56,6 +56,25 @@ export default function PossessivesPage() {
   const [sessionId] = useState(() => crypto.randomUUID());
   const shownAt = useRef(Date.now());
 
+  /**
+   * Refetches only the production queue.
+   *
+   * Its gate is computed from stage-1 attempts *at request time*, so a queue
+   * fetched on mount is stale the moment a stage-1 round is finished. That is
+   * the bug Ariel hit (note 4fa5f38d): he scored 10/10 on identification, moved
+   * to production, and was told it was not yet available — the answer was
+   * correct when it was fetched and wrong by the time he read it.
+   */
+  const reloadProduce = useCallback(() => {
+    fetch("/api/possessives/produce?size=8")
+      .then((r) => r.json())
+      .then((pr) => {
+        setProduce(pr.items ?? []);
+        setProduceReason(pr.reason ?? null);
+      })
+      .catch(() => {});
+  }, []);
+
   const load = useCallback(() => {
     setLoading(true);
     Promise.all([
@@ -160,6 +179,8 @@ export default function PossessivesPage() {
         <button
           key={t.id}
           onClick={() => {
+            // The gate depends on attempts made since this page loaded.
+            if (t.id === 3) reloadProduce();
             setStage(t.id);
             setIndex(0);
             setAnswered(null);

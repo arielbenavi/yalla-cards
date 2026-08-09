@@ -19,7 +19,7 @@ export const strings = {
     songs: "שירים",
     pictureGame: "משחק תמונות",
     content: "תכנים",
-    practice: "תרגול",
+    practice: "משחקים",
     letters: "אותיות",
     numbers: "מספרים",
   },

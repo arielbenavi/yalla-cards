@@ -119,7 +119,10 @@ export default function PictureGamePage() {
     if (hitZone.id === target.id) {
       // Correct!
       setScore((s) => s + 1);
-      setFeedback({ kind: "correct", message: `כל הכבוד! ${target.label_ar}` });
+      setFeedback({
+        kind: "correct",
+        message: `כל הכבוד! ${target.label_ar} — ${target.label_he}`,
+      });
       feedbackTimer.current = setTimeout(advance, 1500);
     } else {
       // Wrong hotzone — show where the correct one is
@@ -211,9 +214,21 @@ export default function PictureGamePage() {
             : "bg-blue-50 text-blue-900"
         }`}
       >
-        {feedback
-          ? feedback.message
-          : <>טפ על: <span className="text-blue-700">{current.label_he}</span></>}
+        {/* The prompt is the transliteration, not the Hebrew (note 64b703ba).
+            Showing the Hebrew means reading a word he already knows and matching
+            a picture to it — the Arabic never gets processed. Reading the
+            transliteration and finding the object is the exercise; the Hebrew is
+            the answer, so it belongs after. */}
+        {feedback ? (
+          feedback.message
+        ) : (
+          <>
+            טפ על:{" "}
+            <span className="nikud-text text-blue-700">
+              {current.translit || current.label_he}
+            </span>
+          </>
+        )}
       </div>
 
       {/* Image */}
@@ -260,9 +275,10 @@ export default function PictureGamePage() {
         </div>
       )}
 
-      {/* Arabic word hint */}
-      {!feedback && current.translit && (
-        <p className="text-gray-500 text-sm" dir="ltr">{current.translit}</p>
+      {/* The Hebrew is the reveal, so it appears only once the answer is in —
+          and only when the transliteration was actually available to prompt with. */}
+      {feedback && current.translit && (
+        <p className="text-gray-500 text-sm">{current.label_he}</p>
       )}
     </div>
   );

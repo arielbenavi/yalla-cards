@@ -45,8 +45,8 @@ export default function PracticePage() {
       emoji: "🔤",
       title: strings.nav.letters,
       description: "זיהוי אותיות ערביות לפי מיקומן במילה",
-      progress: "בקרוב",
-      available: false,
+      progress: null,
+      available: true,
     },
   ];
 

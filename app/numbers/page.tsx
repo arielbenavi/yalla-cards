@@ -8,6 +8,16 @@ import {
 } from "@/lib/numbers-data";
 
 type Mode = "digits" | "arabic";
+
+/**
+ * Which script the Arabic side is shown in (note 8f2d9edb).
+ *
+ * Ariel reads the transliteration far faster than the script, so with both on
+ * screen he answers off the transliteration and the Arabic never gets read. The
+ * toggle makes it one or the other, which is the only way the script side is
+ * actually practised.
+ */
+type Script = "arabic" | "translit";
 type Result = "correct" | "wrong" | null;
 
 const LEVELS: { id: PoolLevel; label: string }[] = [
@@ -38,6 +48,7 @@ function pickWrongEntries(pool: NumberEntry[], correct: NumberEntry, count: numb
 
 export default function NumbersPage() {
   const [mode, setMode] = useState<Mode>("digits");
+  const [script, setScript] = useState<Script>("arabic");
   const [level, setLevel] = useState<PoolLevel>("base");
   const [correct, setCorrect] = useState(0);
   const [total, setTotal] = useState(0);
@@ -124,6 +135,19 @@ export default function NumbersPage() {
         ))}
       </div>
 
+      {/* Script */}
+      <div className="flex rounded-xl overflow-hidden border border-gray-300 self-start">
+        {(["arabic", "translit"] as Script[]).map((sc) => (
+          <button
+            key={sc}
+            onClick={() => setScript(sc)}
+            className={`px-4 py-2 text-sm font-bold transition-colors ${script === sc ? "bg-black text-white" : "bg-white text-gray-600"}`}
+          >
+            {sc === "arabic" ? "כתיב ערבי" : "תעתיק עברי"}
+          </button>
+        ))}
+      </div>
+
       {/* Level */}
       <div className="flex gap-2 flex-wrap text-xs">
         {LEVELS.map((l) => (
@@ -146,10 +170,13 @@ export default function NumbersPage() {
                 <p className="text-6xl font-bold tabular-nums">{current.value}</p>
               ) : (
                 <>
-                  <p className="text-4xl font-bold" dir="rtl" lang="ar" style={{ fontFamily: "serif" }}>
-                    {current.arabic}
-                  </p>
-                  <p className="text-sm text-gray-400 nikud-text">{current.translit}</p>
+                  {script === "arabic" ? (
+                    <p className="text-4xl font-bold" dir="rtl" lang="ar" style={{ fontFamily: "serif" }}>
+                      {current.arabic}
+                    </p>
+                  ) : (
+                    <p className="text-4xl font-bold nikud-text">{current.translit}</p>
+                  )}
                 </>
               )}
             </div>
@@ -178,9 +205,15 @@ export default function NumbersPage() {
                 else cls += "bg-gray-100 border-gray-100 text-gray-400";
                 return (
                   <button key={opt.value} onClick={() => handleAnswer(opt.value)} disabled={result !== null} className={cls}>
-                    {mode === "digits"
-                      ? <span dir="rtl" lang="ar" style={{ fontFamily: "serif" }}>{opt.arabic}</span>
-                      : <span className="tabular-nums">{opt.value}</span>}
+                    {mode === "digits" ? (
+                      script === "arabic" ? (
+                        <span dir="rtl" lang="ar" style={{ fontFamily: "serif" }}>{opt.arabic}</span>
+                      ) : (
+                        <span className="nikud-text">{opt.translit}</span>
+                      )
+                    ) : (
+                      <span className="tabular-nums">{opt.value}</span>
+                    )}
                   </button>
                 );
               })}
