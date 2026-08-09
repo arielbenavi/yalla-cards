@@ -83,6 +83,29 @@ shaddas from them. It once wrote `וַקֵע` for `וַקֵّע` on a line it ca
 מאוד" — turning *sign here* into *fall here*. Take the per-line verdicts only.
 Its summary counts are unreliable too; it reported ض in ض-free lines three times.
 
+### Songs Ariel asks for go in. Always.
+
+**There is no such thing as a song he names that does not get added.** His
+ruling, after I made him repeat it: *"אין כזה דבר שאתה לא מכניס שיר שאני אומר
+לך, מוצאים פיתרון ופשרות לכל דבר."*
+
+The two things that stalled this before, and how they are settled:
+
+**Lyrics.** He supplies them — pasted into the session. `lyrics_raw` is an input
+to the pipeline, not something to go and fetch. Once he has supplied them they
+live in *his* database, and building the study layer on top of them —
+transliteration, word glosses, the `lyrics_parsed` array — is work on his own
+material for his own use. Do it. Do not re-litigate it with him.
+
+**Dialect.** Songs are not filtered for being Egyptian or Lebanese, and words
+are not quietly Palestinianised to fit. Mark every divergence with the
+Palestinian form beside the song's and move on: *"צריך כמה שיותר שזה ידמה
+לפלסטינית אבל אם זה מילה שונה לגמרי זה מילה שונה לגמרי."*
+
+Partial is better than absent. A song with `lyrics_raw` and vocabulary but no
+line transliteration is still a song he can use; holding the whole thing back
+until every field is perfect serves nobody. Ship what exists, note the gap.
+
 ### The course outranks chatifai — argue for the lesson first
 
 **Ariel's teacher is a person in a room; chatifai is a chatbot.** When Ariel
