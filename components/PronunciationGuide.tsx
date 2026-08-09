@@ -10,7 +10,12 @@ const PAIRS = [
   { plain: "ת", geresh: "ת׳", arabic: "ث", desc: "בין ת לס (th של think)" },
   { plain: "ט", geresh: "ט׳", arabic: "ظ", desc: "ז נחצית / עבה" },
   { plain: "ע", geresh: "ע׳", arabic: "غ", desc: "ר צרפתית (גרונית)" },
-  { plain: "צ", geresh: "צ׳", arabic: "ض", desc: "צ עבה — ייחודית לערבית" },
+  // ض is an emphatic **D**, not an emphatic צ. Ariel flagged this (note 50f92fe6)
+  // after the guide had been teaching the wrong target sound: he was practising a
+  // thick S where the letter is a thick D. The transliteration still writes צ׳
+  // because that is this system's symbol for it — the symbol and the sound are
+  // different things, and only the sound was wrong.
+  { plain: "צ", geresh: "צ׳", arabic: "ض", desc: "ד נחצית (עבה) — לא צ" },
 ];
 
 export function PronunciationGuide() {

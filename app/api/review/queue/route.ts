@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   const now = new Date().toISOString();
 
   const cardSelect =
-    "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path, lesson_id, audio_start_sec, audio_end_sec)";
+    "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path, lesson_id, audio_start_sec, audio_end_sec, self_score)";
 
   // PostgREST returns at most 1000 rows per request. card_srs is at ~974 and
   // growing, so these reads are about to start truncating silently. Paging
@@ -56,7 +56,24 @@ export async function GET(request: Request) {
       supabase.from("card_srs").select(cardSelect).order("due", { ascending: true })
     );
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    rows = (data ?? []).slice().sort(() => Math.random() - 0.5);
+
+    // Untagged first, then hardest-self-rated to easiest (note db2eb95b).
+    //
+    // This used to shuffle, which buried the 870 cards he has never rated behind
+    // the 198 he has — exactly backwards, since an unrated card is the one he has
+    // no information about. Within the rated ones, שוב comes before קשה before
+    // טוב before קל so the weakest material is met while attention is freshest.
+    //
+    // Ordering only. Nothing here writes self_score or any FSRS field.
+    const SELF_SCORE_ORDER = (s: number | null | undefined) => (s == null ? -1 : s);
+    rows = (data ?? [])
+      .slice()
+      .sort(() => Math.random() - 0.5)
+      .sort(
+        (a, b) =>
+          SELF_SCORE_ORDER((a.card as { self_score?: number | null })?.self_score) -
+          SELF_SCORE_ORDER((b.card as { self_score?: number | null })?.self_score)
+      );
   } else {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -151,6 +168,9 @@ export async function GET(request: Request) {
         audio_url: audioUrl,
         audio_start_sec: card?.audio_start_sec ?? null,
         audio_end_sec: card?.audio_end_sec ?? null,
+        // Exposed so the ordering in mode=all is checkable from outside — an
+        // ordering that only exists inside the handler cannot be tested.
+        self_score: (card as { self_score?: number | null })?.self_score ?? null,
       };
     })
   );
