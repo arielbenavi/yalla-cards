@@ -31,6 +31,15 @@ const TENSE_LABEL: Record<string, string> = {
 export type DrillSet = {
   id: string;
   source: "verb" | "paradigm";
+  /**
+   * Topic heading the drill belongs under (note 17f19ad7).
+   *
+   * The screen used to list 66 flat entries, one per verb per tense, which made
+   * choosing what to practise a chore in itself — "אין צורך לפרק פר פועל / כל
+   * פיפס קטן". Grouping by meeting for paradigms and by tense for verbs turns
+   * that into a handful of topics, each holding several drills to run in a row.
+   */
+  group: string;
   title: string;
   subtitle: string | null;
   slots: { person: string; answer: string }[];
@@ -72,6 +81,7 @@ export async function GET() {
       sets.push({
         id: `verb:${v.id}:${tense}`,
         source: "verb",
+        group: `פעלים — ${TENSE_LABEL[tense]}`,
         title: `${v.root_translit ?? v.root} — ${TENSE_LABEL[tense]}`,
         subtitle: v.meaning_he,
         slots,
@@ -111,6 +121,7 @@ export async function GET() {
         sets.push({
           id: `paradigm:${p.id}:${col}`,
           source: "paradigm",
+          group: p.meeting ? `מפגש ${p.meeting}` : "כללי",
           title: data.translations?.[col]
             ? `${col} — ${data.translations[col]}`
             : columns.length === 1
@@ -134,6 +145,7 @@ export async function GET() {
       sets.push({
         id: `paradigm:${p.id}:${gender}`,
         source: "paradigm",
+        group: p.meeting ? `מפגש ${p.meeting}` : "כללי",
         title: `תַבַּע — ${gender === "masculine" ? "שם עצם זכר" : "שם עצם נקבה"}`,
         subtitle: block.example ?? data.description ?? null,
         slots,

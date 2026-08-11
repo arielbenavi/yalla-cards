@@ -1,6 +1,14 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers";
 
+/**
+ * Person labels are prose, not identifiers — `זאת (קרוב, נ)` is a real one.
+ * `new RegExp(label)` turns its parentheses into a capture group, so the pattern
+ * silently stops matching the very button it was built from and the click waits
+ * out the full timeout. Escape before matching.
+ */
+const rx = (s: string) => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+
 test.describe("inflection matching drill", () => {
   test("serves verified verbs and paradigms, never Arabic-script columns", async ({ page }) => {
     await login(page);
@@ -20,12 +28,43 @@ test.describe("inflection matching drill", () => {
     }
   });
 
+  test("every set carries a topic group", async ({ page }) => {
+    await login(page);
+    const { sets } = await page.request.get("/api/inflection-drill").then((r) => r.json());
+
+    // The list is one entry per topic, not per table — 77 flat buttons made
+    // choosing what to practise a task of its own (note 17f19ad7). A set with no
+    // group would be unreachable from the list entirely.
+    for (const s of sets) {
+      expect(s.group, `${s.id} has no group`).toBeTruthy();
+    }
+    const groups = new Set(sets.map((s: { group: string }) => s.group));
+    expect(groups.size, "grouping collapsed to one bucket").toBeGreaterThan(1);
+    expect(groups.size, "grouping barely reduced the list").toBeLessThan(sets.length / 3);
+  });
+
   test("a correct placement sticks and a wrong one does not", async ({ page }) => {
     await login(page);
 
     const { sets } = await page.request.get("/api/inflection-drill").then((r) => r.json());
-    const target = sets.find((s: { title: string }) => s.title.includes("שם עצם זכר"));
-    test.skip(!target, "possessive drill not present");
+    type DrillSet = {
+      id: string;
+      group: string;
+      title: string;
+      slots: { person: string; answer: string }[];
+    };
+    const all = sets as DrillSet[];
+
+    // Pick a group with exactly one table, so the shuffle inside a run cannot
+    // change which table opens. Also require every form in it to be distinct —
+    // syncretic tables are legitimate (מפגש 6 past tense has אַנַא and אִנְתֵ both
+    // as כַּתַבְּת) but two identical tiles make `exact: true` ambiguous, which is
+    // a limitation of the locator, not of the drill.
+    const counts = new Map<string, number>();
+    for (const s of all) counts.set(s.group, (counts.get(s.group) ?? 0) + 1);
+    const distinct = (s: DrillSet) => new Set(s.slots.map((x) => x.answer)).size === s.slots.length;
+    const target = all.find((s) => counts.get(s.group) === 1 && distinct(s)) ?? all.find(distinct)!;
+    test.skip(!target, "no drill set with distinct forms");
 
     const tip = page.getByRole("button", { name: "הבנתי" });
     await tip.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
@@ -36,21 +75,19 @@ test.describe("inflection matching drill", () => {
 
     await page.getByRole("link", { name: "התאמת הטיות" }).click();
     await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: new RegExp(target.title) }).first().click();
+    await page.getByRole("button", { name: rx(target.group) }).first().click();
 
     const first = target.slots[0];
-    const other = target.slots.find(
-      (s: { person: string }) => s.person !== first.person
-    );
+    const other = target.slots.find((s) => s.person !== first.person)!;
 
     // Pick the form belonging to `first`, then drop it on the WRONG person
     await page.getByRole("button", { name: first.answer, exact: true }).click();
-    await page.getByRole("button", { name: new RegExp(other.person) }).first().click();
+    await page.getByRole("button", { name: rx(other.person) }).first().click();
     // Still in hand, box still empty
     await expect(page.getByRole("button", { name: first.answer, exact: true })).toBeVisible();
 
     // Now the right box
-    await page.getByRole("button", { name: new RegExp(first.person) }).first().click();
+    await page.getByRole("button", { name: rx(first.person) }).first().click();
     await expect(page.getByText("1 / " + target.slots.length)).toBeVisible();
   });
 });

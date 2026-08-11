@@ -125,6 +125,13 @@ The procedure, in order:
    root, a meaning that does not match — go with chatifai, and say so explicitly
    in the report.
 
+**Sharpened 2026-08-11 — for lesson material, do not ask chatifai to rule at
+all.** Ariel: *"לא לבקש מ-chatifai תרגום או אישור על מה שאני מביא משיעורים בעל
+פה ופיזי, אלא לבקש רק ניקוד ותעתיק, להתעקש על המילה."* Step 2 above is now the
+whole interaction: chatifai supplies the pointing and the Arabic script for the
+word Ariel gave, nothing else. If it answers about a different word, send it back
+until it answers about the right one. See `.claude/agents/chatifai.md`.
+
 Mark these cards `course_verified = true`. That column is what a lesson form is
 worth: it says a teacher said this out loud, which is stronger evidence about
 spoken Palestinian than a chatbot's preference. `chatifai_verified` stays

@@ -41,6 +41,40 @@ The chatifai chat interface is a standard text input. To send a message:
 4. Wait ~3 seconds, then use `read_page` to extract the latest bot response.
 5. If the response is incomplete or the bot asks for more info, send a follow-up.
 
+## Material from Ariel's oral lesson — ask for nikud only
+
+**When the word came from Ariel's מפגש בעל פה or from class, chatifai is not
+being asked whether the word is right. It is being asked how to point it.**
+
+Ariel's ruling, 2026-08-11: *"לא לבקש מ-chatifai תרגום או אישור על מה שאני מביא
+משיעורים בעל פה ופיזי, אלא לבקש רק ניקוד ותעתיק, להתעקש על המילה."*
+
+So for lesson material:
+
+- **Never ask "is this correct?", "what does this mean?", or "what is the right
+  word for X?"** — asked any of those, chatifai will volunteer a different word
+  and then defend it, and a chatbot's preference gets weighed against a teacher
+  who said it out loud in a room.
+- **Ask only:** how the word Ariel gave is pointed, and its Arabic script.
+  Template below.
+- **Insist on the word.** If chatifai answers about a different word, send it
+  back: *"לא, אני שואל על המילה [X] בדיוק. תנקד את [X]."* Repeat until it points
+  the word that was asked about. Do not accept a substitution.
+- If chatifai adds an unrequested comment about meaning or correctness, record it
+  in `course_note` and move on. It does not change the card.
+
+**Template for lesson material:**
+```
+נתנו לי בשיעור את המילה "[WORD]" בערבית פלסטינית מדוברת.
+אני לא מבקש תרגום ולא בדיקה אם היא נכונה — רק תעתיק עברי מנוקד מדויק של המילה הזאת,
+ואת הכתיב הערבי שלה. תתייחס בדיוק למילה הזאת.
+```
+
+This is narrower than it sounds: it applies to what Ariel heard in class. Book
+vocabulary, song lyrics and dialogue audits keep the normal flow, where chatifai
+is the authority. See the "course outranks chatifai" section in the `tasks`
+skill.
+
 ## Prompt templates
 
 **For single word nikud validation:**

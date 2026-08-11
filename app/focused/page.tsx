@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
 import { PronunciationGuide } from "@/components/PronunciationGuide";
 import {
+  COOLDOWN_HOURS,
   SESSION_SIZES,
   reinsertOffset,
   MAX_PRESENTATIONS,
@@ -126,8 +127,16 @@ export default function FocusedPage() {
       <div className="flex flex-col gap-6 p-4 max-w-md mx-auto">
         <div>
           <h1 className="text-2xl font-bold">אימון ממוקד</h1>
+          {/* Ariel asked whether this repeats or updates (note 97d76da0). It
+              updates — but nothing on screen said so, so the only way to find out
+              was to run it twice and compare. Now it says. */}
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
             תרגול על מילים שסימנת בהן &quot;שוב&quot; או &quot;קשה&quot;, עם העדפה לשיעורים האחרונים.
+          </p>
+          <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+            הרשימה נבנית מחדש בכל אימון ולא חוזרת על עצמה: היא מדורגת לפי כישלונות
+            אחרונים, סיכון לשכחה, קושי מצטבר וטריות השיעור — ואז נדגמת באקראי משוקלל,
+            כך ששני אימונים לא ייצאו זהים. מילה שתרגלת כאן לא תחזור ב־{COOLDOWN_HOURS} השעות הבאות.
           </p>
         </div>
 
