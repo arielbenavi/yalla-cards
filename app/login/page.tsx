@@ -31,7 +31,7 @@ function LoginForm() {
       return;
     }
 
-    router.replace(searchParams.get("from") || "/review");
+    router.replace(searchParams.get("from") || "/today");
     router.refresh();
   }
 
@@ -40,7 +40,7 @@ function LoginForm() {
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     const supabase = supabaseAuthBrowser();
-    const from = searchParams.get("from") || "/review";
+    const from = searchParams.get("from") || "/today";
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {

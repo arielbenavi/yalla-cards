@@ -110,7 +110,16 @@ export default function FocusedPage() {
 
       setRevealed(false);
       setQueue(rest);
-      if (rest.length === 0 || attempts + 1 >= HARD_ATTEMPT_CAP) setDone(true);
+      if (rest.length === 0 || attempts + 1 >= HARD_ATTEMPT_CAP) {
+        setDone(true);
+        // Ticks the day's focused-practice box. daily_practice only — this
+        // writes nothing to card_srs, review_log or self_score.
+        fetch("/api/today", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task: "focused" }),
+        }).catch(() => {});
+      }
     },
     [queue, sessionId, attempts]
   );

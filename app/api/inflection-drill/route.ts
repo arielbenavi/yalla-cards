@@ -109,9 +109,18 @@ export async function GET() {
       // carries m_ar / f_ar / pl_ar alongside its transliteration columns, and
       // an exact-match list would have turned each of those into a drill that
       // asks the learner to place أحمر in a box.
+      // `_alt` for the same reason as `variant`: the מפגש 6 past table gives
+      // כַּתַבֵּת beside כַּתַבְּת as the book's alternate pointing of one form, and
+      // drilling it separately would teach a paradigm that does not exist.
+      // `_he` is a gloss column, not a form.
       const SKIP_COLS = new Set(["ar", "arabic", "arabic_script", "variant", "note"]);
       const columns = Object.keys(data.rows[0]).filter(
-        (k) => k !== "person" && !SKIP_COLS.has(k) && !k.endsWith("_ar")
+        (k) =>
+          k !== "person" &&
+          !SKIP_COLS.has(k) &&
+          !k.endsWith("_ar") &&
+          !k.endsWith("_alt") &&
+          !k.endsWith("_he")
       );
       for (const col of columns) {
         const slots = data.rows

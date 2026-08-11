@@ -5,14 +5,14 @@ dotenv.config({ path: ".env.local" });
 
 export const APP_PASSWORD = process.env.APP_PASSWORD ?? "";
 
-/** Log in as admin and land on /review (or wherever the app redirects after auth). */
+/** Log in as admin and land on the daily checklist (or wherever auth redirects). */
 export async function login(page: Page) {
   await page.goto("/login");
   // Admin password form is hidden behind a toggle; reveal it first
   await page.getByRole("button", { name: "כניסת אדמין" }).click();
   await page.locator('input[type="password"]').fill(APP_PASSWORD);
   await page.locator('button[type="submit"]').click();
-  await page.waitForURL(/\/(review|inbox|recordings)/);
+  await page.waitForURL(/\/(today|review|inbox|recordings)/);
 }
 
 /**

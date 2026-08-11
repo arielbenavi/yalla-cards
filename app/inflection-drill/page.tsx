@@ -99,8 +99,19 @@ export default function InflectionDrillPage() {
     setPlaced((p) => ({ ...p, [person]: picked.form }));
     // Remove the tile by id. Filtering by text would take every duplicate with
     // it, which is what broke syncretic tables.
-    setPool((p) => p.filter((x) => x.id !== picked.id));
+    const rest = pool.filter((x) => x.id !== picked.id);
+    setPool(rest);
     setPicked(null);
+
+    // A completed table ticks the day's inflection box. This writes to
+    // daily_practice only — never to card_srs, review_log or self_score.
+    if (rest.length === 0) {
+      fetch("/api/today", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task: "inflections" }),
+      }).catch(() => {});
+    }
   }
 
   const solved = active !== null && pool.length === 0;

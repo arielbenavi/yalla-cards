@@ -8,6 +8,7 @@ import { strings } from "@/lib/strings";
 type NavLink = { href: string; label: string; adminOnly?: boolean };
 
 const links: NavLink[] = [
+  { href: "/today", label: strings.nav.today },
   { href: "/review", label: strings.nav.review },
   { href: "/focused", label: strings.nav.focused },
   { href: "/browse", label: strings.nav.browse },
