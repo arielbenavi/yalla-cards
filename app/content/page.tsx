@@ -56,6 +56,14 @@ const sections: Section[] = [
     emoji: "🌐",
     items: [
       { name: "Videos in Arabic", url: "https://videosinarabic.com/", note: "סרטונים עם כתוביות ותרגום בעברית" },
+      // Deep links, not just the homepage. Every page on that site carries the
+      // clip's full Arabic transcript beside the video, which is the part worth
+      // coming back to — the homepage buries it behind a search.
+      {
+        name: "הזמין את ארוסתו לשווארמה",
+        url: "https://videosinarabic.com/aiovg_videos/הזמין-את-ארוסתו-לשווארמה/",
+        note: "Videos in Arabic · אוצר המילים שלו נכנס למפגש בעל פה 5",
+      },
     ],
   },
   {
