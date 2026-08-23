@@ -32,8 +32,8 @@ test.describe("stored dialogues on /simulate", () => {
     const { dialogues } = await page.request.get("/api/dialogues").then((r) => r.json());
     test.skip(dialogues.length === 0, "no verified dialogue yet");
 
-    // Dismiss the daily tip first — login lands on /review where it renders as a
-    // modal, and its backdrop swallows the nav click.
+    // Dismiss the daily tip first — it renders as a modal whose backdrop
+    // swallows the nav click.
     const tip = page.getByRole("button", { name: "הבנתי" });
     await tip.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
     if (await tip.isVisible().catch(() => false)) {
@@ -41,8 +41,10 @@ test.describe("stored dialogues on /simulate", () => {
       await tip.waitFor({ state: "detached" });
     }
 
-    // Navigate by link — page.goto races the dev server's compile and aborts
-    await page.getByRole("link", { name: "שיחה" }).click();
+    // Navigate by link — page.goto races the dev server's compile and aborts.
+    // Scoped to the nav: the daily checklist now carries a "תרגול שיחה" link to
+    // the same route, so an unscoped locator matches two elements.
+    await page.locator("nav").getByRole("link", { name: "שיחה" }).click();
 
     await page.getByRole("button", { name: "דו-שיח" }).click();
     await page.waitForLoadState("networkidle");
