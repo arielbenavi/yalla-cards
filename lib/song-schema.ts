@@ -95,6 +95,19 @@ export function checkSong(lines: LyricLine[]): SongIssue[] {
       if (LATIN_WORD.test(w.he)) {
         issues.push({ line: n, field: "words.he", problem: "אנגלית בתרגום", value: w.he });
       }
+      // The gap that let every song through. `line` was checked for Hebrew but
+      // the word-level `translit` never was, and the collector's own prompt
+      // asked Gemini for "Latin-alphabet transliteration" — so all eleven songs
+      // stored Latin, and Ariel read that as Immer simply having no
+      // transliteration at all. He does not read Latin: "לא צריך אנגלית!!"
+      if (w.translit?.trim() && !HEBREW.test(w.translit)) {
+        issues.push({
+          line: n,
+          field: "words.translit",
+          problem: LATIN_WORD.test(w.translit) ? "תעתיק לטיני במקום עברי" : "תעתיק לא בעברית",
+          value: w.translit,
+        });
+      }
     }
   });
 

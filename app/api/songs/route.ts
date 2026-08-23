@@ -52,7 +52,13 @@ For each LINE of Arabic lyrics, output a line object with:
 - words: array of word objects, one per word in that line, each with:
   - ar: the Arabic word (in Arabic script if available, otherwise the transliterated form)
   - he: the Hebrew translation of that word
-  - translit: Latin-alphabet transliteration of the Arabic word
+  - translit: HEBREW-letter transliteration of the Arabic word, vocalised with nikud
+
+CRITICAL — the transliteration must be in HEBREW letters, never Latin letters.
+The learner reads Hebrew; a Latin transliteration like "wakha" or "l-hbal" is
+unusable to him. Write וַאחַ'א, not "wakha". Use the Levantine conventions:
+ח' for خ, ע' for غ, ג' for ج, צ' for ض/ظ, ת' for ث, ד' for ذ, ע for ع, ק for ق.
+Vocalise with nikud. Do not put Latin letters in the translit field or in the he field.
 
 Skip empty lines and lines that are purely Hebrew (not Arabic). If a Hebrew translation line follows an Arabic line, use it to inform the word-level translations.
 

@@ -16,6 +16,9 @@ type Item = {
   example: Example | null;
 };
 
+/** A range inside one of the מפגש 1 alphabet recordings (note 28e16a9b). */
+type LetterAudio = { url: string; start: number; end: number; note: string | null };
+
 const FORM_LABEL: Record<Item["form"], string> = {
   isolated: "מבודדת",
   initial: "בתחילת מילה",
@@ -33,6 +36,47 @@ export default function LettersPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [sessionId] = useState(() => crypto.randomUUID());
   const shownAt = useRef(Date.now());
+
+  /**
+   * Pronunciation clips, fetched once. The teacher's own voice from מפגש 1 is
+   * the point — Ariel asked for "איך הוגים" from the recordings themselves, not
+   * a synthesised approximation of ض.
+   */
+  const [audio, setAudio] = useState<Record<string, LetterAudio>>({});
+  const player = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/letters/audio")
+      .then((r) => r.json())
+      .then((d) => setAudio(d.audio ?? {}))
+      .catch(() => {});
+  }, []);
+
+  // The clip is a slice of a five-minute recording, so playback has to be
+  // stopped by hand at `end` — otherwise pressing ض plays the rest of the
+  // alphabet.
+  const playLetter = useCallback((ch: string) => {
+    const clip = audio[ch];
+    if (!clip) return;
+    player.current?.pause();
+    const el = new Audio(clip.url);
+    player.current = el;
+    setPlaying(ch);
+    const stop = () => {
+      el.pause();
+      setPlaying((p) => (p === ch ? null : p));
+    };
+    el.addEventListener("timeupdate", () => {
+      if (el.currentTime >= clip.end) stop();
+    });
+    el.addEventListener("ended", stop);
+    el.currentTime = clip.start;
+    el.play().catch(stop);
+  }, [audio]);
+
+  // Leaving the page mid-clip should not keep the lesson playing.
+  useEffect(() => () => player.current?.pause(), []);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -144,10 +188,28 @@ export default function LettersPage() {
 
       {answered && (
         <div className="flex flex-col gap-3 rounded-xl border p-4">
-          <p className="text-sm">
-            <span className="font-bold">{isCorrect ? "נכון" : "לא"}</span> — {item.name}, נהגית{" "}
-            <span className="font-bold">{item.sound}</span>
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm">
+              <span className="font-bold">{isCorrect ? "נכון" : "לא"}</span> — {item.name}, נהגית{" "}
+              <span className="font-bold">{item.sound}</span>
+            </p>
+            {audio[item.target] && (
+              <button
+                onClick={() => playLetter(item.target)}
+                aria-label={`השמע את ההגייה של ${item.name}`}
+                className={`shrink-0 rounded-full border px-3 py-2 text-lg transition-colors ${
+                  playing === item.target ? "bg-black text-white border-black" : "hover:bg-gray-50"
+                }`}
+              >
+                🔊
+              </button>
+            )}
+          </div>
+          {audio[item.target]?.note && (
+            <p className="text-xs text-gray-500 leading-relaxed border-r-2 pr-2">
+              {audio[item.target]!.note}
+            </p>
+          )}
 
           {/* All four shapes, so the letter reads as one skeleton with a
               connecting stroke rather than four separate symbols */}

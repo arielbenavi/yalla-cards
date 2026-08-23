@@ -218,8 +218,8 @@ export default function SongDetailPage() {
           <p className="text-4xl font-bold mb-1" dir={current.ar ? "rtl" : "ltr"}>
             {current.ar || current.translit}
           </p>
-          {current.ar && (
-            <p className="text-gray-500 text-sm" dir="ltr">
+          {current.ar && /[֐-׿]/.test(current.translit ?? "") && (
+            <p className="nikud-text text-gray-500 text-sm" dir="rtl">
               {current.translit}
             </p>
           )}
@@ -301,9 +301,14 @@ export default function SongDetailPage() {
                   {line.timestamp}
                 </span>
               )}
-              {/[؀-ۿ]/.test(line.line) && line.words.some((w) => w.translit) ? (
+              {/* A line whose `line` field is Arabic needs the transliteration
+                  promoted above it — but only a Hebrew one. Every song stores
+                  Latin word-level transliteration ("wakha", "l-hbal"), and
+                  showing that as the primary reading is worse than showing the
+                  Arabic: Ariel does not read it. "לא צריך אנגלית!!" */}
+              {/[؀-ۿ]/.test(line.line) && line.words.some((w) => /[֐-׿]/.test(w.translit ?? "")) ? (
                 <>
-                  <p className="text-lg font-medium leading-snug ltr-text" dir="ltr">
+                  <p className="nikud-text text-lg font-medium leading-snug" dir="rtl">
                     {line.words.map((w) => w.translit).filter(Boolean).join(" ")}
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500 leading-snug" dir="rtl">
@@ -311,7 +316,12 @@ export default function SongDetailPage() {
                   </p>
                 </>
               ) : (
-                <p className="text-lg font-medium leading-snug">{line.line}</p>
+                <>
+                  <p className="text-lg font-medium leading-snug">{line.line}</p>
+                  {/[؀-ۿ]/.test(line.line) && (
+                    <p className="text-[11px] text-amber-600 leading-snug">חסר תעתיק עברי לשורה הזאת</p>
+                  )}
+                </>
               )}
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
                 {line.words.map((w) => w.he).filter(Boolean).join(" ")}
