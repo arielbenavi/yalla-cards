@@ -29,6 +29,46 @@ export type ChecklistItem = {
   done: boolean;
   /** Only shown when there is something left to do. */
   remaining?: number;
+  /**
+   * Concrete ways to start, offered with the prompt (note 3e564c9f).
+   *
+   * Ariel asked to be nudged — "האם התאמנת על שיחה היום?" — and then handed
+   * straight to a situation rather than to a picker: "ואז נגיד 3 אפשרויות
+   * שנשלפות רנדומלית מהרשימה". A prompt that lands on another menu is a
+   * decision, and the decision is what he skips.
+   */
+  suggestions?: { label: string; href: string }[];
+};
+
+/** Tasks whose completion is recorded rather than derived. */
+const MARKABLE = new Set(["inflections", "focused", "conversation"]);
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Hebrew names for the stored situations, matching the simulate screen. */
+const SITUATION_LABEL: Record<string, string> = {
+  shawarma: "דוכן שווארמה",
+  market: "שוק",
+  taxi: "מונית",
+  restaurant: "מסעדה",
+  cafe: "בית קפה",
+  bank: "בנק",
+  doctor: "רופא",
+  directions: "הכוונה בדרך",
+  clothes_shop: "חנות בגדים",
+  gas_station: "תחנת דלק",
+  car_trouble: "תקלה ברכב",
+  family_chat: "שיחה משפחתית",
+  phone_appointment: "תור בטלפון",
+  meet_stranger: "היכרות",
+  self_intro: "הצגה עצמית",
 };
 
 /** Local calendar day. Deriving it from a UTC timestamp would roll the
@@ -54,6 +94,17 @@ export async function GET() {
       .eq("state", State.New),
     supabase.from("daily_practice").select("task").eq("day", day),
   ]);
+
+  // Only verified situations are offered, the same rule the simulate screen
+  // applies — a nudge that drops him into an unreviewed dialogue would be
+  // pushing him at the material specifically kept away from him.
+  const { data: situations } = await supabase
+    .from("paradigms")
+    .select("slug, data")
+    .like("slug", "simulation_%");
+  const verifiedKeys = (situations ?? [])
+    .filter((r) => (r.data as { chatifai_verified?: boolean })?.chatifai_verified === true)
+    .map((r) => r.slug.replace(/^simulation_/, ""));
 
   const marked = new Set((marks ?? []).map((m) => m.task));
 
@@ -85,6 +136,19 @@ export async function GET() {
       href: "/focused",
       done: marked.has("focused"),
     },
+    {
+      key: "conversation",
+      label: "תרגול שיחה",
+      hint: "סיטואציה אחת מההתחלה עד הסוף",
+      href: "/simulate",
+      done: marked.has("conversation"),
+      suggestions: shuffle(verifiedKeys)
+        .slice(0, 3)
+        .map((key) => ({
+          label: SITUATION_LABEL[key] ?? key,
+          href: `/simulate?tab=dialogue&scene=${encodeURIComponent(key)}`,
+        })),
+    },
   ];
 
   return NextResponse.json({
@@ -104,7 +168,7 @@ export async function GET() {
  */
 export async function POST(request: Request) {
   const { task } = (await request.json().catch(() => ({}))) as { task?: string };
-  if (task !== "inflections" && task !== "focused") {
+  if (!task || !MARKABLE.has(task)) {
     return NextResponse.json({ error: "unknown task" }, { status: 400 });
   }
 

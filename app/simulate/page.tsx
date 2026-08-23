@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { DialogueScene, DIALOGUE_SCENE_KEYS } from "@/lib/dialogue-scenes";
 import { strings } from "@/lib/strings";
 
@@ -91,8 +92,15 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export default function SimulatePage() {
-  const [tab, setTab] = useState<Tab>("cards");
+function SimulateScreen() {
+  const params = useSearchParams();
+  // The daily checklist links straight into one situation (note 3e564c9f), so
+  // the tab has to open on it rather than on the card drill.
+  const wantedTab = params.get("tab") as Tab | null;
+  const wantedScene = params.get("scene");
+  const [tab, setTab] = useState<Tab>(
+    wantedTab && ["cards", "sentences", "convo", "dialogue"].includes(wantedTab) ? wantedTab : "cards"
+  );
 
   // Cards tab state
   const [cards, setCards] = useState<SimCard[]>([]);
@@ -131,6 +139,33 @@ export default function SimulatePage() {
     setShownHe(new Set());
     setChosen({});
   }
+
+  // Follow a ?scene= deep link once the dialogues have loaded. Guarded on
+  // `activeDialogue` being null so re-renders do not yank him back to the top
+  // of the scene he is halfway through.
+  const openedFromLink = useRef(false);
+  useEffect(() => {
+    if (openedFromLink.current || !wantedScene || !dialogues.length) return;
+    const match = dialogues.find((d) => d.key === wantedScene);
+    if (!match) return;
+    openedFromLink.current = true;
+    openDialogue(match);
+  }, [wantedScene, dialogues]);
+
+  // Reaching the last turn is finishing the situation, which ticks the day's
+  // conversation box. daily_practice only — never card_srs, review_log or
+  // self_score.
+  const markedConversation = useRef(false);
+  useEffect(() => {
+    if (!activeDialogue || markedConversation.current) return;
+    if (turnIndex < activeDialogue.turns.length - 1) return;
+    markedConversation.current = true;
+    fetch("/api/today", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task: "conversation" }),
+    }).catch(() => {});
+  }, [activeDialogue, turnIndex]);
 
   // Conversation tab state
   const [scenario, setScenario] = useState<string>("");
@@ -684,5 +719,24 @@ export default function SimulatePage() {
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * `useSearchParams` bails the client tree out of prerendering, so the page it
+ * is used in must sit inside a Suspense boundary or the production build fails
+ * on /simulate. Only the screen below the boundary is client-rendered.
+ */
+export default function SimulatePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-1 items-center justify-center text-gray-500">
+          {strings.common.loading}
+        </div>
+      }
+    >
+      <SimulateScreen />
+    </Suspense>
   );
 }
