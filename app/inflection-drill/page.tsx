@@ -180,7 +180,11 @@ export default function InflectionDrillPage() {
 
       <div className="text-center">
         <h2 className="text-xl font-bold nikud-text">{active.title}</h2>
-        {active.subtitle && <p className="text-xs text-gray-400 mt-1">{active.subtitle}</p>}
+        {/* The tense (or the paradigm's description) is not decoration — you
+            cannot place a form without knowing which table you are filling. */}
+        {active.subtitle && (
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{active.subtitle}</p>
+        )}
       </div>
 
       {/* Boxes, in canonical person order */}

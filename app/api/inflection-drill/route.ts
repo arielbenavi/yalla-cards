@@ -28,6 +28,53 @@ const TENSE_LABEL: Record<string, string> = {
   imperative: "ציווי",
 };
 
+/**
+ * Hebrew names for the paradigm slugs (note 7a063a00 / e165eccf).
+ *
+ * The title used to fall back to the raw slug, so the drill announced itself as
+ * "possession_maa — positive" and never said what was being inflected. Ariel's
+ * ask was blunt: say what the word means. A slug missing from this map still
+ * falls back to itself, so adding a paradigm never breaks the screen — it just
+ * shows an untranslated name until someone adds the line.
+ */
+const SLUG_LABEL: Record<string, string> = {
+  prepositions: "מילות יחס",
+  akh_inflection: "אַח' — אח",
+  ab_akh_inflection: "אַבּ / אַח' — אב ואח",
+  possessives: "שייכות",
+  possessive_tabaa: "שייכות — תַבַּע",
+  possession_tabaa: "שייכות — תַבַּע / תַע",
+  possession_ili: "אִלִי — יש לי",
+  possession_ind: "עִנְד — יש ל… / אצל",
+  possession_maa: "מַע — איתי, עליי",
+  demonstratives: "כינויי רמז",
+  colours: "צבעים",
+  ordinals: "מספרים סודרים",
+  weekdays: "ימות השבוע",
+  past_sound_verb: "עבר — פועל שלם",
+  dual_use_verbs: "פעלים דו-שימושיים",
+};
+
+/** Hebrew names for paradigm columns that carry no `translations` block. */
+const COLUMN_LABEL: Record<string, string> = {
+  positive: "חיוב",
+  negative: "שלילה",
+  m: "זכר",
+  f: "נקבה",
+  pl: "רבים",
+  form: "צורה",
+  past: "עבר",
+  participle: "בינוני",
+  faal: "משקל פַעַל",
+  fiel: "משקל פִעֵל",
+  full: "צורה מלאה",
+  short: "צורה מקוצרת",
+  translit: "תעתיק",
+};
+
+const labelFor = (slug: string) => SLUG_LABEL[slug] ?? slug;
+const columnLabel = (col: string) => COLUMN_LABEL[col] ?? col;
+
 export type DrillSet = {
   id: string;
   source: "verb" | "paradigm";
@@ -82,8 +129,10 @@ export async function GET() {
         id: `verb:${v.id}:${tense}`,
         source: "verb",
         group: `פעלים — ${TENSE_LABEL[tense]}`,
-        title: `${v.root_translit ?? v.root} — ${TENSE_LABEL[tense]}`,
-        subtitle: v.meaning_he,
+        // The meaning goes in the title, not the subtitle. Drilling a paradigm
+        // for a verb you cannot translate is drilling a shape.
+        title: `${v.root_translit ?? v.root} — ${v.meaning_he}`,
+        subtitle: TENSE_LABEL[tense],
         slots,
       });
     }
@@ -132,11 +181,11 @@ export async function GET() {
           source: "paradigm",
           group: p.meeting ? `מפגש ${p.meeting}` : "כללי",
           title: data.translations?.[col]
-            ? `${col} — ${data.translations[col]}`
+            ? `${labelFor(p.slug)} — ${data.translations[col]}`
             : columns.length === 1
             // Single-column paradigm: the column name adds nothing
-            ? (data.description?.split(/[—.]/)[0].trim() || p.slug)
-            : `${p.slug} — ${col}`,
+            ? labelFor(p.slug)
+            : `${labelFor(p.slug)} — ${columnLabel(col)}`,
           subtitle: data.description ?? null,
           slots,
         });

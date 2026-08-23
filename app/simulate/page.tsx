@@ -24,12 +24,20 @@ type Tab = "cards" | "sentences" | "convo" | "dialogue";
 
 type DialogueCell = { translit?: string; ar?: string; he?: string };
 type DialogueTurn = DialogueCell & { speaker?: string; options?: DialogueCell[] };
+type CourseMaterial = {
+  title?: string;
+  source?: string;
+  note?: string;
+  paragraphs?: string[];
+};
 type Dialogue = {
   id: number;
   key: string;
   verified: boolean;
   turn_count: number;
   turns: DialogueTurn[];
+  /** The lesson's own text for this scene, if there is any. */
+  course_material?: CourseMaterial | null;
 };
 
 const DIALOGUE_LABELS: Record<string, { emoji: string; label: string }> = {
@@ -556,6 +564,25 @@ export default function SimulatePage() {
               <p className="text-center text-[11px] text-gray-400">
                 לחיצה על שורה מגלה את התרגום
               </p>
+
+              {/* The lesson's own text for this scene (note 97311b79). It is
+                  reference, not a turn — Ariel wrote it pointed and wrote no
+                  translation, so none is shown. */}
+              {activeDialogue.course_material?.paragraphs?.length ? (
+                <div className="mt-2 rounded-2xl border p-4 flex flex-col gap-2">
+                  <p className="text-sm font-bold">
+                    {activeDialogue.course_material.title ?? "החומר מהשיעור"}
+                  </p>
+                  {activeDialogue.course_material.paragraphs.map((para, i) => (
+                    <p key={i} className="nikud-text text-base leading-relaxed">
+                      {para}
+                    </p>
+                  ))}
+                  {activeDialogue.course_material.note && (
+                    <p className="text-[11px] text-gray-400">{activeDialogue.course_material.note}</p>
+                  )}
+                </div>
+              ) : null}
             </>
           )}
         </div>

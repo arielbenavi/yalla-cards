@@ -14,6 +14,7 @@
 import { config } from "dotenv";
 config({ path: ".env.local" });
 import { createClient } from "@supabase/supabase-js";
+import { writeFileSync } from "node:fs";
 
 const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false },
@@ -35,6 +36,44 @@ const STOPLIST = new Set([
   "כיף", "לימא", "למא", "אדיש", "קדיש", "כם", "אימתא", "ליש", "טיב", "טב",
   "ה", "ו", "ב", "ל", "כ", "אל", "ال",
 ]);
+
+/**
+ * Proper names used in the course's example sentences. They are not vocabulary
+ * — a card reading "נביל = נביל" teaches nothing — and they were a quarter of
+ * the noise in the first pass of this report.
+ */
+const NAMES = new Set([
+  "אחמד", "נביל", "ח'דיג'", "ח'דיג'ה", "ויסאם", "מרים", "עאטף", "לטיפה",
+  "זהיר", "הדיה", "אמיר", "באסם", "רועה", "סמיר", "נצ'אל", "חסן", "פאטמה",
+  "מחמד", "מחמוד", "עלי", "יוסף", "סעיד", "כרים", "לילא", "סלמא", "רים",
+  "אבו", "אמ", "ام",
+]);
+
+/**
+ * Verbal morphology, which is inflection rather than a separate word.
+ *
+ * The imperfect takes a person prefix (ب/بت/ي/ت/ن/م-) and negation is a
+ * circumfix (ما…ش → מ…ש), so מַענדהמש, פהמתש and בַּלעב all looked like unknown
+ * vocabulary while their stems already had cards. Each shape is *added* as a
+ * candidate match, never substituted, so a real word starting with ب is not
+ * silently truncated into a match it does not deserve.
+ */
+function stripVerbAffixes(tok: string): string[] {
+  const out = new Set<string>();
+  let t = tok;
+  // negation circumfix ما…ش
+  if (t.endsWith("ש") && t.length > 3) {
+    out.add(t.slice(0, -1));
+    t = t.slice(0, -1);
+  }
+  if (t.startsWith("מא") && t.length > 3) out.add(t.slice(2));
+  if (t.startsWith("מ") && t.length > 3) out.add(t.slice(1));
+  // imperfect prefixes, longest first
+  for (const p of ["בת", "בי", "בנ", "בא", "ב", "ת", "י", "נ", "א"]) {
+    if (t.startsWith(p) && t.length > p.length + 1) out.add(t.slice(p.length));
+  }
+  return [...out].filter((x) => x.length > 1);
+}
 
 /** Strip proclitics: conjunction ו, prepositions ב/ל/כ, and the definite article
  *  in all the shapes the transliteration uses — including the assimilated form
@@ -88,16 +127,23 @@ function variants(tok: string): string[] {
   const out = new Set<string>();
   for (const a of stripProclitics(tok)) {
     out.add(a);
-    for (const b of stripSuffixes(a)) out.add(b);
+    for (const b of stripSuffixes(a)) {
+      out.add(b);
+      for (const c of stripVerbAffixes(b)) out.add(c);
+    }
+    for (const c of stripVerbAffixes(a)) out.add(c);
   }
   return [...out];
 }
 
-function tokenize(translit: string): string[] {
+/** Tokens paired with their pointed original. The pointing is the whole value
+ *  of this report: it is the course's own vocalisation of the word, so the
+ *  chatifai pass has evidence to point at instead of a bare consonant skeleton. */
+function tokenize(translit: string): { bare: string; pointed: string }[] {
   return translit
     .split(/[\s()?.!,\/־–-]+/)
-    .map(stripNikud)
-    .filter((t) => t.length > 1);
+    .map((pointed) => ({ bare: stripNikud(pointed), pointed: pointed.trim() }))
+    .filter((t) => t.bare.length > 1);
 }
 
 async function main() {
@@ -125,28 +171,49 @@ async function main() {
     }
   }
 
-  const missing = new Map<string, { he: string; count: number }>();
+  type Hit = { he: string; count: number; pointed: string; sources: string[] };
+  const missing = new Map<string, Hit>();
   for (const p of phrases ?? []) {
     if (!p.translit_nikud) continue;
-    for (const raw of tokenize(p.translit_nikud)) {
-      const forms = variants(raw);
-      if (forms.some((f) => known.has(f) || STOPLIST.has(f))) continue;
-      if (STOPLIST.has(raw)) continue;
+    for (const { bare, pointed } of tokenize(p.translit_nikud)) {
+      const forms = variants(bare);
+      if (forms.some((f) => known.has(f) || STOPLIST.has(f) || NAMES.has(f))) continue;
+      if (STOPLIST.has(bare) || NAMES.has(bare)) continue;
       // The shortest normalised form is the likeliest dictionary shape
-      const key = forms.sort((a, b) => a.length - b.length)[0] ?? raw;
+      const key = forms.sort((a, b) => a.length - b.length)[0] ?? bare;
       if (key.length < 3) continue;
       const hit = missing.get(key);
-      if (hit) hit.count++;
-      else missing.set(key, { he: p.hebrew_meaning, count: 1 });
+      if (hit) {
+        hit.count++;
+        if (hit.sources.length < 3 && !hit.sources.includes(p.hebrew_meaning)) hit.sources.push(p.hebrew_meaning);
+      } else {
+        missing.set(key, { he: p.hebrew_meaning, count: 1, pointed, sources: [p.hebrew_meaning] });
+      }
     }
   }
 
   const sorted = [...missing.entries()].sort((a, b) => b[1].count - a[1].count);
   console.log(`\n=== מילים בביטויים שאין להן כרטיס משלהן (${sorted.length}) ===\n`);
   for (const [tok, info] of sorted) {
-    console.log(`• ${tok.padEnd(14)} ${String(info.count).padStart(2)}x   — ב: "${info.he}"`);
+    console.log(`• ${info.pointed.padEnd(18)} ${String(info.count).padStart(2)}x   — ב: "${info.he}"`);
   }
   console.log(`\n(${(phrases ?? []).length} ביטויים/משפטים · ${(words ?? []).length} מילות בסיס)`);
+
+  // The worklist is the deliverable, not the console dump. Each entry carries
+  // the course's own pointing and the sentences it came from, so the chatifai
+  // pass asks only for the Arabic script and Ariel supplies only the gloss.
+  const out = sorted.map(([bare, info]) => ({
+    bare,
+    pointed: info.pointed,
+    count: info.count,
+    sources: info.sources,
+  }));
+  writeFileSync(
+    "scripts/data/vocab-from-phrases-worklist.json",
+    JSON.stringify(out, null, 2) + "\n",
+    "utf-8"
+  );
+  console.log(`\nנכתב scripts/data/vocab-from-phrases-worklist.json — ${out.length} מילים`);
 }
 
 main().catch((e) => {

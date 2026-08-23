@@ -28,6 +28,14 @@ export async function GET(request: Request) {
         chatifai_verified?: boolean;
         verification_note?: string;
         description?: string;
+        /** Verbatim lesson text attached to the scene (note 97311b79). Not a
+         *  turn and not drilled — the course's own words, shown as reference. */
+        course_material?: {
+          title?: string;
+          source?: string;
+          note?: string;
+          paragraphs?: string[];
+        };
       };
       return {
         id: row.id,
@@ -38,6 +46,7 @@ export async function GET(request: Request) {
         verification_note: d?.verification_note ?? null,
         turn_count: Array.isArray(d?.turns) ? d.turns.length : 0,
         turns: d?.turns ?? [],
+        course_material: d?.course_material ?? null,
       };
     })
     .filter((d) => includeUnverified || d.verified);

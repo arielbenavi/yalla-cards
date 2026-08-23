@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Rating } from "ts-fsrs";
 
-type LyricWord = { ar: string; he: string; translit: string };
+type LyricWord = { ar: string; he: string; translit: string; note?: string };
 type LyricLine = { line: string; words: LyricWord[]; timestamp?: string };
 
 type Song = {
@@ -162,6 +162,13 @@ export default function SongDetailPage() {
 
   const youtubeId = song.youtube_url ? getYoutubeEmbedId(song.youtube_url) : null;
 
+
+  // `[]` is truthy. Three songs carry Ariel's Arabic in `lyrics_raw` with an
+  // empty `lyrics_parsed`, so the old `song.lyrics_parsed ?` rendered an empty
+  // list and the raw fallback never fired — his lyrics were in the database
+  // but invisible on the page.
+  const parsed = song.lyrics_parsed?.length ? song.lyrics_parsed : null;
+
   // --- DRILL MODE ---
   if (drillMode) {
     if (drillLoading) {
@@ -272,22 +279,22 @@ export default function SongDetailPage() {
       {/* Start drill button */}
       <button
         onClick={startDrill}
-        disabled={enrolling || !song.lyrics_parsed}
+        disabled={enrolling || !parsed}
         className="w-full bg-black text-white px-4 py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-6"
       >
         {enrolling ? "מכין תרגול..." : "התחל תרגול"}
       </button>
 
-      {!song.lyrics_parsed && (
+      {!parsed && (
         <p className="text-center text-sm text-amber-600 mb-4">
-          המילים עדיין מעובדות. רענן את הדף תוך מספר שניות.
+          המילים למטה, אבל עוד אין להן תעתיק ותרגום — לכן אין תרגול.
         </p>
       )}
 
       {/* Lyrics */}
-      {song.lyrics_parsed ? (
+      {parsed ? (
         <div className="space-y-5" dir="rtl">
-          {song.lyrics_parsed.map((line, li) => (
+          {parsed.map((line, li) => (
             <div key={li}>
               {line.timestamp && (
                 <span className="inline-block text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5 mb-1 font-mono" dir="ltr">
@@ -307,8 +314,18 @@ export default function SongDetailPage() {
                 <p className="text-lg font-medium leading-snug">{line.line}</p>
               )}
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">
-                {line.words.map((w) => w.he).join(" ")}
+                {line.words.map((w) => w.he).filter(Boolean).join(" ")}
               </p>
+              {/* Grammar that used to sit inside the translation itself. Kept
+                  beside the line, not inside it. */}
+              {line.words.some((w) => w.note) && (
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 leading-snug">
+                  {line.words
+                    .filter((w) => w.note)
+                    .map((w) => `${w.ar} — ${w.note}`)
+                    .join(" · ")}
+                </p>
+              )}
             </div>
           ))}
         </div>

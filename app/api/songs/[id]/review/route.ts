@@ -73,7 +73,11 @@ export async function GET(
 
   if (dueError) return NextResponse.json({ error: dueError.message }, { status: 500 });
 
-  const items = (dueRows ?? []).map((row) => {
+  // Words with no gloss are grammatical particles, not vocabulary — asking
+  // "what does عم mean" with four Hebrew options has no right answer. Their SRS
+  // rows stay put: `word_index` is positional, so removing them would shift
+  // every later word onto the wrong scheduling row.
+  const items = (dueRows ?? []).filter((row) => allWords[row.word_index]?.he).map((row) => {
     const word = allWords[row.word_index];
     return {
       srs_id: row.id,
@@ -85,7 +89,7 @@ export async function GET(
     };
   });
 
-  return NextResponse.json({ items, all_words: allWords });
+  return NextResponse.json({ items, all_words: allWords.filter((w) => w.he) });
 }
 
 // POST /api/songs/[id]/review — submit rating for a word

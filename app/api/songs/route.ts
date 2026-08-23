@@ -4,7 +4,12 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { checkSong } from "@/lib/song-schema";
 
-export type LyricWord = { ar: string; he: string; translit: string };
+/**
+ * `he` is a translation, never an explanation. A particle with no Hebrew
+ * equivalent (عم, marking the progressive) gets an empty `he` so the flowing
+ * translation line reads as a sentence, and its grammar goes in `note`.
+ */
+export type LyricWord = { ar: string; he: string; translit: string; note?: string };
 export type LyricLine = { line: string; words: LyricWord[] };
 
 const lyricsSchema: Schema = {

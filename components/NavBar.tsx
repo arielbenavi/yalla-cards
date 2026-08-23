@@ -15,7 +15,8 @@ const links: NavLink[] = [
   { href: "/songs", label: strings.nav.songs },
   { href: "/content", label: strings.nav.content },
   { href: "/simulate", label: strings.nav.simulate },
-  { href: "/inflections", label: strings.nav.inflections },
+  // "נטיות" removed from the bar on Ariel's call (note e165eccf). The route
+  // still resolves, so this is one line to undo — nothing was deleted.
   { href: "/inflection-drill", label: strings.nav.inflectionDrill },
   { href: "/possessives", label: strings.nav.possessives },
   { href: "/practice", label: strings.nav.practice },
