@@ -14,6 +14,19 @@ tools:
 
 You are querying the chatifai.io Arabic course chatbot to get precise Palestinian Arabic transliteration with Hebrew nikud.
 
+## This agent has browser tools ONLY
+
+No Read, no Write, no Bash. Whoever dispatches this agent must put the word list
+**inline in the prompt** and take the results back **in the final message** — a
+run on 2026-08-24 was wasted because the brief pointed at a scratchpad file the
+agent could not open, and `file://` cannot be reached through the browser tools
+either (`navigate` prefixes `https://`, and fetching `file://` from a page origin
+is blocked).
+
+The agent was right to stop rather than reconstruct the list from the format
+description or scrape it out of the open chat. Arabic spellings attached to the
+wrong pointed forms would look like data instead of like an error.
+
 ## Setup (first time per session)
 
 1. Load chrome tools: `ToolSearch select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__find,mcp__claude-in-chrome__form_input,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__javascript_tool`
