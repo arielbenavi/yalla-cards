@@ -52,6 +52,10 @@ const SLUG_LABEL: Record<string, string> = {
   ordinals: "מספרים סודרים",
   weekdays: "ימות השבוע",
   past_sound_verb: "עבר — פועל שלם",
+  indirect_object_l: "נטיית ל׳ — כינויי מושא עקיף",
+  past_indirect_negation: "עבר + מושא עקיף — וַצַף",
+  past_indirect_object_grid: "עבר + מושא עקיף — דַפַע",
+  participle_indirect_object: "בינוני + מושא עקיף — סַארֵק",
   dual_use_verbs: "פעלים דו-שימושיים",
 };
 
@@ -70,6 +74,17 @@ const COLUMN_LABEL: Record<string, string> = {
   full: "צורה מלאה",
   short: "צורה מקוצרת",
   translit: "תעתיק",
+  singular_m: "יחיד",
+  singular_f: "יחידה",
+  plural: "רבים",
+  ana: "אַנַא",
+  inta: "אִנְתֵ",
+  inti: "אִנְתִי",
+  huwwe: "הֻוֵّ",
+  hiyye: "הִיֵّ",
+  ihna: "אִחְנַא",
+  intu: "אִנְתוּ",
+  hum: "הֵםّ",
 };
 
 const labelFor = (slug: string) => SLUG_LABEL[slug] ?? slug;
@@ -172,8 +187,12 @@ export async function GET() {
           !k.endsWith("_he")
       );
       for (const col of columns) {
+        // "X" marks a cell the book blocks — אַנַא does not pay to itself, and
+        // אִחְנַא does not pay to us. Serving it as a tile would ask the learner
+        // to place a form that does not exist, and the drill only completes when
+        // every tile is placed, so a single X made the table unfinishable.
         const slots = data.rows
-          .filter((r) => r.person && r[col])
+          .filter((r) => r.person && r[col] && r[col] !== "X")
           .map((r) => ({ person: r.person, answer: primaryForm(r[col]) }));
         if (slots.length < 3) continue;
         sets.push({

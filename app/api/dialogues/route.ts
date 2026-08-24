@@ -3,11 +3,16 @@ import { supabaseAdmin } from "@/lib/supabase";
 
 /** Stored conversation dialogues (paradigms rows with a simulation_* slug).
  *
- *  Only chatifai-verified rows are served. The rest were produced by a
- *  general-purpose model and contain real errors — chatifai's audit of the first
- *  one found a gender mistake and two unnatural lines — so they must not reach a
- *  learner until they have been through the same review. Pass ?all=1 to list
- *  every dialogue with its verification state, for the admin view.
+ *  The gate exists because most of these were produced by a general-purpose
+ *  model and contain real errors — chatifai's audit of the first one found a
+ *  gender mistake and two unnatural lines — so unreviewed machine Arabic must
+ *  not reach a learner.
+ *
+ *  `course_verified` passes the same gate. The מפגש 8 dialogue was typed out of
+ *  the book, already pointed, and the course outranks chatifai on anything that
+ *  came from a lesson; holding it back would be applying a rule about
+ *  AI-generated text to text no model wrote. Pass ?all=1 to list every dialogue
+ *  with its verification state, for the admin view.
  */
 export async function GET(request: Request) {
   const includeUnverified = new URL(request.url).searchParams.get("all") === "1";
@@ -26,6 +31,7 @@ export async function GET(request: Request) {
       const d = row.data as {
         turns?: unknown[];
         chatifai_verified?: boolean;
+        course_verified?: boolean;
         verification_note?: string;
         description?: string;
         /** Verbatim lesson text attached to the scene (note 97311b79). Not a
@@ -42,7 +48,8 @@ export async function GET(request: Request) {
         slug: row.slug,
         key: row.slug.replace(/^simulation_/, ""),
         description: d?.description ?? null,
-        verified: d?.chatifai_verified === true,
+        verified: d?.chatifai_verified === true || d?.course_verified === true,
+        source: d?.course_verified === true && d?.chatifai_verified !== true ? "course" : "chatifai",
         verification_note: d?.verification_note ?? null,
         turn_count: Array.isArray(d?.turns) ? d.turns.length : 0,
         turns: d?.turns ?? [],
@@ -54,8 +61,9 @@ export async function GET(request: Request) {
   return NextResponse.json({
     dialogues,
     total: (data ?? []).length,
-    verified: (data ?? []).filter(
-      (r) => (r.data as { chatifai_verified?: boolean })?.chatifai_verified === true
-    ).length,
+    verified: (data ?? []).filter((r) => {
+      const d = r.data as { chatifai_verified?: boolean; course_verified?: boolean };
+      return d?.chatifai_verified === true || d?.course_verified === true;
+    }).length,
   });
 }

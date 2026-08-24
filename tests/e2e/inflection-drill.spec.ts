@@ -90,4 +90,36 @@ test.describe("inflection matching drill", () => {
     await page.getByRole("button", { name: rx(first.person) }).first().click();
     await expect(page.getByText("1 / " + target.slots.length)).toBeVisible();
   });
+
+  /**
+   * מפגש 8 brought the first paradigm with blocked cells: the דַפַע grid marks
+   * 13 of its 64 combinations "X", because אַנַא does not pay to itself and
+   * אִחְנַא does not pay to us. A drill only completes when every tile is placed,
+   * so one X served as a tile makes the table unfinishable — and the learner
+   * would be asked to place a form the language does not have.
+   */
+  test("no drill ever serves a blocked cell as a form", async ({ page }) => {
+    await login(page);
+    const { sets } = await page.request.get("/api/inflection-drill").then((r) => r.json());
+
+    for (const set of sets as DrillSet[]) {
+      for (const slot of set.slots) {
+        expect(slot.answer.trim(), `${set.title} serves "X" for ${slot.person}`).not.toBe("X");
+        expect(slot.answer.trim(), `${set.title} has an empty answer for ${slot.person}`).not.toBe("");
+      }
+    }
+  });
+
+  test("the מפגש 8 object-suffix grid reached the drill, one table per subject", async ({ page }) => {
+    await login(page);
+    const { sets } = await page.request.get("/api/inflection-drill").then((r) => r.json());
+
+    const grid = (sets as DrillSet[]).filter((s) => s.id.includes("past_indirect_object_grid") || /דַפַע/.test(s.title));
+    expect(grid.length, "the דַפַע grid produced no drills").toBeGreaterThan(0);
+
+    // Every drill carries a Hebrew name for its subject, not a raw column key.
+    for (const s of grid) {
+      expect(s.title, `${s.id} still shows a raw column key`).not.toMatch(/\b(ana|inta|inti|huwwe|hiyye|ihna|intu|hum)\b/);
+    }
+  });
 });
