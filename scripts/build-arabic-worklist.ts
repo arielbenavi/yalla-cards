@@ -19,25 +19,43 @@ const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
 
 async function main() {
   const { data: lessons } = await sb.from("lessons").select("id, title");
-  const target = (lessons ?? []).filter((l) => /^מפגש (6|8)$/.test(l.title));
+  const titleById = new Map((lessons ?? []).map((l) => [l.id, l.title]));
 
-  const out: { id: string; translit: string; he: string; lesson: string; type: string }[] = [];
-  for (const l of target) {
+  // Every card missing Arabic, whatever lesson it sits in — including the ones
+  // with no lesson at all. Paging: a plain select() stops at 1000 and would
+  // silently under-report.
+  const all: {
+    id: string;
+    translit_nikud: string | null;
+    hebrew_meaning: string | null;
+    item_type: string | null;
+    arabic_script: string | null;
+    lesson_id: string | null;
+  }[] = [];
+  for (let from = 0; ; from += 1000) {
     const { data, error } = await sb
       .from("cards")
-      .select("id, translit_nikud, hebrew_meaning, item_type, arabic_script")
-      .eq("lesson_id", l.id);
+      .select("id, translit_nikud, hebrew_meaning, item_type, arabic_script, lesson_id")
+      .range(from, from + 999);
     if (error) throw error;
-    for (const c of data ?? []) {
-      if (c.arabic_script?.trim()) continue;
-      out.push({
-        id: c.id,
-        translit: c.translit_nikud ?? "",
-        he: c.hebrew_meaning ?? "",
-        lesson: l.title,
-        type: c.item_type ?? "word",
-      });
-    }
+    if (!data?.length) break;
+    all.push(...(data as typeof all));
+    if (data.length < 1000) break;
+  }
+
+  const out: { id: string; translit: string; he: string; lesson: string; type: string }[] = [];
+  for (const c of all) {
+    if (c.arabic_script?.trim()) continue;
+    // A card with no transliteration or no gloss is not something chatifai can
+    // be asked about — there is nothing to point at.
+    if (!c.translit_nikud?.trim() || !c.hebrew_meaning?.trim()) continue;
+    out.push({
+      id: c.id,
+      translit: c.translit_nikud,
+      he: c.hebrew_meaning,
+      lesson: (c.lesson_id && titleById.get(c.lesson_id)) || "(בלי שיעור)",
+      type: c.item_type ?? "word",
+    });
   }
 
   const byLesson: Record<string, number> = {};

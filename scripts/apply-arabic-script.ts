@@ -37,8 +37,47 @@ const HEBREW = /[֐-׿]/;
  * card so it is visible instead of buried.
  */
 const FLAGGED: Record<number, string> = {
-  15: "chatifai נתן כאן ספרותית (الثلاثاء) אבל שמר על המדוברת בשכנים — التنين ל-14, تقيل ל-93. באותה הודעה, שלוש שורות הפרש. שווה לבדוק מול דרור אם צריך تلاتة.",
+  25: "שדה התעתיק בכרטיס הזה מכיל גם פירוש בעברית (\u0022= זה הילד; ... = זאת הבת\u0022), ולא רק תעתיק. הערבית נכונה; הכרטיס עצמו צריך ניקוי.",
+  187: "הפירוש הרשום על הכרטיס הוא \u0022התחיל\u0022, אבל بدي פירושו \u0022אני רוצה\u0022. הערבית נכונה — הפירוש הוא שנראה שגוי. לבדוק מול דרור.",
 };
+
+/**
+ * Items whose Arabic is faithful to the stored transliteration and therefore
+ * *wrong*, because the transliteration itself is corrupt. chatifai copied what
+ * it was given instead of normalising, which is exactly what it was asked to
+ * do — the defect is upstream, in Ariel's card.
+ *
+ * These are held rather than written. An empty arabic_script says "not known
+ * yet"; a non-word says "this is the Arabic", and that is worse than a gap.
+ * The transliteration has to be fixed first, then the Arabic re-asked.
+ */
+const HOLD_CORRUPT_SOURCE: Record<number, string> = {
+  50: "اقصتك אינה מילה — התעתיק אִקְצַתַכ משובש. הצורה המקובלת: قصتك",
+  82: "سيعة אינה מילה — התעתיק סֵיעַה משובש. שעה היא ساعة",
+  91: "سيعرتي אינה מילה — התעתיק סֵיעַרְתִי משובש. \u0022המכונית שלי\u0022 היא سيارتي",
+  124: "كستك אינה מילה — התעתיק כֻּסְתַכּ משובש. הצורה המקובלת: قصتك",
+  129: "الحار = \u0022החם\u0022, לא \u0022השכונה\u0022. התעתיק (א)לְחַאר קטוע — צריך الحارة",
+};
+
+/**
+ * Catches the failure mode that matters on a sentence pass: chatifai quietly
+ * rewording a course sentence instead of just transliterating it into Arabic
+ * script. A reworded sentence still looks like plausible Arabic, so nothing
+ * downstream would notice — but the word count almost always drifts.
+ *
+ * Compared loosely on purpose. The transliteration writes the article as a
+ * bracketed prefix — "(א)לְבַּנְדוֹרַה" is one token and "البندورة" is one token —
+ * but clitics and the `يا` vocative can legitimately split or merge, so only a
+ * real gap is reported.
+ */
+function wordCountDrift(translit: string, ar: string): number | null {
+  const count = (x: string) => x.split(/[\s،,.!?؟]+/).filter((t) => /[^\s\-–—/()]/.test(t)).length;
+  const a = count(translit);
+  const b = count(ar);
+  if (a < 3) return null; // single words and two-word phrases are not informative
+  const tolerance = Math.max(1, Math.round(a * 0.25));
+  return Math.abs(a - b) > tolerance ? b - a : null;
+}
 
 /**
  * The book lists two spellings of one word (וַחְדֵה / וַחְדַה) that Arabic does
@@ -69,10 +108,15 @@ async function main() {
   const rejected: string[] = [];
 
   const collapsed: string[] = [];
+  const held: string[] = [];
   jobs.forEach((job, i) => {
     const num = i + 1;
     const raw = answers.get(num);
     if (!raw || raw === "?") { unresolved.push(`${num}. ${job.translit} — ${job.he}`); return; }
+    if (HOLD_CORRUPT_SOURCE[num]) {
+      held.push(`${num}. ${job.translit} (${job.he})\n     ${HOLD_CORRUPT_SOURCE[num]}`);
+      return;
+    }
     const ar = collapseIdenticalAlternants(raw);
     if (ar !== raw) collapsed.push(`${num}. ${job.translit}: "${raw}" → "${ar}"`);
 
@@ -82,7 +126,22 @@ async function main() {
     if (!ARABIC.test(ar)) { rejected.push(`${num}. ${job.translit}: אין ערבית בתשובה — "${ar}"`); return; }
     if (HEBREW.test(ar)) { rejected.push(`${num}. ${job.translit}: עברית בשדה הערבי — "${ar}"`); return; }
 
-    updates.push({ id: job.id, translit: job.translit, he: job.he, ar, flag: FLAGGED[num] });
+    // Known-benign length differences: one written word that Arabic conventionally
+    // splits (إن شاء الله) or a source card whose transliteration field carries a
+    // Hebrew gloss. Both trip the counter without being rewrites.
+    const BENIGN_DRIFT = new Set([25, 166]);
+    const drift = BENIGN_DRIFT.has(num) ? null : wordCountDrift(job.translit, ar);
+    const driftFlag =
+      drift === null
+        ? null
+        : `אורך שונה מהותית מהתעתיק (${drift > 0 ? "+" : ""}${drift} מילים) — ייתכן ש-chatifai ניסח מחדש במקום לתעתק. לבדוק.`;
+    updates.push({
+      id: job.id,
+      translit: job.translit,
+      he: job.he,
+      ar,
+      flag: [FLAGGED[num], driftFlag].filter(Boolean).join(" · ") || undefined,
+    });
   });
 
   // Never overwrite. A card that gained Arabic since the worklist was built is
@@ -111,6 +170,10 @@ async function main() {
   for (const u of toWrite.slice(0, 20)) console.log(`  ${u.translit.padEnd(30)} → ${u.ar}`);
   if (toWrite.length > 20) console.log(`  … ועוד ${toWrite.length - 20}`);
 
+  if (held.length) {
+    console.log("\n⛔ מוחזקים — התעתיק במקור משובש, והערבית הנאמנה לו תהיה לא-מילה:");
+    for (const h of held) console.log(`   ${h}`);
+  }
   if (collapsed.length) {
     console.log("\n🔁 חלופות זהות אוחדו:");
     for (const c of collapsed) console.log(`   ${c}`);
