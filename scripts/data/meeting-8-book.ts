@@ -238,7 +238,12 @@ export const DAFA_GRID = {
   subjects: [
     { person: "אַנַא", past: "דַפַעֵת" },
     { person: "אִנְתֵ", past: "דַפַעְת" },
-    { person: "אִנְתִי", past: "דַפַעְת", uncertain: true },
+    // The scan shows the אִנְתֵ and אִנְתִי headers as looking identical, which is
+    // why this was flagged. chatifai (asked for the form of "את שילמת") gives
+    // דַפַעְתִי — the feminine is distinguished only by the final י׳. The row
+    // cells always did distinguish them (דַפַעְתְלִי mול דַפַעְתִילִי), so only the
+    // header was ever in doubt. A clean photo would still settle it outright.
+    { person: "אִנְתִי", past: "דַפַעְתִי", uncertain: true, source: "chatifai — הכותרת בצילום לא קריאה" },
     { person: "הֻוֵّ", past: "דַפַע" },
     { person: "הִיֵّ", past: "דַפְעַת" },
     { person: "אִחְנַא", past: "דַפַעְנַא" },
