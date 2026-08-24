@@ -1,6 +1,15 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers";
 
+/** The shape /api/inflection-drill serves. Shared by the tests below. */
+type DrillSet = {
+  id: string;
+  group: string;
+  title: string;
+  subtitle?: string | null;
+  slots: { person: string; answer: string }[];
+};
+
 /**
  * Person labels are prose, not identifiers — `זאת (קרוב, נ)` is a real one.
  * `new RegExp(label)` turns its parentheses into a capture group, so the pattern
@@ -47,12 +56,6 @@ test.describe("inflection matching drill", () => {
     await login(page);
 
     const { sets } = await page.request.get("/api/inflection-drill").then((r) => r.json());
-    type DrillSet = {
-      id: string;
-      group: string;
-      title: string;
-      slots: { person: string; answer: string }[];
-    };
     const all = sets as DrillSet[];
 
     // Pick a group with exactly one table, so the shuffle inside a run cannot

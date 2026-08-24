@@ -273,7 +273,9 @@ export const SARIQ_PARTICIPLE = {
     { person: "לכם",    singular_m: "סַארְקְלְכֹּם", singular_f: "סַארְקַתְלְכֹּם", plural: "סַארְקִינְלְכֹּם" },
     { person: "להם",    singular_m: "סַארְקְלְהֹם",  singular_m_alt: "סַארְקְלַם", singular_f: "סַארְקַתְלְהֹם", plural: "סַארְקִינְלְהֹם" },
   ],
-  translations: { singular_m: "סַארֵק — גונב", singular_f: "סַארְקַה — גונבת", plural: "סַארְקִין — גונבים" },
+  // The drill title already names the verb, so repeating it here produced
+  // "סַארֵק — סַארֵק — גונב" on screen.
+  translations: { singular_m: "יחיד, גונב", singular_f: "יחידה, גונבת", plural: "רבים, גונבים" },
 };
 
 /** עמ' 127–128 — דו-שיח, עם התרגום מהעמוד הבא באותה שורה. */
