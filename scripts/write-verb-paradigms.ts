@@ -12,7 +12,8 @@
 //   npx tsx scripts/write-verb-paradigms.ts --apply
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { VERBS, type Person } from "./data/verb-paradigms";
+import { VERBS as BASE_VERBS, type Person } from "./data/verb-paradigms";
+import { MEETING_6_PARADIGMS } from "./data/verb-paradigms-meeting-6";
 
 config({ path: ".env.local" });
 
@@ -22,6 +23,11 @@ const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
 });
 
 const APPLY = process.argv.includes("--apply");
+// --meeting-6 writes only the מפגש 6 paradigms and leaves the 24 already in the
+// table untouched; without it the whole list is upserted, as before.
+const VERBS = process.argv.includes("--meeting-6")
+  ? MEETING_6_PARADIGMS
+  : [...BASE_VERBS, ...MEETING_6_PARADIGMS];
 const PERSONS: Person[] = ["ana", "inta", "inti", "huwwe", "hiyye", "ihna", "intu", "hum"];
 
 function validate() {

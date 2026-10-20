@@ -21,6 +21,7 @@ import {
   POINTED,
   NEEDS_GLOSS_FROM_ARIEL,
   EXISTING_CARDS_TO_ANNOTATE,
+  GLOSS_FROM_CHATIFAI,
 } from "./data/meeting-oral-4-pointed";
 
 config({ path: ".env.local" });
@@ -51,7 +52,13 @@ const fold = (s: string) =>
     .trim();
 
 async function main() {
-  const glossed = ALL_ORAL_4.filter((e) => e.he.trim());
+  // Ariel's gloss wins; chatifai's fills only the two he left blank and asked for.
+  const withGloss = ALL_ORAL_4.map((e) =>
+    e.he.trim() || !GLOSS_FROM_CHATIFAI[e.heard]
+      ? e
+      : { ...e, he: GLOSS_FROM_CHATIFAI[e.heard], glossFromChatifai: true }
+  );
+  const glossed = withGloss.filter((e) => e.he.trim());
   const ready = glossed.filter((e) => POINTED[e.heard]);
   const waiting = glossed.filter((e) => !POINTED[e.heard]);
 
@@ -83,7 +90,9 @@ async function main() {
     const p = POINTED[e.heard];
     const translit = normalizeMarks(p.translit);
     assertClean(e.he, translit, p.ar);
-    return { heard: e.heard, translit, ar: p.ar, he: e.he, note: e.note, chatifaiNote: p.chatifaiNote };
+    const glossNote = "glossFromChatifai" in e ? "הפירוש מ-chatifai — לא נרשם בשיעור" : null;
+    const chatifaiNote = [glossNote, p.chatifaiNote && `chatifai הוסיף מיוזמתו: ${p.chatifaiNote}`].filter(Boolean).join(" · ");
+    return { heard: e.heard, translit, ar: p.ar, he: e.he, note: e.note, chatifaiNote };
   });
 
   const known = new Set<string>();
@@ -131,7 +140,7 @@ async function main() {
         item_type: r.heard.includes(" ") ? "sentence" : "word",
         lesson_id: lessonId,
         course_verified: true,
-        course_note: r.chatifaiNote ? `chatifai הוסיף מיוזמתו: ${r.chatifaiNote}` : null,
+        course_note: r.chatifaiNote || null,
       })
       .select("id")
       .single();

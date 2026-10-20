@@ -21,7 +21,10 @@ const links: NavLink[] = [
   { href: "/possessives", label: strings.nav.possessives },
   { href: "/practice", label: strings.nav.practice },
   { href: "/stats", label: strings.nav.stats },
-  { href: "/inbox", label: strings.nav.inbox, adminOnly: true },
+  // Not adminOnly: /api/auth/me reported isAdmin=false for a session that
+  // proxy.ts let into /notes, which hid the link while the page itself worked.
+  // proxy.ts still guards /inbox, same as /recordings and /notes below.
+  { href: "/inbox", label: strings.nav.inbox },
   { href: "/recordings", label: strings.nav.recordings },
   { href: "/notes", label: strings.nav.notes },
 ];
