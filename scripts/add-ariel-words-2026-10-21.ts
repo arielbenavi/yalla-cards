@@ -2,6 +2,7 @@
 //   ג׳חש ("Jah-sh", מטומטם) → גַ'חְש / جحش — literally a donkey foal
 //   ג׳יב לאכ (להביא לך)     → גִ'יבְּלַכּ / أجيبلك — short for אַגִ'יבְּלַכּ
 //   ע׳דא (צהריים, note b9a792c9) → עַ'דַא / غداء — lunch
+//   ג׳וזי (בעלי, 2026-10-22)      → ג'וֹזִי / جوزي — how a woman says "my husband"
 //
 //   npx tsx scripts/add-ariel-words-2026-10-21.ts
 import { config } from "dotenv";
@@ -15,6 +16,7 @@ const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
 
 const WORDS = [
   { translit_nikud: "גַ'חְש", arabic_script: "جحش", hebrew_meaning: "מטומטם", notes: "סלנג, גנאי. מילולית: סייח של חמור", item_type: "word" },
+  { translit_nikud: "ג'וֹזִי", arabic_script: "جوزي", hebrew_meaning: "בעלי", notes: "כך אישה אומרת 'בעלי'", item_type: "word" },
   { translit_nikud: "עַ'דַא", arabic_script: "غداء", hebrew_meaning: "ארוחת צהריים", notes: null, item_type: "word" },
   { translit_nikud: "גִ'יבְּלַכּ", arabic_script: "أجيبلك", hebrew_meaning: "להביא לך? / אביא לך", notes: "קיצור של אַגִ'יבְּלַכּ. גִ'יבְּלַכּ קַהְוֵה? = להביא לך קפה?", item_type: "phrase" },
 ];
