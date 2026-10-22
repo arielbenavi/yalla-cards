@@ -69,6 +69,7 @@ const SITUATION_LABEL: Record<string, string> = {
   phone_appointment: "תור בטלפון",
   meet_stranger: "היכרות",
   self_intro: "הצגה עצמית",
+  new_classmate: "סטודנט חדש",
 };
 
 /** Local calendar day. Deriving it from a UTC timestamp would roll the

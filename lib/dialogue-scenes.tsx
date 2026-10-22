@@ -215,6 +215,21 @@ const SCENES: Record<string, React.ReactNode> = {
       <circle cx="86" cy="42" r="2" fill={C.line} />
     </>
   ),
+  // Two students on a campus bench, a book open between them.
+  new_classmate: (
+    <>
+      <Ground />
+      <rect x="10" y="14" width="40" height="40" fill={C.wall} {...S} />
+      <path d="M 10 14 l 20 -8 l 20 8" fill={C.grey} {...S} />
+      <rect x="24" y="36" width="12" height="18" fill={C.wood} {...S} />
+      <rect x="54" y="58" width="58" height="5" rx="2" fill={C.wood} {...S} />
+      <circle cx="68" cy="34" r="7" fill={C.skin} {...S} />
+      <path d="M 57 58 q 11 -18 22 0" fill={C.blue} {...S} />
+      <circle cx="98" cy="34" r="7" fill={C.skin} {...S} />
+      <path d="M 87 58 q 11 -18 22 0" fill={C.yellow} {...S} />
+      <path d="M 78 50 l 5 -4 l 5 4 l -5 3 z" fill={C.white} {...S} />
+    </>
+  ),
 };
 
 /** Every dialogue key that has a drawing. */

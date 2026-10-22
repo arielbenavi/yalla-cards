@@ -57,6 +57,7 @@ const DIALOGUE_LABELS: Record<string, { emoji: string; label: string }> = {
   phone_appointment: { emoji: "📞", label: "תור בטלפון" },
   meet_stranger: { emoji: "🤝", label: "היכרות" },
   self_intro: { emoji: "🙋", label: "הצגה עצמית" },
+  new_classmate: { emoji: "🎓", label: "סטודנט חדש" },
   meeting8_intro: { emoji: "📖", label: "מפגש 8 — היכרות" },
 };
 
