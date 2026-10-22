@@ -44,6 +44,13 @@ const YOUTUBE: Record<string, string> = {
   do_you_love_me: "https://www.youtube.com/watch?v=ubVfuinllEM",
   // The lyrics carry the Moroccan verse of the Delarue & Orio remix.
   ana_enta: "https://www.youtube.com/watch?v=IZtQDLfKYow",
+  // Second batch (same day): lyrics Ariel pasted, including the French and
+  // Spanish verses, which are kept as lines to read along but not broken down.
+  mazal: "https://www.youtube.com/watch?v=9m16vYQl_1w",
+  katkouta: "https://www.youtube.com/watch?v=kzONEnw0A5c",
+  dima: "https://www.youtube.com/watch?v=lpKjktacE3Y",
+  akhedni: "https://www.youtube.com/watch?v=3aUFTJRxK4c",
+  // my_lady: no upload of the official video turned up; left without a link.
 };
 
 type Song = { title: string; artist: string; dialect: string; raw: string; lines: string[]; uniq: string[] };
@@ -64,6 +71,9 @@ const skeleton = (s: string) =>
   [...s].map((c) => AR2HE[c] ?? FINAL[c] ?? c).filter((c) => HEB.test(c)).join("").replace(/[אוי]/g, "").replace(/ק/g, "כ");
 const tokens = (line: string) =>
   line.replace(/\([^)]*\)/g, " ").replace(/[،,؟?!".:]/g, " ").split(/\s+/).filter(Boolean);
+// chatifai sometimes carried a bracketed echo "(إيهي)" into a word entry.
+const unbracket = (s: string) => s.replace(/[()]/g, "").trim();
+const ARABIC = /[\u0600-\u06FF]/;
 const fold = (s: string) => s.normalize("NFC").replace(/[֑-ׇ'׳\-\s()]/g, "");
 
 function repairAr(ar: string, line: string, problems: string[], where: string): string {
@@ -76,12 +86,15 @@ function repairAr(ar: string, line: string, problems: string[], where: string): 
 }
 
 async function main() {
-  const lyrics: Record<string, Song> = JSON.parse(readFileSync(`${DIR}/_lyrics.json`, "utf8"));
+  const lyrics: Record<string, Song> = {
+    ...JSON.parse(readFileSync(`${DIR}/_lyrics.json`, "utf8")),
+    ...JSON.parse(readFileSync(`${DIR}/_lyrics_batch2.json`, "utf8")),
+  };
   const { data: existing, error } = await sb.from("songs").select("title");
   if (error) throw error;
   const have = new Set((existing ?? []).map((s) => s.title));
 
-  const rows: { title: string; artist: string; lyrics_raw: string; youtube_url: string; lyrics_parsed: unknown[] }[] = [];
+  const rows: { title: string; artist: string; lyrics_raw: string; youtube_url: string | null; lyrics_parsed: unknown[] }[] = [];
   const problems: string[] = [];
   let repaired = 0;
 
@@ -90,13 +103,16 @@ async function main() {
     if (cf.length !== song.uniq.length) problems.push(`${key}: ${cf.length} שורות מ-chatifai מול ${song.uniq.length} ייחודיות`);
 
     const parsed = song.lines.map((line) => {
+      // A line with no Arabic (the French/Spanish verses) is shown as is.
+      if (!ARABIC.test(line)) return { line, words: [] as Word[] };
       const u = song.uniq.indexOf(line);
       const [translit, words] = cf[u] ?? ["", []];
       if (!translit) problems.push(`${key}: אין תעתיק לשורה "${line}"`);
       return {
         ar: line,
         line: translit,
-        words: words.map(([ar, he, tr, pal], i): Word => {
+        words: words.map(([ar0, he0, tr0, pal], i): Word => {
+          const [ar, he, tr] = [unbracket(ar0), unbracket(he0), unbracket(tr0)];
           const fixed = repairAr(ar, line, problems, `${key} #${u + 1}.${i + 1}`);
           if (fixed !== ar) repaired++;
           const w: Word = { ar: fixed, he, translit: tr };
@@ -111,7 +127,7 @@ async function main() {
     console.log(`${have.has(song.title) ? "⏭ קיים" : "➕"} ${song.title} — ${song.artist} · ${song.dialect}`);
     console.log(`   ${parsed.length} שורות (${song.uniq.length} ייחודיות) · ${words} מילים · ${marked} עם צורה פלסטינית`);
     if (!have.has(song.title)) {
-      rows.push({ title: song.title, artist: song.artist, lyrics_raw: song.raw, youtube_url: YOUTUBE[key], lyrics_parsed: parsed });
+      rows.push({ title: song.title, artist: song.artist, lyrics_raw: song.raw, youtube_url: YOUTUBE[key] ?? null, lyrics_parsed: parsed });
     }
   }
 
