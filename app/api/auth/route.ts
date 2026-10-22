@@ -13,7 +13,10 @@ export async function POST(request: NextRequest) {
   const response = NextResponse.json({ ok: true });
   response.cookies.set(AUTH_COOKIE, value, {
     httpOnly: true,
-    secure: true,
+    // Safari drops a Secure cookie on http://localhost (Chrome lets it through),
+    // so the admin login silently failed in the iOS simulator. Production is
+    // always https and keeps the flag.
+    secure: request.nextUrl.protocol === "https:",
     sameSite: "lax",
     path: "/",
     maxAge,

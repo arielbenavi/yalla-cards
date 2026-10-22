@@ -38,21 +38,23 @@ export default function TodayPage() {
   const allDone = items.length > 0 && doneCount === items.length;
 
   return (
-    <div className="mx-auto flex max-w-md flex-col gap-6 p-4">
+    <div className="mx-auto flex w-full max-w-md flex-col gap-8 px-4 py-6">
       <div>
-        <h1 className="text-2xl font-bold">היום</h1>
+        <h1 className="text-4xl font-bold tracking-tight">היום</h1>
         <p className="mt-1 text-sm text-gray-500">
           {allDone ? "סיימת הכל להיום 🎉" : `${doneCount} מתוך ${items.length}`}
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {items.map((item) => (
           <div key={item.key} className="flex flex-col gap-2">
             <Link
               href={item.href}
-              className={`flex items-center gap-3 rounded-xl border p-4 transition-colors ${
-                item.done ? "border-green-600 bg-green-50" : "hover:bg-gray-50"
+              className={`flex min-h-[72px] items-center gap-4 rounded-2xl border p-4 transition-colors ${
+                item.done
+                  ? "border-green-600/40 bg-green-50"
+                  : "border-gray-200 bg-white shadow-[0_6px_16px_-12px_rgb(29_79_150/0.35)] hover:border-gray-300"
               }`}
             >
               <span
@@ -68,7 +70,7 @@ export default function TodayPage() {
                 <span className="block text-xs text-gray-500">{item.hint}</span>
               </span>
               {!item.done && item.remaining ? (
-                <span className="shrink-0 rounded-full bg-black px-2 py-1 text-xs text-white">
+                <span className="shrink-0 rounded-full bg-black px-3 py-1 text-sm font-bold tabular-nums text-white">
                   {item.remaining}
                 </span>
               ) : null}
@@ -84,7 +86,7 @@ export default function TodayPage() {
                   <Link
                     key={s.href}
                     href={s.href}
-                    className="rounded-full border px-3 py-1.5 text-xs hover:bg-gray-50 transition-colors"
+                    className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 transition-colors hover:border-gray-300"
                   >
                     {s.label}
                   </Link>

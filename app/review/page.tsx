@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Rating } from "ts-fsrs";
@@ -165,9 +166,13 @@ function ReviewPageInner() {
 
   if (!current) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
-        <h1 className="text-2xl font-bold">{strings.review.doneTitle}</h1>
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+        <TileStar className="star-in h-16 w-16 text-black" />
+        <h1 className="text-3xl font-bold tracking-tight">{strings.review.doneTitle}</h1>
         <p className="text-gray-500">{strings.review.doneSubtitle}</p>
+        <Link href="/today" className="mt-4 rounded-2xl bg-black px-6 py-3 font-bold text-white">
+          חזרה להיום
+        </Link>
       </div>
     );
   }
@@ -193,20 +198,20 @@ function ReviewPageInner() {
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+      <div className="tile mx-auto flex w-full max-w-xl flex-1 flex-col items-center justify-center gap-6 px-8 py-12 text-center">
         {effectiveDir === "he_to_ar" ? (
-          <p className="text-3xl font-bold nikud-text">{current.hebrew_meaning}</p>
+          <p className="text-4xl font-bold nikud-text text-gray-900">{current.hebrew_meaning}</p>
         ) : audioOnlyPrompt ? (
           <AudioIconButton onClick={playAudio} />
         ) : (
-          <p className="text-3xl font-bold nikud-text">{current.translit_nikud}</p>
+          <p className="text-4xl font-bold nikud-text text-gray-900">{current.translit_nikud}</p>
         )}
 
         {revealed && (
           <div className="flex flex-col items-center gap-3">
             {effectiveDir === "he_to_ar" ? (
               <>
-                <p className="text-2xl nikud-text">{current.translit_nikud}</p>
+                <p className="text-3xl nikud-text text-black">{current.translit_nikud}</p>
                 {current.notes && <p className="text-base text-gray-500">{current.notes}</p>}
               </>
             ) : audioOnlyPrompt ? (
@@ -238,7 +243,7 @@ function ReviewPageInner() {
             {prevIndex !== null && (
               <button
                 onClick={() => { setIndex(prevIndex); setRevealed(false); setHintUsed(false); }}
-                className="rounded-xl border border-gray-300 px-4 py-5 text-base font-bold text-gray-600"
+                className="rounded-2xl border border-gray-300 bg-white px-4 py-5 text-base font-bold text-gray-600"
                 aria-label="מילה קודמת"
               >
                 ←
@@ -247,21 +252,21 @@ function ReviewPageInner() {
             {!hintUsed && (
               <button
                 onClick={() => setHintUsed(true)}
-                className="rounded-xl border border-gray-300 px-5 py-5 text-base font-bold text-gray-600"
+                className="rounded-2xl border border-gray-300 bg-white px-5 py-5 text-base font-bold text-gray-600"
               >
                 רמז
               </button>
             )}
             <button
               onClick={() => setRevealed(true)}
-              className="flex-1 rounded-xl bg-black py-5 text-lg font-bold text-white"
+              className="flex-1 rounded-2xl bg-black py-5 shadow-[0_8px_20px_-10px_rgb(29_79_150/0.7)] text-lg font-bold text-white"
             >
               {strings.review.showAnswer}
             </button>
             {nextIndex !== null && (
               <button
                 onClick={() => { setIndex(nextIndex); setRevealed(false); setHintUsed(false); }}
-                className="rounded-xl border border-gray-300 px-4 py-5 text-base font-bold text-gray-600"
+                className="rounded-2xl border border-gray-300 bg-white px-4 py-5 text-base font-bold text-gray-600"
                 aria-label="מילה הבאה"
               >
                 →
@@ -271,25 +276,25 @@ function ReviewPageInner() {
         </div>
       ) : hintUsed ? (
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => grade(Rating.Again)} disabled={grading} className="rounded-xl bg-red-600 py-5 text-lg font-bold text-white disabled:opacity-50">
+          <button onClick={() => grade(Rating.Again)} disabled={grading} className="rounded-2xl bg-red-600 py-5 text-lg font-bold text-white disabled:opacity-50">
             {strings.review.again}
           </button>
-          <button onClick={() => grade(Rating.Hard)} disabled={grading} className="rounded-xl bg-orange-500 py-5 text-lg font-bold text-white disabled:opacity-50">
+          <button onClick={() => grade(Rating.Hard)} disabled={grading} className="rounded-2xl bg-orange-500 py-5 text-lg font-bold text-white disabled:opacity-50">
             {strings.review.hard}
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-4 gap-2">
-          <button onClick={() => grade(Rating.Again)} className="rounded-xl bg-red-600 py-5 text-lg font-bold text-white">
+          <button onClick={() => grade(Rating.Again)} className="rounded-2xl bg-red-600 py-5 text-lg font-bold text-white">
             {strings.review.again}
           </button>
-          <button onClick={() => grade(Rating.Hard)} className="rounded-xl bg-orange-500 py-5 text-lg font-bold text-white">
+          <button onClick={() => grade(Rating.Hard)} className="rounded-2xl bg-orange-500 py-5 text-lg font-bold text-white">
             {strings.review.hard}
           </button>
-          <button onClick={() => grade(Rating.Good)} className="rounded-xl bg-green-600 py-5 text-lg font-bold text-white">
+          <button onClick={() => grade(Rating.Good)} className="rounded-2xl bg-green-600 py-5 text-lg font-bold text-white">
             {strings.review.good}
           </button>
-          <button onClick={() => grade(Rating.Easy)} className="rounded-xl bg-blue-600 py-5 text-lg font-bold text-white">
+          <button onClick={() => grade(Rating.Easy)} className="rounded-2xl bg-blue-600 py-5 text-lg font-bold text-white">
             {strings.review.easy}
           </button>
         </div>
@@ -318,6 +323,16 @@ function ReviewPageInner() {
         />
       )}
     </div>
+  );
+}
+
+/** Eight-point star, as on the Old City tiles. */
+function TileStar({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+      <path d="M12 2l2.6 4.2L19.1 4.9l-1.3 4.5L22 12l-4.2 2.6 1.3 4.5-4.5-1.3L12 22l-2.6-4.2-4.5 1.3 1.3-4.5L2 12l4.2-2.6-1.3-4.5 4.5 1.3z" />
+      <circle cx="12" cy="12" r="3.2" fill="#fff" />
+    </svg>
   );
 }
 

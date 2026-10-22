@@ -39,6 +39,11 @@ const sections: Section[] = [
       { type: "playlist", name: "קרוב רחוק – קרבה ע'רבה", playlistId: "PLLttfoK87AdVUConb7o7fVRjgqwhLnQFy" },
       { name: "דוקטור כראג'", url: "https://youtu.be/EsEtEb9w-ns" },
       { name: "התסריטאי", url: "https://www.kan.org.il/content/kan/kan-11/p-13835/", note: "כאן 11" },
+      {
+        name: "מרחבא דאולה — مرحبا دولة",
+        url: "https://www.youtube.com/results?search_query=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7+%D8%AF%D9%88%D9%84%D8%A9+%D8%A7%D9%84%D8%AD%D9%84%D9%82%D8%A9",
+        note: "LBCI · ערבית לבנונית, קרובה לפלסטינית",
+      },
       { name: "סאדה", url: "https://www.makan.org.il/content/makan/makan-tv/p-991014/%D8%AC%D9%85%D9%8A%D8%B9-%D8%A7%D9%84%D8%AD%D9%84%D9%82%D8%A7%D8%AA/994806/", note: "מכאן" },
     ],
   },

@@ -53,7 +53,7 @@ function LoginForm() {
     <div className="flex w-full max-w-sm flex-col gap-6 text-center">
       {/* App description */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold">יאללה כרטיסים 🃏</h1>
+        <h1 className="text-3xl font-bold tracking-tight">יאללה כרטיסים</h1>
         <p className="text-sm text-gray-500">
           כרטיסיות SRS לערבית פלסטינית — חזרה חכמה על אוצר המילים שלך
         </p>

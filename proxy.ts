@@ -3,7 +3,18 @@ import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { AUTH_COOKIE, isValidAuthCookie } from "@/lib/auth";
 
-const PUBLIC = ["/login", "/auth/callback"];
+// The manifest and icons are fetched by the phone when adding to the home
+// screen, without the session — behind the login they would come back as a
+// redirect and the icon would be a blank tile.
+const PUBLIC = [
+  "/login",
+  "/auth/callback",
+  "/manifest.webmanifest",
+  "/icon-192.png",
+  "/icon-512.png",
+  "/icon-maskable-512.png",
+  "/apple-icon",
+];
 const ADMIN_ONLY = ["/inbox", "/recordings", "/notes"];
 // Lowercased on both sides: the list is hand-edited, and an address typed with
 // a capital (Jonikremer1@gmail.com) would never match what the provider returns.

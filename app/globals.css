@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Palette: Hebron glass and the Armenian tiles of the Old City — cobalt on a
+ * cool glazed white, with the red of tatreez kept for "again" only.
+ *
+ * The pages are written with Tailwind's stock names (bg-black, text-gray-500,
+ * bg-green-600 …), ~500 of them. Re-pointing those names here re-themes the
+ * whole app without touching a single page, which keeps every screen's logic
+ * exactly as it was. `black` is the primary action colour, not literal black.
+ *
+ * Light only on purpose: half the pages hard-code bg-white surfaces, so a dark
+ * body behind them was the old dark mode — a white card floating on #0a0a0a.
+ */
+@theme {
+  --color-black: #1d4f96;      /* cobalt — primary buttons, active borders */
+  --color-white: #ffffff;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-gray-50: #f1f5f9;
+  --color-gray-100: #e6ecf3;
+  --color-gray-200: #d5deea;
+  --color-gray-300: #b9c6d8;
+  --color-gray-400: #8a9ab2;
+  --color-gray-500: #64748f;
+  --color-gray-600: #4a5a76;
+  --color-gray-700: #36445f;
+  --color-gray-800: #24314a;
+  --color-gray-900: #17223a;
+
+  /* again / errors — tatreez red */
+  --color-red-50: #fbeeef;
+  --color-red-100: #f6dadc;
+  --color-red-500: #c43a44;
+  --color-red-600: #b02a35;
+  --color-red-700: #8f2029;
+  --color-red-800: #6f1a21;
+
+  /* hard / attention — saffron */
+  --color-orange-50: #fdf4e6;
+  --color-orange-300: #f0c27a;
+  --color-orange-500: #d38b1f;
+  --color-orange-700: #8f5a0e;
+  --color-orange-800: #6e450b;
+
+  /* good / done — Hebron glass teal */
+  --color-green-50: #e9f5f3;
+  --color-green-100: #d3ece8;
+  --color-green-600: #1d7f78;
+  --color-green-700: #16655f;
+  --color-green-800: #114f4a;
+
+  /* easy — turquoise of the tile's inner band */
+  --color-blue-50: #eaf2fb;
+  --color-blue-600: #2b78c2;
+  --color-blue-700: #215f9c;
+
   --font-hebrew: var(--font-hebrew);
+  --font-arabic: var(--font-arabic);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --background: #f4f7fa;
+  --foreground: #17223a;
+  --ink: #17223a;
+  --cobalt: #1d4f96;
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Nikkud combining marks need extra line-height or they get clipped on mobile */
@@ -28,4 +77,41 @@ body {
 .nikud-text {
   line-height: 2;
   unicode-bidi: isolate;
+}
+
+
+:where(a, button, [role="button"], input, select, textarea):focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: 2px;
+}
+
+/* The review card: a plain white sheet lifted off the page by a shadow tinted
+   with the cobalt, nothing drawn on it. */
+.tile {
+  position: relative;
+  background: #fff;
+  border-radius: 28px;
+  box-shadow: 0 1px 2px rgb(29 79 150 / 0.06), 0 16px 40px -16px rgb(29 79 150 / 0.28);
+}
+
+/* The end of the daily queue is the moment worth marking — one star turns in,
+   once, and only for people who have not asked for less motion. */
+@keyframes star-in {
+  from { transform: rotate(-45deg) scale(0.6); opacity: 0; }
+  to { transform: rotate(0) scale(1); opacity: 1; }
+}
+.star-in { animation: star-in 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .star-in { animation: none; }
+}
+
+/* Room under the content for the bottom tab bar, only while it is shown. */
+@media (max-width: 767px) {
+  body:has(.tabbar) main { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
+
+/* iOS Safari zooms the whole page into any field under 16px when it gets focus,
+   and stays zoomed — the login screen ended up cropped at both edges. */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: max(16px, 1em); }
 }

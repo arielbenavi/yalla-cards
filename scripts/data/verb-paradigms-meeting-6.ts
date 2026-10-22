@@ -44,9 +44,9 @@ export const MEETING_6_PARADIGMS: Verb[] = [
     past: { ana: { translit: "חְ'לִקֵת", arabic: "خلقت" }, inta: { translit: "חְ'לִקֵת", arabic: "خلقت" }, inti: { translit: "חְ'לִקְתִי", arabic: "خلقتي" }, huwwe: { translit: "חִ'לֵק", arabic: "خلق" }, hiyye: { translit: "חִ'לְקַת", arabic: "خلقت" }, ihna: { translit: "חְ'לִקְנַא", arabic: "خلقنا" }, intu: { translit: "חְ'לִקְתוּ", arabic: "خلقتوا" }, hum: { translit: "חִ'לְקוּ", arabic: "خلقوا" } },
     present: { ana: { translit: "בַּחְ'לַק", arabic: "بخلق" }, inta: { translit: "בִּתְחְ'לַק", arabic: "بتخلق" }, inti: { translit: "בִּתְחְ'לַקִי", arabic: "بتخلقي" }, huwwe: { translit: "בִּחְ'לַק", arabic: "بيخلق" }, hiyye: { translit: "בִּתְחְ'לַק", arabic: "بتخلق" }, ihna: { translit: "מִנְחְ'לַק", arabic: "منخلق" }, intu: { translit: "בִּתְחְ'לַקוּ", arabic: "بتخلقوا" }, hum: { translit: "בִּחְ'לַקוּ", arabic: "بيخلقوا" } },
     imperative: { inta: { translit: "אִחְ'לַק", arabic: "اخلق" }, inti: { translit: "אִחְ'לַקִי", arabic: "اخلقي" }, intu: { translit: "אִחְ'לַקוּ", arabic: "اخلقوا" } },
-    participle: { m: { translit: "חַ'אלֵק", arabic: "خالق" }, f: { translit: "חַ'אלְקַה", arabic: "خالقة" }, pl: { translit: "חַ'אלְקִין", arabic: "خالقين" } },
-    // خالق is "creator", from the other sense of the root — not "one who was born".
-    flags: ["בינוני: chatifai נתן חַ'אלֵק (خالق = בורא), שלא מתאים ל'נולד' — לשאול שוב"],
+    // First pass gave خالق, "creator" — the other sense of the root. Asked again
+    // on 2026-10-21: the one who was born is the passive participle, مخلوق.
+    participle: { m: { translit: "מַחְ'לוּק", arabic: "مخلوق" }, f: { translit: "מַחְ'לוּקַה", arabic: "مخلوقة" }, pl: { translit: "מַחְ'לוּקִין", arabic: "مخلوقين" } },
   },
   {
     root: "حلق", root_translit: "חַלַק", meaning_he: "התגלח", binyan: "פַעַל",
