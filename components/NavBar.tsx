@@ -79,9 +79,9 @@ export default function NavBar() {
   const visible = (l: NavLink) => !l.adminOnly || isAdmin === true;
   const isActive = (href: string) => pathname?.startsWith(href) ?? false;
   const moreActive = secondary.some((l) => isActive(l.href));
-  // During a review the grading buttons own the bottom of the screen; a tab bar
-  // right under them is a mis-tap waiting to happen.
-  const hideTabs = pathname?.startsWith("/review");
+  // Shown everywhere, the review included (Ariel, 2026-10-23): with it hidden
+  // there was no visible way out of a screen. The grading buttons keep their
+  // distance through main's bottom padding (globals.css) plus the review's own.
 
   return (
     <>
@@ -113,7 +113,7 @@ export default function NavBar() {
       </nav>
 
       {/* Bottom tabs on phones. */}
-      {!hideTabs && (
+      {(
         <nav className="tabbar fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
           {/* flex, not grid: page tests find their buttons with ".grid button",
               and this bar renders before <main>. */}
