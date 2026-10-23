@@ -93,6 +93,11 @@ build expires after 90 days; uploading a new one renews it.
 installs on the iPhone (cable or same Wi-Fi). Bundle id `il.ariel.yalla.personal`
 — the App Store one is taken for a personal team. The signature lasts 7 days;
 run the script again to renew. Data on the phone survives the reinstall.
+It renews itself: a launchd job (`~/Library/LaunchAgents/il.ariel.yalla.reinstall.plist`,
+not in the repo) runs `mobile/reinstall-daily.sh` every day at 20:30; a day the
+iPhone is out of reach just fails and the next day tries again. Log:
+`~/Library/Logs/yalla-reinstall.log`. Stop it with
+`launchctl bootout gui/$(id -u)/il.ariel.yalla.reinstall`.
 First install only: iPhone → Settings → General → VPN & Device Management →
 trust the developer; Developer Mode on (Privacy & Security).
 

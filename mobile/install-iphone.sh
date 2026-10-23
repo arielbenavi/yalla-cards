@@ -25,7 +25,8 @@ npx cap sync ios >/dev/null
 xcodebuild -project mobile/ios/App/App.xcodeproj -scheme App -configuration Release \
   -destination "id=$UDID" -derivedDataPath "$OUT" -packageAuthorizationProvider netrc \
   -allowProvisioningUpdates DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
-  PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" CURRENT_PROJECT_VERSION="$(date +%Y%m%d%H%M)" build | grep -E "error|BUILD" || true
+  PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" CURRENT_PROJECT_VERSION="$(date +%Y%m%d%H%M)" build > "$OUT.log" 2>&1 \
+  || { grep -E "error:" "$OUT.log" | head -5; echo "✗ build failed — full log: $OUT.log"; exit 1; }
 
 xcrun devicectl device install app --device "$DEVICE" "$OUT/Build/Products/Release-iphoneos/App.app" >/dev/null
 echo "✅ installed on the iPhone — valid until $(date -v+7d '+%d/%m %H:%M')"
