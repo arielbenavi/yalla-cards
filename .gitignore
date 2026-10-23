@@ -43,3 +43,8 @@ next-env.d.ts
 # playwright test artifacts
 /test-results/
 backups/
+
+# iPhone app: built web layer, archives, App Store Connect API key
+/mobile/www
+/mobile/build
+/mobile/*.p8

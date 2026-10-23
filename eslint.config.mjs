@@ -20,6 +20,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // iPhone app: generated and bundled output
+    "mobile/www/**",
+    "mobile/ios/**",
+    "mobile/build/**",
   ]),
 ]);
 

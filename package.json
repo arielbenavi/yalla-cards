@@ -12,6 +12,11 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.110.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/browser": "^8.0.5",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/ios": "^8.5.3",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@google/generative-ai": "^0.24.1",
@@ -26,6 +31,8 @@
     "ts-fsrs": "^5.4.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
+    "@fontsource/ibm-plex-sans-hebrew": "^5.3.0",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -33,6 +40,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.4.2",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "pg": "^8.22.0",
