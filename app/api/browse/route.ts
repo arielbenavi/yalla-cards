@@ -25,7 +25,11 @@ export async function GET(request: NextRequest) {
       query = query.or(`hebrew_meaning.ilike.%${term}%,translit_nikud.ilike.%${term}%`);
     }
   }
-  if (lessonId) {
+  // "source:preply" filters by a whole group of lessons rather than one
+  if (lessonId.startsWith("source:")) {
+    const { data: ids } = await supabase.from("lessons").select("id").eq("source", lessonId.slice(7));
+    query = query.in("lesson_id", (ids ?? []).map((l) => l.id));
+  } else if (lessonId) {
     query = query.eq("lesson_id", lessonId);
   }
   if (itemType) {

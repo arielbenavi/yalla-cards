@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { strings } from "@/lib/strings";
-
-type Lesson = { id: string; date: string; title: string | null };
+import { SOURCE_LABEL, lessonLabel, type Lesson, type LessonSource } from "@/lib/lessons";
 
 const SEED_FIRST_MONDAY = "2026-07-06";
 
@@ -43,6 +42,32 @@ export default function LessonsPage() {
     refresh();
   }
 
+  // A Preply lesson: next meeting with the same teacher as the last one, today
+  async function addPreplyLesson() {
+    setAdding(true);
+    const last = lessons
+      .filter((l) => l.source === "preply")
+      .sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+    const teacher = window.prompt("שם המורה ב-Preply", last?.teacher ?? "")?.trim();
+    if (teacher) {
+      const meeting =
+        lessons.filter((l) => l.source === "preply" && l.teacher === teacher).reduce((m, l) => Math.max(m, l.meeting ?? 0), 0) + 1;
+      await fetch("/api/lessons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Preply ${teacher} ${meeting}`,
+          date: new Date().toLocaleDateString("en-CA"),
+          source: "preply",
+          teacher,
+          meeting,
+        }),
+      });
+      refresh();
+    }
+    setAdding(false);
+  }
+
   async function updateLesson(id: string, patch: Partial<Lesson>) {
     setLessons((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
   }
@@ -52,7 +77,13 @@ export default function LessonsPage() {
     await fetch(`/api/lessons/${lesson.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: lesson.title, date: lesson.date }),
+      body: JSON.stringify({
+        title: lesson.title,
+        date: lesson.date,
+        source: lesson.source ?? "other",
+        teacher: lesson.teacher || null,
+        meeting: lesson.meeting ?? null,
+      }),
     });
     setSaving(null);
     refresh();
@@ -92,13 +123,22 @@ export default function LessonsPage() {
 
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{strings.lessons.title}</h1>
-        <button
-          onClick={addNextLesson}
-          disabled={adding}
-          className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
-        >
-          {strings.lessons.addNext}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={addPreplyLesson}
+            disabled={adding}
+            className="border border-black text-black rounded px-4 py-2 disabled:opacity-50"
+          >
+            + שיעור Preply
+          </button>
+          <button
+            onClick={addNextLesson}
+            disabled={adding}
+            className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
+          >
+            {strings.lessons.addNext}
+          </button>
+        </div>
       </div>
 
       {sorted.length === 0 ? (
@@ -106,9 +146,48 @@ export default function LessonsPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {sorted.map((lesson) => (
-            <div key={lesson.id} className="flex items-center gap-2 border rounded p-3">
-              <label className="flex flex-col gap-1 flex-1">
-                <span className="text-sm text-gray-500">{strings.lessons.titleLabel}</span>
+            <div key={lesson.id} className="flex flex-wrap items-center gap-2 border rounded p-3">
+              <label className="flex flex-col gap-1">
+                <span className="text-sm text-gray-500">מקור</span>
+                <select
+                  value={lesson.source ?? "other"}
+                  onChange={(e) => updateLesson(lesson.id, { source: e.target.value as LessonSource })}
+                  className="border rounded px-2 py-1"
+                >
+                  {(Object.keys(SOURCE_LABEL) as LessonSource[]).map((s) => (
+                    <option key={s} value={s}>
+                      {SOURCE_LABEL[s]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {lesson.source === "preply" && (
+                <>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm text-gray-500">מורה</span>
+                    <input
+                      value={lesson.teacher ?? ""}
+                      onChange={(e) => updateLesson(lesson.id, { teacher: e.target.value })}
+                      className="border rounded px-2 py-1 w-32"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-sm text-gray-500">מפגש</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={lesson.meeting ?? ""}
+                      onChange={(e) => updateLesson(lesson.id, { meeting: e.target.value ? Number(e.target.value) : null })}
+                      className="border rounded px-2 py-1 w-16"
+                    />
+                  </label>
+                </>
+              )}
+              <label className="flex flex-col gap-1 flex-1 min-w-40">
+                <span className="text-sm text-gray-500">
+                  {strings.lessons.titleLabel}
+                  {lesson.source === "preply" && <span className="text-gray-400"> · מוצג: {lessonLabel(lesson)}</span>}
+                </span>
                 <input
                   value={lesson.title ?? ""}
                   onChange={(e) => updateLesson(lesson.id, { title: e.target.value })}

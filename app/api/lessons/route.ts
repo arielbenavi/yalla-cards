@@ -6,7 +6,7 @@ export async function GET() {
   const supabase = supabaseAdmin();
   const { data, error } = await supabase
     .from("lessons")
-    .select("id, date, title")
+    .select("id, date, title, source, teacher, meeting")
     .order("date", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -14,11 +14,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const { title, date, notes } = await request.json();
+  const { title, date, notes, source, teacher, meeting } = await request.json();
   const supabase = supabaseAdmin();
   const { data, error } = await supabase
     .from("lessons")
-    .insert({ title, date, notes })
+    .insert({ title, date, notes, source: source ?? "other", teacher: teacher ?? null, meeting: meeting ?? null })
     .select()
     .single();
 

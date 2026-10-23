@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
+import { groupLessons, lessonLabel, type Lesson } from "@/lib/lessons";
 import { config } from "@/lib/config";
 import {
   unzipChatExport,
@@ -26,7 +27,6 @@ import {
 import { getPdfPageCount, renderPdfPagesToImages } from "@/lib/pdf";
 
 type Row = BatchRow;
-type Lesson = { id: string; date: string; title: string | null };
 
 type ConfidenceFilter = "all" | "high" | "low";
 
@@ -751,10 +751,14 @@ export default function InboxPage() {
           className="border rounded px-3 py-2"
         >
           <option value="">{strings.inbox.noLesson}</option>
-          {lessons.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.title || l.date}
-            </option>
+          {groupLessons(lessons).map((g) => (
+            <optgroup key={g.source} label={g.label}>
+              {g.lessons.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {lessonLabel(l)}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </label>

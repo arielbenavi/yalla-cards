@@ -18,6 +18,7 @@ const primary: NavLink[] = [
 
 const secondary: NavLink[] = [
   { href: "/browse", label: strings.nav.browse },
+  { href: "/lessons", label: strings.nav.lessons },
   { href: "/songs", label: strings.nav.songs },
   { href: "/content", label: strings.nav.content },
   // "נטיות" removed from the bar on Ariel's call (note e165eccf). The route
