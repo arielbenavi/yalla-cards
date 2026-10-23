@@ -192,7 +192,8 @@ export function onAudio(fn: () => void) {
 
 let audioBusy = false;
 async function cacheAudio(d: Deck) {
-  if (!native || audioBusy) return;
+  if (!native) return warmWebAudio(d);
+  if (audioBusy) return;
   audioBusy = true;
   try {
     const wanted = d.cards.filter((c) => c.clip_path && !audioFiles[clipKey(c)] && d.audio[c.clip_path]);
@@ -208,6 +209,21 @@ async function cacheAudio(d: Deck) {
       } catch {
         // Next sync tries again
       }
+    }
+  } finally {
+    audioBusy = false;
+  }
+}
+
+// On the website the service worker (public/sw.js) keeps every clip it has
+// fetched, keyed by path without the signed token. Fetching each one once
+// after a sync puts all of them there, so audio plays offline as in the app.
+async function warmWebAudio(d: Deck) {
+  if (audioBusy || !("serviceWorker" in navigator) || !navigator.serviceWorker.controller) return;
+  audioBusy = true;
+  try {
+    for (const url of Object.values(d.audio)) {
+      await fetch(url).catch(() => {});
     }
   } finally {
     audioBusy = false;

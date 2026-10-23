@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Rating, type Grade } from "ts-fsrs";
 import { Browser } from "@capacitor/browser";
+import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { strings } from "@/lib/strings";
 import { dailyQueue, laterToday, type DeckCard } from "@/lib/daily-queue";
@@ -173,12 +174,24 @@ function Home({
             </button>
           </div>
           <p className="muted small">
-            <bdi>{snap.cards.length}</bdi> כרטיסים בטלפון · <bdi>{store.audioCount()}</bdi> הקלטות
+            <bdi>{snap.cards.length}</bdi> כרטיסים שמורים
+            {/* On the website the clips live in the service worker's cache, not counted here */}
+            {Capacitor.isNativePlatform() && (
+              <>
+                {" "}· <bdi>{store.audioCount()}</bdi> הקלטות
+              </>
+            )}
           </p>
         </>
       )}
 
-      <button className="btn ghost" onClick={() => Browser.open({ url: `${store.API_BASE}/today` })}>
+      <button
+        className="btn ghost"
+        onClick={() =>
+          // In the app: an in-app Safari sheet. On the website: just the site.
+          Capacitor.isNativePlatform() ? Browser.open({ url: `${store.API_BASE}/today` }) : (location.href = "/today")
+        }
+      >
         לאתר המלא ↗
       </button>
     </div>

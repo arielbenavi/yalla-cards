@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "node mobile/build.mjs --web && next build",
     "start": "next start",
     "lint": "eslint",
     "test": "playwright test",

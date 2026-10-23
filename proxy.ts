@@ -14,6 +14,9 @@ const PUBLIC = [
   "/icon-512.png",
   "/icon-maskable-512.png",
   "/apple-icon",
+  // A service worker script that redirects to /login is refused by the browser
+  // outright, and with it the whole offline copy. It holds no data.
+  "/sw.js",
 ];
 const ADMIN_ONLY = ["/inbox", "/recordings", "/notes"];
 // Lowercased on both sides: the list is hand-edited, and an address typed with

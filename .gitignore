@@ -46,5 +46,6 @@ backups/
 
 # iPhone app: built web layer, archives, App Store Connect API key
 /mobile/www
+/public/app
 /mobile/build
 /mobile/*.p8

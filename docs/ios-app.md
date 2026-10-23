@@ -86,3 +86,22 @@ installs **TestFlight** from the App Store on the iPhone and accepts the invite.
 
 Every later release is just the `mobile/release.sh` line again. A TestFlight
 build expires after 90 days; uploading a new one renews it.
+
+## Without a paid account (what runs now)
+
+`mobile/install-iphone.sh` builds with the free Apple ID signed into Xcode and
+installs on the iPhone (cable or same Wi-Fi). Bundle id `il.ariel.yalla.personal`
+— the App Store one is taken for a personal team. The signature lasts 7 days;
+run the script again to renew. Data on the phone survives the reinstall.
+First install only: iPhone → Settings → General → VPN & Device Management →
+trust the developer; Developer Mode on (Privacy & Security).
+
+## The website offline
+
+`npm run build` also builds the same offline review into `public/app/`
+(`mobile/build.mjs --web`, same-origin API). `public/sw.js` keeps it, and any
+page that cannot load offline shows it instead. `components/OfflineSupport.tsx`
+registers the worker and, once per online visit (at most every 30 min), loads
+`/app/` in a hidden frame for a minute so the deck and audio on the device stay
+fresh and offline grades get sent. Works from Safari and from the home-screen
+icon (Share → Add to Home Screen).

@@ -3,6 +3,7 @@ import { IBM_Plex_Sans_Hebrew, Noto_Naskh_Arabic } from "next/font/google";
 import "./globals.css";
 import { strings } from "@/lib/strings";
 import NavBar from "@/components/NavBar";
+import OfflineSupport from "@/components/OfflineSupport";
 
 // One family for everything, including the pointed transliteration — Plex
 // Hebrew carries full nikud.
@@ -45,6 +46,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-hebrew pt-[env(safe-area-inset-top)]">
         <NavBar />
+        <OfflineSupport />
         <main className="flex-1 flex flex-col">{children}</main>
       </body>
     </html>
