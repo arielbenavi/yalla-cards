@@ -6,6 +6,7 @@ export const strings = {
     review: "חזרה יומית",
     focused: "אימון ממוקד",
     inflectionDrill: "התאמת הטיות",
+    translate: "תרגום משפטים",
     possessives: "סיומות שייכות",
     inbox: "ייבוא",
     lessons: "מפגשים",

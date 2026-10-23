@@ -58,6 +58,7 @@ const SLUG_LABEL: Record<string, string> = {
   participle_indirect_object: "בינוני + מושא עקיף — סַארֵק",
   dual_use_verbs: "פעלים דו-שימושיים",
   noun_suffixes: "סיומות שייכות",
+  noun_suffixes_2: "סיומות שייכות — המשך",
 };
 
 /** Hebrew names for paradigm columns that carry no `translations` block. */

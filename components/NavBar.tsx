@@ -23,6 +23,7 @@ const secondary: NavLink[] = [
   // "נטיות" removed from the bar on Ariel's call (note e165eccf). The route
   // still resolves, so this is one line to undo — nothing was deleted.
   { href: "/inflection-drill", label: strings.nav.inflectionDrill },
+  { href: "/translate", label: strings.nav.translate },
   { href: "/possessives", label: strings.nav.possessives },
   { href: "/practice", label: strings.nav.practice },
   { href: "/stats", label: strings.nav.stats },
