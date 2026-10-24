@@ -5,6 +5,8 @@
 //   or several), answered by חַיּ מִין שַאיְפַכּ. It first wrote the reply חִ'י with
 //   ח'; asked again, it corrected itself to חַיּ — ح, not خ.
 // - אַטְרַאף, plural of טַרַף, as its own card (it was only in טַרַף's plural field).
+// - later the same evening (--second): טַבְּעַן, and אִשְתַקְנַאלַכּ, the line chatifai
+//   offered after שוּ הַ(א)לְעֵ'יבֵּה; its "I missed you" forms go in the note.
 //
 //   npx tsx scripts/insert-asked-2026-10-23.ts [--apply]
 import { config } from "dotenv";
@@ -18,7 +20,7 @@ const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
 const APPLY = process.argv.includes("--apply");
 const ASKED = "825ef0fe-f683-48ee-9bb5-3cfaa5913282"; // מילים שביקשתי
 
-const CARDS = [
+const FIRST = [
   {
     translit_nikud: "שוּ הַ(א)לְעֵ'יבֵּה?",
     arabic_script: "شو هالغيبة؟",
@@ -41,6 +43,25 @@ const CARDS = [
     item_type: "word",
   },
 ];
+
+const SECOND = [
+  {
+    translit_nikud: "טַבְּעַן",
+    arabic_script: "طبعاً",
+    hebrew_meaning: "כמובן / בוודאי",
+    notes: "chatifai · בִּדַּכּ תִיגִ'י מַעַנַא? – טַבְּעַן! = אתה רוצה לבוא איתנו? – כמובן!",
+    item_type: "word",
+  },
+  {
+    translit_nikud: "אִשְתַקְנַאלַכּ",
+    arabic_script: "إشتقنالك",
+    hebrew_meaning: "התגעגענו אליך!",
+    notes:
+      "chatifai · לאישה: אִשְתַקְנַאלֵכּ · לרבים: אִשְתַקְנַאלְכֹּם · התגעגעתי אליך: אִשְתַקֵתְלַכּ (נ: אִשְתַקֵתְלֵכּ, ר: אִשְתַקֵתְלְכֹּם) · בעיר: אִשְתַאַנַאלַכּ · עונים: תִשְתַאק-לַכִּ (א)לְעַאפְיֵה",
+    item_type: "phrase",
+  },
+];
+const CARDS = process.argv.includes("--second") ? SECOND : FIRST;
 
 async function main() {
   for (const c of CARDS) console.log(c.translit_nikud, "·", c.arabic_script, "·", c.hebrew_meaning);
