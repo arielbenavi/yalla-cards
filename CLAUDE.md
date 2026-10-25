@@ -21,7 +21,7 @@ Fixture: `tests/fixtures/wa-test.zip`. Regenerate: `npx tsx scripts/gen-wa-fixtu
 
 ## FSRS review queue (`app/api/review/queue/route.ts`)
 
-- **Daily (default):** due cards + new cards up to `newCardsPerDay` (12)
+- **Daily (default):** due cards + new cards up to `newCardsPerDay` (40)
 - **`mode=all`:** everything, `ORDER BY due ASC`
 - **`mode=selected`:** specific IDs, shuffled
 
