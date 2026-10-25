@@ -1,7 +1,7 @@
-// Book exercises from pages 26–27, 31–33 (+ 289–292), 36–37, 40–41, 44–45 50 (+ 294) and 66–67 (+ 296–297) as drills
+// Book exercises from pages 26–27, 31–33 (+ 289–292), 36–37, 40–41, 44–45 50 (+ 294) 66–67 (+ 296–297) and 74 (+ 75) as drills
 // (Ariel, 2026-10-23). Data and sources: scripts/data/book-translation-drills.ts.
 //
-// - seven translation drills → paradigms rows with data.type = "translation_drill",
+// - eight translation drills → paradigms rows with data.type = "translation_drill",
 //   served by /api/translation-drill to /translate
 // - the second noun-suffix table (p. 32 / 290) → paradigms 2 / noun_suffixes_2,
 //   picked up by התאמת הטיות next to the first (p. 31, already in)
@@ -10,7 +10,7 @@
 //
 //   npx tsx scripts/insert-book-translation-drills.ts [--apply]
 // Rollback: delete from paradigms where slug in ('book_dialogue_p26',
-//   'book_translation_p33', 'book_construct_p36', 'book_prepositions_p40', 'book_dialogue_p44', 'book_translation_p50', 'book_translation_p66', 'noun_suffixes_2');
+//   'book_translation_p33', 'book_construct_p36', 'book_prepositions_p40', 'book_dialogue_p44', 'book_translation_p50', 'book_translation_p66', 'book_ili_indi_mai_p74', 'noun_suffixes_2');
 import { config } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { DRILLS, NOUN_SUFFIXES_2 } from "./data/book-translation-drills";
