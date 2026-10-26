@@ -15,7 +15,7 @@ TEAM_ID=${TEAM_ID:-Y93Y9ZACWZ}            # personal team of the Apple ID signed
 BUNDLE_ID=il.ariel.yalla.personal
 OUT=mobile/build/personal
 
-DEVICE=$(xcrun devicectl list devices 2>/dev/null | grep -i iphone | grep -E 'available|connected' | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' | head -1)
+DEVICE=$(xcrun devicectl list devices 2>/dev/null | grep -i iphone | grep -E ' (available|connected)' | grep -v unavailable | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' | head -1)
 [[ -n "$DEVICE" ]] || { echo "✗ no iPhone available — same Wi-Fi as the Mac, unlocked, or plug it in"; exit 1; }
 UDID=$(xcrun xctrace list devices 2>/dev/null | awk -F'[()]' '/iPhone/ && !/Simulator/ {print $(NF-1); exit}')
 
