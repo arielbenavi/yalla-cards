@@ -6,6 +6,7 @@ import { App as CapApp } from "@capacitor/app";
 import { strings } from "@/lib/strings";
 import { dailyQueue, laterToday, type DeckCard } from "@/lib/daily-queue";
 import * as store from "./store";
+import { PAIRS } from "@/components/PronunciationGuide";
 
 // Same hint as the web review page (app/review/page.tsx)
 function buildHint(word: string): string {
@@ -217,6 +218,7 @@ function Review({
   const [revealed, setRevealed] = useState(false);
   const [hintUsed, setHintUsed] = useState(false);
   const [dirFlipped, setDirFlipped] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [grading, setGrading] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -290,7 +292,31 @@ function Review({
         >
           {dirFlipped ? "ת→ע" : "ע→ת"}
         </button>
+        <button className={`chip ${guideOpen ? "on" : ""}`} onClick={() => setGuideOpen((o) => !o)}>
+          הגייה
+        </button>
       </div>
+      {guideOpen && (
+        // Same table as the website's review page (components/PronunciationGuide.tsx)
+        <div className="guide" onClick={() => setGuideOpen(false)}>
+          <p className="muted small">אותיות עם גרסה + גרש</p>
+          <table>
+            <thead>
+              <tr><th>ללא גרש</th><th>עם גרש</th><th>ערבית</th><th>הגייה</th></tr>
+            </thead>
+            <tbody>
+              {PAIRS.map((p) => (
+                <tr key={p.geresh}>
+                  <td className="nikud bold">{p.plain}</td>
+                  <td className="nikud bold geresh">{p.geresh}</td>
+                  <td className="ar">{p.arabic}</td>
+                  <td className="muted">{p.desc}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="tile card">
         {dir === "he_to_ar" ? (

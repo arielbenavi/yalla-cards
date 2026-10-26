@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // Letters that have both a plain and geresh (') variant in this transliteration system
-const PAIRS = [
+export const PAIRS = [
   { plain: "ג", geresh: "ג׳", arabic: "ج", desc: "כמו ג׳ין (g רך)" },
   { plain: "ח", geresh: "ח׳", arabic: "خ", desc: "ח אשכנזית / כ רכה" },
   { plain: "ד", geresh: "ד׳", arabic: "ذ", desc: "בין ד לז (th של the)" },
