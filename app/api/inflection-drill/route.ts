@@ -59,6 +59,8 @@ const SLUG_LABEL: Record<string, string> = {
   dual_use_verbs: "פעלים דו-שימושיים",
   noun_suffixes: "סיומות שייכות",
   noun_suffixes_2: "סיומות שייכות — המשך",
+  answers_298: "תַבַּע / אִל / עִנְד / מַע — פתרון התרגול",
+  answers_299_negation: "אִל / עִנְד / מַע בשלילה — פתרון",
 };
 
 /** Hebrew names for paradigm columns that carry no `translations` block. */
