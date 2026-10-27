@@ -35,6 +35,34 @@ short, fast, slangy, with no subtitles. Each item is one practice round:
   other card. Per the project rule, the feed reads FSRS state and never writes
   it.
 
+## Subtitles and questions (decided with Ariel, 2026-10-27)
+
+There are both, in layers. The item starts with no help at all, and each
+layer is turned on separately:
+
+1. **A guiding question before watching** ("על מה הוא מדבר?" or "מה היא
+   מבקשת?"). It focuses listening the way a teacher does. Claude generates
+   it from the translation, 1–2 questions per item.
+2. **Subtitles in three separate toggles:** Arabic script, Hebrew-letter
+   transliteration, Hebrew translation. Ariel turns on only what he needs,
+   usually transliteration first and Hebrew last.
+3. **Per-line playback:** tapping a line plays only it, with a loop and
+   0.75x speed.
+
+Avoid clips with Hebrew subtitles burned into the picture, since they can't
+be hidden. Burned-in Arabic subtitles are fine.
+
+**Technical consequence: the clip is stored with us.** Synced subtitles,
+per-line looping and slow playback need control of the player. YouTube
+allows that (IFrame API: `getCurrentTime`, `setPlaybackRate`). An embedded
+Instagram or Facebook reel does not: it's a closed iframe. So for a reel,
+Ariel saves the clip himself and uploads it, the way recordings work today.
+The clip is kept in Supabase Storage (private bucket, Ariel's personal use
+only), goes through Groq Whisper with timestamps into `segments`, and the
+link to the original is kept for attribution. Without an upload, the item
+falls back to an embed plus a transcript under it with the same toggles,
+but not synced.
+
 ## Content
 
 **Curated by hand. No scraping, no automatic import.** Instagram and TikTok
@@ -52,6 +80,22 @@ Whatever the source, the stored text is passed through Claude to produce
 Hebrew-letter transliteration and a translation. The transliteration is
 checked with chatifai, as with the cards, before an item is marked
 `verified`.
+
+**The first two items, from Ariel (2026-10-27):**
+- Instagram reel by @moamenjaberofficial (elections and voting):
+  https://www.instagram.com/reel/De_0J_FN7e-/
+- Facebook reel: https://www.facebook.com/reel/1178373095150482/
+  (needs a login to view, so it has to be saved and uploaded).
+
+**How to find more.** Searching the web for lists of creators came up empty
+(it mostly returns war and politics coverage). The practical approach is a
+**separate Instagram/TikTok account just for Arabic**. Follow the creators we
+already know, the ones on `/content` plus the two above, then search hashtags
+such as `#طبخ_فلسطيني`, `#لهجة_فلسطينية` and `#نكت_فلسطينية`, and let the
+Explore tab fill up on its own. Ariel saves whatever he likes; it doesn't
+have to be uploaded right away. Order of difficulty, easiest first:
+Palestinian cooking (the picture explains, vocabulary repeats), daily-life
+vlogs, street interviews, comedy skits (fast and full of slang, so later).
 
 **Starting with items that aren't too hard.** The first 15–20 items come from
 channels already on `/content` (סליחה על השאלה, בלא מאאח'ד'ה, אחכי ללכמירא,
