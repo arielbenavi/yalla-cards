@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { Rating, State } from "@/lib/fsrs";
 import { config } from "@/lib/config";
+import { pickNew, spreadLong, isLong } from "@/lib/daily-queue";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -78,13 +79,20 @@ export async function GET(request: Request) {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
 
-    const { count: newDoneToday } = await supabase
+    const { data: newTodayRows } = await supabase
       .from("review_log")
-      .select("id", { count: "exact", head: true })
+      .select("card_srs:card_srs(card:cards(translit_nikud))")
       .eq("state", State.New)
       .gte("reviewed_at", startOfDay.toISOString());
+    const newDoneToday = newTodayRows?.length ?? 0;
+    // Long (sentence) cards already introduced today count against the day's long share
+    const longNewToday = (newTodayRows ?? []).filter((r) => {
+      const srs = Array.isArray(r.card_srs) ? r.card_srs[0] : r.card_srs;
+      const card = Array.isArray(srs?.card) ? srs?.card[0] : srs?.card;
+      return isLong(card?.translit_nikud);
+    }).length;
 
-    const remainingNewAllowance = Math.max(0, config.newCardsPerDay - (newDoneToday ?? 0));
+    const remainingNewAllowance = Math.max(0, config.newCardsPerDay - newDoneToday);
 
     // Cards rated Easy today (in any review mode) are skipped to avoid same-day double-review
     const { data: easyTodayRows } = await supabase
@@ -94,13 +102,19 @@ export async function GET(request: Request) {
       .gte("reviewed_at", startOfDay.toISOString());
     const easyTodayIds = (easyTodayRows ?? []).map((r) => r.card_srs_id);
 
+    const textOf = (row: { card: unknown }) => {
+      const card = (Array.isArray(row.card) ? row.card[0] : row.card) as { translit_nikud?: string } | null;
+      return card?.translit_nikud;
+    };
+
     const buildDue = () => {
       let q = supabase
         .from("card_srs")
         .select(cardSelect)
         .neq("state", State.New)
         .lte("due", now)
-        .order("due", { ascending: true });
+        .order("due", { ascending: true })
+        .order("id", { ascending: true }); // ties (one insert batch) break as on the phone
       if (easyTodayIds.length > 0) q = q.not("id", "in", `(${easyTodayIds.join(",")})`);
       return q;
     };
@@ -120,7 +134,8 @@ export async function GET(request: Request) {
           .select(cardSelect)
           .eq("state", State.New)
           .lte("due", now)
-          .order("due", { ascending: true });
+          .order("due", { ascending: true })
+          .order("id", { ascending: true });
         if (easyTodayIds.length > 0) q = q.not("id", "in", `(${easyTodayIds.join(",")})`);
         return q;
       };
@@ -135,13 +150,16 @@ export async function GET(request: Request) {
         return lessonDate.get(card?.lesson_id ?? "") ?? "";
       };
 
-      newRows = (newCandidates ?? [])
-        .slice()
-        .sort((a, b) => rank(b).localeCompare(rank(a)))
-        .slice(0, remainingNewAllowance);
+      newRows = pickNew(
+        (newCandidates ?? []).slice().sort((a, b) => rank(b).localeCompare(rank(a))),
+        remainingNewAllowance,
+        longNewToday,
+        textOf
+      );
     }
 
-    rows = [...(dueRows ?? []), ...newRows];
+    // Sentences spread among the words, due and new each in their own run (lib/daily-queue.ts)
+    rows = [...spreadLong(dueRows ?? [], textOf), ...spreadLong(newRows ?? [], textOf)];
   }
 
   const withAudioUrl = await Promise.all(

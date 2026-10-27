@@ -21,7 +21,7 @@ Fixture: `tests/fixtures/wa-test.zip`. Regenerate: `npx tsx scripts/gen-wa-fixtu
 
 ## FSRS review queue (`app/api/review/queue/route.ts`)
 
-- **Daily (default):** due cards + new cards up to `newCardsPerDay` (40)
+- **Daily (default):** due cards + new cards up to `newCardsPerDay` (40). Long items (≥ 4 words) are capped at `newLongShare` (25%) of the day's new cards and spread evenly among the words (`pickNew` / `spreadLong` in `lib/daily-queue.ts`, shared with the phone). Due cards are never held back. Ties in `due` break by `card_srs.id` on both sides.
 - **`mode=all`:** everything, `ORDER BY due ASC`
 - **`mode=selected`:** specific IDs, shuffled
 
