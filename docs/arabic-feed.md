@@ -87,6 +87,18 @@ checked with chatifai, as with the cards, before an item is marked
 - Facebook reel: https://www.facebook.com/reel/1178373095150482/
   (needs a login to view, so it has to be saved and uploaded).
 
+**Minerva stories (from oral meeting 6, 2026-10-28).** The channel "מינרוה המרכז
+לשפה ותרבות ערבית" has ~20 folk tales in spoken Arabic, 0:41–13:14 long, all on
+YouTube, so the player can be controlled. They are the best stage-0 material
+found so far: slow, clear narration, pictures that carry the plot, and a
+story every time. They burn in Arabic script and Hebrew-letter
+transliteration (not Hebrew translation), so the transliteration toggle can't
+be turned off for them; the guiding question and the Hebrew layer still work.
+The full list, short to long, is in the "סיפורים של מינרוה" section of
+`/content`. "המזל הרע" (6QubRNusq_g) already has its cards (lesson "מפגש בעל פה 6"),
+so it is the natural first item. Still to find: "חכמת המדבר", which Tomer
+mentioned; it didn't come up in a YouTube search.
+
 **How to find more.** Searching the web for lists of creators came up empty
 (it mostly returns war and politics coverage). The practical approach is a
 **separate Instagram/TikTok account just for Arabic**. Follow the creators we

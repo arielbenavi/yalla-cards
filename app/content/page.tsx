@@ -31,6 +31,36 @@ const sections: Section[] = [
     ],
   },
   {
+    // Minerva (מינרוה): short folk tales in spoken Arabic, with Arabic and Hebrew-letter subtitles
+    // burned in. Ordered short to long. "המזל הרע" was oral meeting 6 with Tomer.
+    title: "סיפורים של מינרוה",
+    emoji: "📖",
+    items: [
+      { name: "המזל הרע — الحظ العاطل", url: "https://youtu.be/6QubRNusq_g", note: "מפגש בעל פה 6 · יש כרטיסים" },
+      { name: "דברי האדמה — كلام الأرض", url: "https://youtu.be/jf782k4Eb-g" },
+      { name: "הנסיך הקטן — الأمير الصغير", url: "https://youtu.be/n7M0ANG1GSU" },
+      { name: "בין חאנא ומאנא — بين حانا ومانا", url: "https://youtu.be/fA2Ta1saWaA" },
+      { name: "הקדרה הולידה קדרה — الطنجرة ولدت طنجرة", url: "https://youtu.be/V2y6LqnoXTo" },
+      { name: "מצנפת השיח' — عمامة الشيخ", url: "https://youtu.be/YwB2fUlghxk" },
+      { name: "התנצלות גרועה מחטא — عذر أقبح من ذنب", url: "https://youtu.be/hFxI_jmgzVk" },
+      { name: "העכבר והדלעת — الفار والقرعة", url: "https://youtu.be/HttMrNDwhjE" },
+      { name: "המשורר ואשת הח'ליף — الشاعر وزوجة الخليفة", url: "https://youtu.be/kvsYU5k1nvk" },
+      { name: "משל האבנים — مثل الحجارة", url: "https://youtu.be/4JfFhuQosMg" },
+      { name: "החתולה — البسّة", url: "https://youtu.be/iF-0_XBc-hI" },
+      { name: "האיכר והחמור — الفلاح والحمار", url: "https://youtu.be/AZd5OJm-QOA" },
+      { name: "התאים שן לטבקה — وافق شن طبقة", url: "https://youtu.be/u59nxkwLJ9k" },
+      { name: "מי שיודע יודע — إلّي بعرف بعرف", url: "https://youtu.be/ycEZG5Qoth8" },
+      { name: "ג'חא והשופט — جحا والقاضي", url: "https://youtu.be/UnlJBvvWBGA" },
+      { name: "כבוד הגמל — احترام الجمل", url: "https://youtu.be/nra9gZ3kmoo" },
+      { name: "סיפור התאנה — قصة حبّة التين", url: "https://youtu.be/mDdcOiORSMc" },
+      { name: "כיפה אדומה — ليلى الحمرا", url: "https://youtu.be/Yy-SUZDn0cE" },
+      { name: "מרק כפתורים — شوربة زرار", url: "https://youtu.be/nvLmH0u57Kc" },
+      { name: "איך הגיע הקפה לעולם? — كيف أجت القهوة", url: "https://youtu.be/mZJDfuABhz4" },
+      { name: "אלאדין — علاء الدين", url: "https://youtu.be/EN15l_wkRmw" },
+      { name: "כוחה של הכנסת אורחים — قوّة الضيافة", url: "https://youtu.be/9g1B1s3NL1A" },
+    ],
+  },
+  {
     title: "סדרות בערבית",
     emoji: "📺",
     items: [
