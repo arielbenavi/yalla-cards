@@ -31,30 +31,29 @@ const sections: Section[] = [
     ],
   },
   {
-    // Minerva (מינרוה): short folk tales in spoken Arabic, with Arabic and Hebrew-letter subtitles
-    // burned in. The whole playlist first, then each story on its own, short to long, so it's
-    // easy to start with the short ones. "המזל הרע" was oral meeting 6 with Tomer.
+    // Minerva (מינרוה): folk tales in spoken Arabic, with Arabic and Hebrew-letter subtitles
+    // burned in. Only short (≤ ~2 min) and medium (2–5 min) ones, two short then one medium,
+    // per Ariel; the long ones (5–13 min) are left out. "המזל הרע" was oral meeting 6 with Tomer.
     title: "סיפורים של מינרוה",
     emoji: "📖",
     items: [
-      { type: "playlist", name: "כל הסיפורים בערבית מדוברת", playlistId: "PL_coLxtgro8zUWD1kFPJPA1Mz1Hxtk43i", note: "38 סרטונים" },
       { name: "דברי האדמה — كلام الأرض", url: "https://youtu.be/jf782k4Eb-g", note: "0:41" },
       { name: "אסיפת הורים — إجتماع أهالي", url: "https://youtu.be/OuAwxXUZBU4", note: "1:21 · שיחה" },
+      { name: "התנצלות גרועה מחטא — عذر أقبح من ذنب", url: "https://youtu.be/hFxI_jmgzVk", note: "2:18" },
       { name: "למען הדורות הבאים — عشان الأجيال الجاي", url: "https://youtu.be/I3dibv1zXac", note: "1:33" },
       { name: "המזל הרע — الحظ العاطل", url: "https://youtu.be/6QubRNusq_g", note: "1:41 · מפגש בעל פה 6 · יש כרטיסים" },
+      { name: "העכבר והדלעת — الفار والقرعة", url: "https://youtu.be/HttMrNDwhjE", note: "2:20" },
       { name: "הנער היתום והזקן החכם — الصبي اليتيم والختيار الذكي", url: "https://youtu.be/ToA75d6hWbI", note: "1:46" },
       { name: "נוח מביט אל מחוץ לתיבה — نوح يتطلّع برّات السفينة", url: "https://youtu.be/zW0_KoHjUHQ", note: "1:48" },
+      { name: "קנה את העולם הבא בגרושים — اشترى العالم الجاي في قروش", url: "https://youtu.be/7M-ZkiDszcQ", note: "2:31" },
       { name: "שיחה בין בני זוג — محادثة بين زوج", url: "https://youtu.be/T44fUdx1O90", note: "1:53 · שיחה" },
       { name: "בין חאנא ומאנא — بين حانا ومانا", url: "https://youtu.be/fA2Ta1saWaA", note: "1:53" },
+      { name: "המשורר ואשת הח'ליף — الشاعر وزوجة الخليفة", url: "https://youtu.be/kvsYU5k1nvk", note: "2:49" },
       { name: "הקדרה הולידה קדרה — الطنجرة ولدت طنجرة", url: "https://youtu.be/V2y6LqnoXTo", note: "1:56" },
       { name: "אצבעות זינב (גרסה שנייה) — أصابع زينب", url: "https://youtu.be/cQNP77IGm1o", note: "2:02" },
+      { name: "משל האבנים — مثل الحجارة", url: "https://youtu.be/4JfFhuQosMg", note: "2:50" },
       { name: "מצנפת השיח' — عمامة الشيخ", url: "https://youtu.be/YwB2fUlghxk", note: "2:03" },
       { name: "כמידת עורו של השור — قدّ قدّ جلد التور", url: "https://youtu.be/MuNGHEgm-fg", note: "2:05" },
-      { name: "התנצלות גרועה מחטא — عذر أقبح من ذنب", url: "https://youtu.be/hFxI_jmgzVk", note: "2:18" },
-      { name: "העכבר והדלעת — الفار والقرعة", url: "https://youtu.be/HttMrNDwhjE", note: "2:20" },
-      { name: "קנה את העולם הבא בגרושים — اشترى العالم الجاي في قروش", url: "https://youtu.be/7M-ZkiDszcQ", note: "2:31" },
-      { name: "המשורר ואשת הח'ליף — الشاعر وزوجة الخليفة", url: "https://youtu.be/kvsYU5k1nvk", note: "2:49" },
-      { name: "משל האבנים — مثل الحجارة", url: "https://youtu.be/4JfFhuQosMg", note: "2:50" },
       { name: "החתולה — البسّة", url: "https://youtu.be/iF-0_XBc-hI", note: "2:54" },
       { name: "אצבעות זינב (גרסה ראשונה) — أصابع زينب", url: "https://youtu.be/G-C00-9KKlE", note: "3:01" },
       { name: "האיכר והחמור — الفلاح والحمار", url: "https://youtu.be/AZd5OJm-QOA", note: "3:09" },
@@ -63,15 +62,6 @@ const sections: Section[] = [
       { name: "האמיר מבסרה והנער הגנב — أمير البصرة والشاب الحرامي", url: "https://youtu.be/T8BC3S8ltqM", note: "3:41" },
       { name: "ג'חא והשופט — جحا والقاضي", url: "https://youtu.be/UnlJBvvWBGA", note: "4:11" },
       { name: "כבוד הגמל — احترام الجمل", url: "https://youtu.be/nra9gZ3kmoo", note: "4:13" },
-      { name: "הנסיך הקטן, פרק 2 — الأمير الصغير", url: "https://youtu.be/sOXJfZJqQ3o", note: "5:16" },
-      { name: "סיפור התאנה — قصة حبّة التين", url: "https://youtu.be/mDdcOiORSMc", note: "6:02" },
-      { name: "כיפה אדומה — ليلى الحمرا", url: "https://youtu.be/Yy-SUZDn0cE", note: "6:07" },
-      { name: "מרק כפתורים — شوربة زرار", url: "https://youtu.be/nvLmH0u57Kc", note: "6:31" },
-      { name: "איך הגיע הקפה לעולם? — كيف أجت القهوة", url: "https://youtu.be/mZJDfuABhz4", note: "7:40" },
-      { name: "החתול במגפיים — البسّ أبو الجزمة", url: "https://youtu.be/YPyL5zTutD4", note: "8:03" },
-      { name: "נעליו של אבו אל-קאסם — كندرة أبو القاسم الطنبوري", url: "https://youtu.be/DjeJk5SrSj8", note: "8:15" },
-      { name: "אלאדין — علاء الدين", url: "https://youtu.be/EN15l_wkRmw", note: "12:28" },
-      { name: "כוחה של הכנסת אורחים — قوّة الضيافة", url: "https://youtu.be/9g1B1s3NL1A", note: "13:14" },
     ],
   },
   {
@@ -446,6 +436,21 @@ function PlaylistGroupRow({
   );
 }
 
+// ---- Section tracking ----
+// How many of a section's single YouTube videos were watched to the end (≥ 95%).
+// Playlists keep their own count; non-video links (sites, Kan, Spotify) aren't counted.
+function WatchedCount({ items, progressMap }: { items: SectionItem[]; progressMap: ProgressMap }) {
+  const videos = items.filter((i): i is Resource => !("type" in i) && /youtu\.?be/.test(i.url));
+  if (videos.length < 2) return null;
+  const done = videos.filter((v) => getPct(progressMap[v.url]) >= 95).length;
+  const started = videos.filter((v) => getPct(progressMap[v.url]) > 0).length;
+  return (
+    <span className="mr-auto text-xs font-normal text-gray-400">
+      נצפו {done}/{videos.length}{started > done ? ` · ${started - done} בהתחלה` : ""}
+    </span>
+  );
+}
+
 // ---- Main page ----
 export default function ContentPage() {
   const [progressMap, setProgressMap] = useState<ProgressMap>({});
@@ -472,6 +477,7 @@ export default function ContentPage() {
           <h2 className="text-base font-semibold flex items-center gap-2">
             <span>{section.emoji}</span>
             <span>{section.title}</span>
+            <WatchedCount items={section.items} progressMap={progressMap} />
           </h2>
           <div className="flex flex-col gap-1.5">
             {section.items.map((item, i) =>
