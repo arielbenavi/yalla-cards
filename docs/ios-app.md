@@ -1,12 +1,23 @@
 # The iPhone app
 
-A native iOS app (Capacitor) whose main screen is the daily review, working
-with or without a network. The rest of the site opens inside the same web view
-(`server.allowNavigation` in `capacitor.config.ts`), so it is one app: the
-bottom tabs (`lib/nav.ts`, shared with the site) are on every screen, the
-review included. The site spots the app by its user agent (`YallaApp`) and
-sends its "חזרה יומית" tab back to `capacitor://localhost/`, the offline review.
-The first time, the site asks to log in inside the app.
+A native iOS app (Capacitor) that **is the website**: `server.url` in
+`capacitor.config.ts` loads https://yalla-cards.vercel.app, so there is one UI,
+one tab bar (`lib/nav.ts`) and one session (docs/one-app.md). The app opens on
+the daily review (`app/page.tsx` spots it by the `YallaApp` user agent).
+
+- **Offline:** the site's service worker shows the offline review (`/app/`,
+  built from `mobile/src`) when a page can't load. WKWebView runs service
+  workers only for App-Bound Domains (`WKAppBoundDomains` in Info.plist +
+  `limitsNavigationsToAppBoundDomains`). Before the worker exists, the bundled
+  copy of the same review loads instead (`server.errorPath`).
+- **Sign-in:** Google, in the system Safari sheet (Google refuses embedded web
+  views), back through `il.ariel.yalla://` (Info.plist `CFBundleURLTypes`,
+  allowed in Supabase Auth's redirect URLs). See `app/login/page.tsx`.
+- `server.url` must stay the bare origin: Capacitor opens in Safari any address
+  that doesn't start with it.
+
+The sections below describe the offline review (`mobile/src`), which is what
+`/app/` and the bundled fallback run.
 
 ## How offline works
 

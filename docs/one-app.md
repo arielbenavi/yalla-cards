@@ -1,7 +1,7 @@
 # One app: the iPhone app, the website and the offline review as a single product
 
-Status: plan (2026-10-29, Opus). Not built. Each stage is a separate,
-reversible step that ships on its own, in order.
+Status: stages 1–3 built and installed (2026-10-29, commits 05ab2de, 77267d1).
+Stage 4 not started. Each stage is a separate, reversible step.
 
 ## The problem (Ariel, 2026-10-29)
 
@@ -52,7 +52,9 @@ on the server, except grades made offline, which sync on their own.
 - **Offline inside the app needs a service worker,** and WKWebView runs service
   workers only for **App-Bound Domains**: add `WKAppBoundDomains`
   (`yalla-cards.vercel.app`) to `mobile/ios/App/App/Info.plist` and
-  `ios.limitsNavigationsToAppBoundDomains: true` to the config. Then
+  `ios.limitsNavigationsToAppBoundDomains: true` to the config.
+  **`server.url` must be the bare origin.** With a path (`/review`), Capacitor
+  opened `/login` in Safari. The landing page goes in `app/page.tsx` instead. Then
   `public/sw.js` works in the app exactly as on the home-screen icon: no
   network → the offline review.
   *Check on the device:* YouTube iframes on `/content` still play under
