@@ -42,7 +42,8 @@ export default function BrowsePage() {
   const [q, setQ] = useState("");
   const [lessonId, setLessonId] = useState("");
   const [itemType, setItemType] = useState("");
-  const [scoreFilter, setScoreFilter] = useState("");
+  // Opens on what is still worth practicing: never tagged, or tagged שוב.
+  const [scoreFilter, setScoreFilter] = useState("todo");
   const [loading, setLoading] = useState(false);
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -108,7 +109,8 @@ export default function BrowsePage() {
     : baseDir;
 
   // A filter is "active" when any filter field is set
-  const filterActive = !!(q || lessonId || itemType || scoreFilter);
+  // The default "todo" view doesn't count as a filter.
+  const filterActive = !!(q || lessonId || itemType || (scoreFilter && scoreFilter !== "todo"));
 
   function next() {
     setIndex((i) => Math.min(i + 1, cards.length - 1));
@@ -281,6 +283,7 @@ export default function BrowsePage() {
           <option value="sentence">משפט</option>
         </select>
         <select value={scoreFilter} onChange={(e) => setScoreFilter(e.target.value)} className="border rounded px-3 py-2 text-sm">
+          <option value="todo">לא תויגו + שוב</option>
           <option value="">כל הניקוד</option>
           <option value="1">שוב</option>
           <option value="2">קשה</option>

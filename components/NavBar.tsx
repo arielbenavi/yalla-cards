@@ -4,37 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { strings } from "@/lib/strings";
+import { APP_HOME, IN_APP_UA, navGroups, primaryNav as primary, type NavLink } from "@/lib/nav";
 
-type NavLink = { href: string; label: string; adminOnly?: boolean };
-
-// The four things he opens every day. On a phone they are the bottom tabs, in
-// the thumb's reach; everything else lives behind "עוד".
-const primary: NavLink[] = [
-  { href: "/today", label: strings.nav.today },
-  { href: "/review", label: strings.nav.review },
-  { href: "/focused", label: strings.nav.focused },
-  { href: "/simulate", label: strings.nav.simulate },
-];
-
-const secondary: NavLink[] = [
-  { href: "/browse", label: strings.nav.browse },
-  { href: "/lessons", label: strings.nav.lessons },
-  { href: "/songs", label: strings.nav.songs },
-  { href: "/content", label: strings.nav.content },
-  // "נטיות" removed from the bar on Ariel's call (note e165eccf). The route
-  // still resolves, so this is one line to undo — nothing was deleted.
-  { href: "/inflection-drill", label: strings.nav.inflectionDrill },
-  { href: "/translate", label: strings.nav.translate },
-  { href: "/possessives", label: strings.nav.possessives },
-  { href: "/practice", label: strings.nav.practice },
-  { href: "/stats", label: strings.nav.stats },
-  // Not adminOnly: /api/auth/me reported isAdmin=false for a session that
-  // proxy.ts let into /notes, which hid the link while the page itself worked.
-  // proxy.ts still guards /inbox, same as /recordings and /notes below.
-  { href: "/inbox", label: strings.nav.inbox },
-  { href: "/recordings", label: strings.nav.recordings },
-  { href: "/notes", label: strings.nav.notes },
-];
+// The menu itself (order, sections) lives in lib/nav.ts, shared with the iPhone app.
+const secondary: NavLink[] = navGroups.flatMap((g) => g.links);
 
 const TAB_ICONS: Record<string, React.ReactNode> = {
   "/today": <path d="M4 7h16M4 12h16M4 17h10" />,
@@ -51,6 +24,26 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
     </>
   ),
   "/simulate": <path d="M5 6h14v9H9l-4 3z" />,
+  "/browse": (
+    <>
+      <rect x="7" y="3" width="12" height="15" rx="2.5" />
+      <path d="M5 7v12a2 2 0 0 0 2 2h9" />
+    </>
+  ),
+  "/practice": (
+    <>
+      <rect x="4" y="4" width="7" height="7" rx="2" />
+      <rect x="13" y="4" width="7" height="7" rx="2" />
+      <rect x="4" y="13" width="7" height="7" rx="2" />
+      <circle cx="16.5" cy="16.5" r="3.5" />
+    </>
+  ),
+  "/content": (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="3" />
+      <path d="M10 9.5v5l4.5-2.5z" />
+    </>
+  ),
 };
 
 function TabIcon({ href }: { href: string }) {
@@ -63,21 +56,16 @@ function TabIcon({ href }: { href: string }) {
 
 export default function NavBar() {
   const pathname = usePathname();
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => setIsAdmin(Boolean(d.isAdmin)))
-      .catch(() => setIsAdmin(false));
-  }, []);
+  // Inside the iPhone app the review tab goes to the app's own offline review.
+  const [inApp, setInApp] = useState(false);
+  useEffect(() => setInApp(navigator.userAgent.includes(IN_APP_UA)), []);
 
   useEffect(() => setMoreOpen(false), [pathname]);
 
   if (pathname === "/login") return null;
 
-  const visible = (l: NavLink) => !l.adminOnly || isAdmin === true;
+  const hrefOf = (href: string) => (inApp && href === "/review" ? APP_HOME : href);
   const isActive = (href: string) => pathname?.startsWith(href) ?? false;
   const moreActive = secondary.some((l) => isActive(l.href));
   // Shown everywhere, the review included (Ariel, 2026-10-23): with it hidden
@@ -92,7 +80,7 @@ export default function NavBar() {
           {strings.appName}
         </Link>
         <div className="hidden flex-1 flex-wrap items-center gap-x-5 gap-y-1 text-[15px] md:flex">
-          {[...primary, ...secondary].filter(visible).map((link) => (
+          {[...primary, ...secondary].map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -122,7 +110,7 @@ export default function NavBar() {
             {primary.map((link) => (
               <Link
                 key={link.href}
-                href={link.href}
+                href={hrefOf(link.href)}
                 className={`flex h-16 flex-col items-center justify-center gap-1 text-[11px] ${
                   isActive(link.href) ? "font-bold text-black" : "text-gray-500"
                 }`}
@@ -157,17 +145,24 @@ export default function NavBar() {
           />
           <div className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-white px-4 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3 shadow-[0_-12px_32px_-12px_rgb(29_79_150/0.25)]">
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-gray-300" />
-            <div className="grid grid-cols-2 gap-2">
-              {secondary.filter(visible).map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`rounded-2xl px-4 py-3.5 text-[15px] ${
-                    isActive(link.href) ? "bg-blue-50 font-bold text-black" : "bg-gray-50 text-gray-800"
-                  }`}
-                >
-                  {link.label}
-                </Link>
+            <div className="flex flex-col gap-3">
+              {navGroups.map((group) => (
+                <div key={group.title}>
+                  <p className="mb-1.5 px-1 text-xs font-medium text-gray-400">{group.title}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {group.links.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className={`rounded-2xl px-4 py-3 text-[15px] ${
+                          isActive(link.href) ? "bg-blue-50 font-bold text-black" : "bg-gray-50 text-gray-800"
+                        }`}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>

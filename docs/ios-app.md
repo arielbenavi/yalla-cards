@@ -1,9 +1,12 @@
 # The iPhone app
 
 A native iOS app (Capacitor) whose main screen is the daily review, working
-with or without a network. Everything else — songs, focused practice,
-conversation, browse — opens from it in an in-app Safari sheet on
-https://yalla-cards.vercel.app.
+with or without a network. The rest of the site opens inside the same web view
+(`server.allowNavigation` in `capacitor.config.ts`), so it is one app: the
+bottom tabs (`lib/nav.ts`, shared with the site) are on every screen, the
+review included. The site spots the app by its user agent (`YallaApp`) and
+sends its "חזרה יומית" tab back to `capacitor://localhost/`, the offline review.
+The first time, the site asks to log in inside the app.
 
 ## How offline works
 

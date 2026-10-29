@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Rating, type Grade } from "ts-fsrs";
-import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { strings } from "@/lib/strings";
 import { dailyQueue, laterToday, type DeckCard } from "@/lib/daily-queue";
 import * as store from "./store";
 import { PAIRS } from "@/components/PronunciationGuide";
+import { navGroups, primaryNav } from "@/lib/nav";
 
 // Same hint as the web review page (app/review/page.tsx)
 function buildHint(word: string): string {
@@ -83,8 +83,11 @@ export default function App() {
 
   if (!snap) return <div className="center muted">{strings.common.loading}</div>;
 
+  const tabs = <TabBar onReview={() => setScreen("home")} />;
+
   if (screen === "review")
     return (
+      <>
       <Review
         queue={queue}
         cards={snap.cards}
@@ -95,9 +98,12 @@ export default function App() {
         }}
         onExit={() => setScreen("home")}
       />
+      {tabs}
+      </>
     );
 
   return (
+    <>
     <Home
       snap={snap}
       queueSize={queue.length}
@@ -106,6 +112,8 @@ export default function App() {
       onStart={() => setScreen("review")}
       onSync={runSync}
     />
+    {tabs}
+    </>
   );
 }
 
@@ -186,16 +194,56 @@ function Home({
         </>
       )}
 
-      <button
-        className="btn ghost"
-        onClick={() =>
-          // In the app: an in-app Safari sheet. On the website: just the site.
-          Capacitor.isNativePlatform() ? Browser.open({ url: `${store.API_BASE}/today` }) : (location.href = "/today")
-        }
-      >
-        לאתר המלא ↗
-      </button>
     </div>
+  );
+}
+
+// The bottom tabs, on every screen of the app, the review included — the same
+// tabs as the site (lib/nav.ts). "חזרה יומית" is this app's own offline review;
+// the rest opens the site inside the app's web view (capacitor.config.ts allows
+// its host), whose own "חזרה יומית" tab leads back here. On the website's offline
+// copy (public/app) the site is the same origin.
+function TabBar({ onReview }: { onReview: () => void }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const open = (href: string) => {
+    location.href = Capacitor.isNativePlatform() ? `${store.API_BASE}${href}` : href;
+  };
+  return (
+    <>
+      {moreOpen && (
+        <div className="sheet" role="dialog" aria-label="עוד">
+          <button className="sheet-backdrop" aria-label="סגור" onClick={() => setMoreOpen(false)} />
+          <div className="sheet-body">
+            {navGroups.map((g) => (
+              <section key={g.title}>
+                <p className="muted group-title">{g.title}</p>
+                <div className="menu-grid">
+                  {g.links.map((l) => (
+                    <button key={l.href} className="menu-item" onClick={() => open(l.href)}>
+                      {l.label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      )}
+      <nav className="tabbar">
+        {primaryNav.map((l) => (
+          <button
+            key={l.href}
+            className={l.href === "/review" ? "active" : ""}
+            onClick={() => (l.href === "/review" ? (setMoreOpen(false), onReview()) : open(l.href))}
+          >
+            {l.label}
+          </button>
+        ))}
+        <button className={moreOpen ? "active" : ""} onClick={() => setMoreOpen((o) => !o)}>
+          עוד
+        </button>
+      </nav>
+    </>
   );
 }
 

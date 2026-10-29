@@ -35,7 +35,11 @@ export async function GET(request: NextRequest) {
   if (itemType) {
     query = query.eq("item_type", itemType);
   }
-  if (score) {
+  // "todo": what is still worth practicing — never tagged, or tagged שוב. The
+  // default of /browse (Ariel, 2026-10-29), same order as before (untagged first).
+  if (score === "todo") {
+    query = query.or("self_score.is.null,self_score.eq.1");
+  } else if (score) {
     query = query.eq("self_score", parseInt(score, 10));
   }
 

@@ -129,3 +129,28 @@ bdi { unicode-bidi: isolate; }
 .guide tr:last-child td { border-bottom: 0; }
 .guide .geresh { color: #7c3aed; }
 .guide .ar { font-size: 1.15rem; font-family: "Geeza Pro", "Noto Naskh Arabic", system-ui, sans-serif; }
+
+/* Bottom tabs on every screen (the review too); same tabs as the site */
+:root { --tabbar: 60px; }
+.page, .review { padding-bottom: calc(env(safe-area-inset-bottom) + 16px + var(--tabbar)) !important; }
+.tabbar {
+  position: fixed; inset-inline: 0; bottom: 0; z-index: 40;
+  display: flex; height: calc(var(--tabbar) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgb(255 255 255 / 0.96); border-top: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.tabbar button { flex: 1; font-size: 0.78rem; color: var(--muted); }
+.tabbar button.active { color: var(--ink); font-weight: 700; }
+.sheet { position: fixed; inset: 0; z-index: 50; }
+.sheet-backdrop { position: absolute; inset: 0; background: rgb(23 34 58 / 0.3); }
+.sheet-body {
+  position: absolute; inset-inline: 0; bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--surface); border-radius: 24px 24px 0 0; padding: 18px 16px 16px;
+  box-shadow: 0 -12px 32px -12px rgb(29 79 150 / 0.25);
+}
+.group-title { font-size: 0.8rem; margin: 0 4px 6px; }
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.menu-item { border: 1px solid var(--line); background: #f6f8fb; color: var(--ink); border-radius: 16px; padding: 13px 12px; font-size: 0.95rem; }
+.menu-item:active { background: #e8eef7; }
