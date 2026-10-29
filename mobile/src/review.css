@@ -1,0 +1,142 @@
+/* The daily review's styles, scoped under .yc so the same component runs both
+   as the standalone offline page (/app/, the app's bundled fallback — app.css
+   adds the page base) and inside the website's /review (docs/one-app.md,
+   stage 4). Edit here; the selectors stay prefixed. */
+.yc {
+  --cobalt: #1d4f96;
+  --bg: #f4f7fa;
+  --surface: #ffffff;
+  --line: #d5deea;
+  --muted: #64748f;
+  --ink: #17223a;
+  --red: #b02a35;
+  --saffron: #d38b1f;
+  --teal: #1d7f78;
+  --blue: #2b78c2;
+}
+.yc button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+.yc button:disabled { opacity: 0.5; }
+.yc h1 { margin: 0; font-size: 2rem; letter-spacing: -0.01em; }
+.yc p { margin: 0; }
+.yc bdi { unicode-bidi: isolate; }
+
+.yc .page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: calc(env(safe-area-inset-top) + 24px) 16px calc(env(safe-area-inset-bottom) + 16px);
+}
+.yc .center { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; min-height: 100%; }
+.yc .muted { color: var(--muted); }
+.yc .small { font-size: 0.85rem; text-align: center; }
+.yc .big { font-size: 1.25rem; font-weight: 700; }
+.yc .bold { font-weight: 700; }
+.yc .error { color: var(--red); font-size: 0.9rem; }
+.yc .stack { display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; padding: 28px 20px; }
+
+.yc .brand { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0 4px; }
+.yc .brand-star { width: 48px; height: 48px; color: var(--cobalt); }
+.yc .done-star { width: 64px; height: 64px; color: var(--cobalt); }
+
+.yc .tile {
+  background: var(--surface);
+  border-radius: 24px;
+  box-shadow: 0 1px 0 rgb(23 34 58 / 0.04), 0 12px 32px -18px rgb(29 79 150 / 0.35);
+}
+.yc .count { font-size: 3.5rem; font-weight: 700; color: var(--cobalt); line-height: 1; }
+
+.yc .btn {
+  border-radius: 18px;
+  padding: 18px 20px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.yc .btn.primary { background: var(--cobalt); color: #fff; box-shadow: 0 8px 20px -10px rgb(29 79 150 / 0.7); width: 100%; }
+.yc .btn.ghost { border: 1px solid var(--line); background: var(--surface); color: var(--cobalt); margin-top: auto; }
+.yc .btn.side { border: 1px solid #b9c6d8; background: var(--surface); color: #4a5a76; padding: 18px 16px; }
+.yc .btn.grow { flex: 1; width: auto; }
+.yc .btn.again { background: var(--red); color: #fff; }
+.yc .btn.hard { background: var(--saffron); color: #fff; }
+.yc .btn.good { background: var(--teal); color: #fff; }
+.yc .btn.easy { background: var(--blue); color: #fff; }
+.yc .link { color: var(--cobalt); font-weight: 700; padding: 6px 8px; }
+.yc .close { display: flex; padding: 6px; }
+.yc .close svg { width: 22px; height: 22px; color: var(--muted); }
+
+.yc .status { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center; font-size: 0.95rem; color: var(--muted); }
+.yc .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--teal); }
+.yc .dot.syncing { background: var(--saffron); }
+.yc .dot.offline { background: #8a9ab2; }
+.yc .badge { background: #fdf4e6; color: #8f5a0e; border-radius: 999px; padding: 2px 10px; font-size: 0.85rem; }
+
+.yc .review {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 16px);
+}
+.yc .topbar { display: flex; align-items: center; justify-content: space-between; font-size: 0.95rem; }
+.yc .chip { border: 1px solid #b9c6d8; color: var(--muted); border-radius: 8px; padding: 3px 10px; font-size: 0.85rem; }
+.yc .chip.on { background: var(--cobalt); border-color: var(--cobalt); color: #fff; }
+.yc .card { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; padding: 40px 24px; text-align: center; overflow-y: auto; }
+.yc .prompt { font-size: 2.25rem; font-weight: 700; color: var(--ink); line-height: 1.5; }
+.yc .answer { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.yc .answer-main { font-size: 1.75rem; color: var(--cobalt); line-height: 1.6; }
+.yc .nikud { line-height: 1.7; word-break: break-word; }
+.yc .hint { text-align: center; color: #8a9ab2; font-size: 0.95rem; }
+.yc .actions { display: flex; flex-direction: column; gap: 8px; }
+.yc .row { display: flex; gap: 8px; }
+.yc .grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.yc .grades.two { grid-template-columns: repeat(2, 1fr); }
+.yc .grades .btn { padding: 20px 0; }
+
+.yc .audio { display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: var(--cobalt); color: #fff; }
+.yc .audio svg { width: 28px; height: 28px; }
+.yc .audio.large { width: 96px; height: 96px; }
+.yc .audio.large svg { width: 48px; height: 48px; }
+
+@keyframes star-in { from { transform: scale(0.4) rotate(-45deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.yc .star-in { animation: star-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+
+.yc .topbar { gap: 8px; }
+.yc .guide { background: var(--surface); border-radius: 16px; padding: 12px; box-shadow: 0 12px 32px -18px rgb(29 79 150 / 0.45); }
+.yc .guide table { width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: right; }
+.yc .guide th { font-weight: 400; color: var(--muted); font-size: 0.75rem; padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+.yc .guide td { padding: 6px 2px; border-bottom: 1px solid var(--line); }
+.yc .guide tr:last-child td { border-bottom: 0; }
+.yc .guide .geresh { color: #7c3aed; }
+.yc .guide .ar { font-size: 1.15rem; font-family: "Geeza Pro", "Noto Naskh Arabic", system-ui, sans-serif; }
+
+/* Bottom tabs on every screen (the review too); same tabs as the site */
+.yc { --tabbar: 64px; } /* = NavBar's h-16 */
+.yc .page, .yc .review { padding-bottom: calc(env(safe-area-inset-bottom) + 16px + var(--tabbar)) !important; }
+.yc .tabbar {
+  position: fixed; inset-inline: 0; bottom: 0; z-index: 60;
+  display: flex; height: calc(var(--tabbar) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgb(255 255 255 / 0.96); border-top: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+.yc .tabbar { border-top-color: #e5e7eb; }
+.yc .tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: #6b7280; }
+.yc .tabbar button.active { color: #000; font-weight: 700; }
+.yc .sheet { position: fixed; inset: 0; z-index: 50; }
+.yc .sheet-backdrop { position: absolute; inset: 0; background: rgb(23 34 58 / 0.3); }
+.yc .sheet-body {
+  position: absolute; inset-inline: 0; bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 14px;
+  background: var(--surface); border-radius: 24px 24px 0 0; padding: 18px 16px 16px;
+  box-shadow: 0 -12px 32px -12px rgb(29 79 150 / 0.25);
+}
+.yc .group-title { font-size: 0.8rem; margin: 0 4px 6px; }
+.yc .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yc .menu-item { border: 1px solid var(--line); background: #f6f8fb; color: var(--ink); border-radius: 16px; padding: 13px 12px; font-size: 0.95rem; }
+.yc .menu-item:active { background: #e8eef7; }
+
+/* Inside the site: its NavBar gives the top bar, the bottom tabs and their room
+   (globals.css), so the review only fills what is left. */
+.yc { color: var(--ink); }
+.yc.embedded { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.yc.embedded .page, .yc.embedded .review { flex: 1; height: auto; min-height: 0; padding: 12px 16px 16px !important; }

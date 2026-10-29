@@ -18,15 +18,23 @@ import type { Grade } from "ts-fsrs";
 import { scheduleReview, type CardSrsRow } from "@/lib/fsrs";
 import type { DeckCard, ReviewEvent } from "@/lib/daily-queue";
 
-declare const __API_BASE__: string;
-declare const __DRY_RUN__: boolean;
-export const API_BASE = __API_BASE__;
+// Set by mobile/build.mjs; absent when the website's /review imports this
+// (same origin, real grades).
+declare const __API_BASE__: string | undefined;
+declare const __DRY_RUN__: boolean | undefined;
+export const API_BASE = typeof __API_BASE__ === "string" ? __API_BASE__ : "";
+const DRY_RUN = typeof __DRY_RUN__ === "boolean" ? __DRY_RUN__ : false;
 
 export type Pending = ReviewEvent & { rating: Grade };
 
 type Deck = { generated_at: string; cards: DeckCard[]; reviews: ReviewEvent[]; audio: Record<string, string> };
 
-const native = Capacitor.isNativePlatform();
+// Phone files and iOS networking only for the copy bundled inside the app
+// (capacitor://). The iPhone app is the website now, so the native bridge is
+// there on every site page too, but those — /review and the offline /app/ —
+// keep their data in the browser like the site on any other device.
+export const native =
+  Capacitor.isNativePlatform() && typeof location !== "undefined" && location.protocol === "capacitor:";
 
 // ── files ────────────────────────────────────────────────────────────────────
 
@@ -159,13 +167,13 @@ async function doSync(): Promise<SyncResult> {
   try {
     for (let i = 0; i < sending.length; i += 50) {
       const chunk = sending.slice(i, i + 50).map(({ card_srs_id, rating, reviewed_at }) => ({ card_srs_id, rating, reviewed_at }));
-      await http("POST", "/api/mobile/sync", { reviews: chunk, dry_run: __DRY_RUN__ });
+      await http("POST", "/api/mobile/sync", { reviews: chunk, dry_run: DRY_RUN });
     }
     const fresh = await http<Deck>("GET", "/api/mobile/deck");
     deck = fresh;
     // Grades made while this sync ran stay pending for the next one
     const sent = new Set(sending);
-    pending = __DRY_RUN__ ? pending : pending.filter((p) => !sent.has(p));
+    pending = DRY_RUN ? pending : pending.filter((p) => !sent.has(p));
     syncedAt = new Date().toISOString();
     await writeJson("deck.json", deck);
     await writeJson("pending.json", pending);

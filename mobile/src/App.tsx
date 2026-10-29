@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Rating, type Grade } from "ts-fsrs";
-import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { strings } from "@/lib/strings";
 import { dailyQueue, laterToday, type DeckCard } from "@/lib/daily-queue";
@@ -9,7 +8,7 @@ import { PAIRS } from "@/components/PronunciationGuide";
 import { navGroups, primaryNav } from "@/lib/nav";
 import { TabIcon } from "@/lib/nav-icons";
 
-// Same hint as the web review page (app/review/page.tsx)
+// The prompt hint: the first letter or two of the answer
 function buildHint(word: string): string {
   const NIKUD = /[֑-ׇ]/;
   const baseLetters = [...word].filter((c) => !NIKUD.test(c)).length;
@@ -36,9 +35,33 @@ function timeAgo(iso: string | null): string {
 
 type SyncState = "idle" | "syncing" | "offline";
 
-export default function App() {
+export type ReviewMode = { kind: "daily" } | { kind: "all" } | { kind: "selected"; ids: string[] };
+
+/**
+ * The one daily review (docs/one-app.md, stage 4). It runs in three places:
+ * the website's /review (`embedded`, inside the site's NavBar), the site's
+ * offline page /app/ and the copy bundled in the iPhone app (standalone, with
+ * the home screen and the same bottom tabs). The deck lives on the device and
+ * grades sync through /api/mobile/*, so it works the same with or without a
+ * network, and /review and /app/ share one deck (same origin, same storage).
+ */
+export default function App({
+  embedded = false,
+  mode = { kind: "daily" },
+  adminSlot,
+}: {
+  embedded?: boolean;
+  /** "all" and "selected" come from /browse; the daily queue is the default. */
+  mode?: ReviewMode;
+  /** Admin tools under the answer (the site passes the clip-range editor). */
+  adminSlot?: (card: DeckCard, afterSave: () => void) => ReactNode;
+} = {}) {
   const [snap, setSnap] = useState<store.Snapshot | null>(null);
-  const [screen, setScreen] = useState<"home" | "review">("home");
+  const [screen, setScreen] = useState<"home" | "review">(embedded ? "review" : "home");
+  // all/selected: cards graded in this session leave the list (the daily
+  // queue drops them by itself, through their new due date)
+  const [gradedNow, setGradedNow] = useState<Set<string>>(() => new Set());
+  const [selectedOrder] = useState(() => (mode.kind === "selected" ? shuffle(mode.ids) : []));
   const [syncState, setSyncState] = useState<SyncState>("idle");
   const [lastError, setLastError] = useState<string | null>(null);
   const [tick, setTick] = useState(0); // re-evaluates "due ≤ now" as time passes
@@ -76,35 +99,50 @@ export default function App() {
     };
   }, [refresh, runSync]);
 
-  const queue = useMemo(
-    () => (snap ? dailyQueue(snap.cards, snap.reviews) : []),
+  const queue = useMemo(() => {
+    if (!snap) return [];
+    if (mode.kind === "daily") return dailyQueue(snap.cards, snap.reviews);
+    // Easy today stays out in every mode (CLAUDE.md)
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const easyToday = new Set(
+      snap.reviews.filter((r) => r.rating === Rating.Easy && new Date(r.reviewed_at) >= startOfDay).map((r) => r.card_srs_id)
+    );
+    const open = (c: DeckCard) => !easyToday.has(c.card_srs_id) && !gradedNow.has(c.card_srs_id);
+    if (mode.kind === "all")
+      return snap.cards.filter(open).sort((a, b) => new Date(a.srs.due).getTime() - new Date(b.srs.due).getTime());
+    const byId = new Map(snap.cards.map((c) => [c.card_srs_id, c]));
+    return selectedOrder.map((id) => byId.get(id)).filter((c): c is DeckCard => !!c && open(c));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snap, tick]
-  );
+  }, [snap, tick, gradedNow]);
 
-  if (!snap) return <div className="center muted">{strings.common.loading}</div>;
+  const exit = () => (embedded ? (location.href = "/today") : setScreen("home"));
 
-  const tabs = <TabBar onReview={() => setScreen("home")} />;
-
-  if (screen === "review")
-    return (
-      <>
+  let body: ReactNode;
+  if (!snap || (embedded && !snap.hasDeck))
+    body = (
+      <div className="center muted">
+        {snap && syncState === "offline" ? "צריך חיבור לאינטרנט פעם אחת כדי להוריד את הכרטיסים" : strings.common.loading}
+      </div>
+    );
+  else if (screen === "review")
+    body = (
       <Review
         queue={queue}
         cards={snap.cards}
+        mode={mode}
+        embedded={embedded}
+        adminSlot={adminSlot && ((card) => adminSlot(card, () => void runSync()))}
         onGrade={async (card, rating) => {
           await store.grade(card, rating);
+          if (mode.kind !== "daily") setGradedNow((g) => new Set(g).add(card.card_srs_id));
           refresh();
           void runSync();
         }}
-        onExit={() => setScreen("home")}
+        onExit={exit}
       />
-      {tabs}
-      </>
     );
-
-  return (
-    <>
+  else body = (
     <Home
       snap={snap}
       queueSize={queue.length}
@@ -113,9 +151,23 @@ export default function App() {
       onStart={() => setScreen("review")}
       onSync={runSync}
     />
-    {tabs}
-    </>
   );
+
+  return (
+    <div className={embedded ? "yc embedded" : "yc"}>
+      {body}
+      {!embedded && <TabBar onReview={() => setScreen("home")} />}
+    </div>
+  );
+}
+
+function shuffle<T>(list: T[]): T[] {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 
 // ── home ─────────────────────────────────────────────────────────────────────
@@ -186,7 +238,7 @@ function Home({
           <p className="muted small">
             <bdi>{snap.cards.length}</bdi> כרטיסים שמורים
             {/* On the website the clips live in the service worker's cache, not counted here */}
-            {Capacitor.isNativePlatform() && (
+            {store.native && (
               <>
                 {" "}· <bdi>{store.audioCount()}</bdi> הקלטות
               </>
@@ -207,7 +259,7 @@ function Home({
 function TabBar({ onReview }: { onReview: () => void }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const open = (href: string) => {
-    location.href = Capacitor.isNativePlatform() ? `${store.API_BASE}${href}` : href;
+    location.href = `${store.API_BASE}${href}`;
   };
   return (
     <>
@@ -255,11 +307,17 @@ function TabBar({ onReview }: { onReview: () => void }) {
 function Review({
   queue,
   cards,
+  mode,
+  embedded,
+  adminSlot,
   onGrade,
   onExit,
 }: {
   queue: DeckCard[];
   cards: DeckCard[];
+  mode: ReviewMode;
+  embedded: boolean;
+  adminSlot?: (card: DeckCard) => ReactNode;
   onGrade: (card: DeckCard, rating: Grade) => Promise<void>;
   onExit: () => void;
 }) {
@@ -296,6 +354,27 @@ function Review({
     setGrading(false);
   }
 
+  // On a computer: space shows the answer, 1–4 grade (1–2 only after the hint)
+  const gradeRef = useRef(grade);
+  gradeRef.current = grade;
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (!current || (e.target as HTMLElement)?.closest("input, textarea")) return;
+      if (e.key === " " && !revealed) {
+        e.preventDefault();
+        setRevealed(true);
+        return;
+      }
+      if (!revealed) return;
+      const keys: Record<string, Grade> = hintUsed
+        ? { "1": Rating.Again, "2": Rating.Hard }
+        : { "1": Rating.Again, "2": Rating.Hard, "3": Rating.Good, "4": Rating.Easy };
+      if (keys[e.key]) void gradeRef.current(keys[e.key]);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [current, revealed, hintUsed]);
+
   if (!current) {
     const later = laterToday(cards).length;
     return (
@@ -306,7 +385,7 @@ function Review({
           {later > 0 ? `עוד ${later} כרטיסים יחזרו בהמשך היום` : strings.review.doneSubtitle}
         </p>
         <button className="btn primary" onClick={onExit}>
-          חזרה
+          {embedded ? "חזרה להיום" : "חזרה"}
         </button>
       </div>
     );
@@ -333,6 +412,8 @@ function Review({
         </button>
         <span className="muted">
           <bdi>{queue.length - safeIndex}</bdi> {strings.review.remaining}
+          {mode.kind === "all" && " · כל הכרטיסים"}
+          {mode.kind === "selected" && " · נבחרו"}
         </span>
         <button
           className={`chip ${dirFlipped ? "on" : ""}`}
@@ -394,6 +475,7 @@ function Review({
               <p className="answer-main nikud">{current.hebrew_meaning}</p>
             )}
             {audioUrl && !audioOnlyPrompt && <AudioButton onClick={play} />}
+            {adminSlot?.(current)}
           </div>
         )}
         {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}

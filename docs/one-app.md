@@ -1,7 +1,8 @@
 # One app: the iPhone app, the website and the offline review as a single product
 
-Status: stages 1–3 built and installed (2026-10-29, commits 05ab2de, 77267d1).
-Stage 4 not started. Each stage is a separate, reversible step.
+Status: all four stages built (2026-10-29). Stage 4: `/review` renders the
+offline-first review (`mobile/src/App.tsx`, `embedded`), styles scoped in
+`mobile/src/review.css`. The old page is in git history (before this commit).
 
 ## The problem (Ariel, 2026-10-29)
 

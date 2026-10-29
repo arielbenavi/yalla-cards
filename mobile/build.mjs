@@ -38,6 +38,7 @@ await build({
 const html = readFileSync("mobile/src/index.html", "utf8");
 writeFileSync(`${out}/index.html`, web ? html.replace("<head>", '<head>\n    <base href="/app/" />') : html);
 copyFileSync("mobile/src/app.css", `${out}/app.css`);
+copyFileSync("mobile/src/review.css", `${out}/review.css`);
 const font = "node_modules/@fontsource/ibm-plex-sans-hebrew/files/ibm-plex-sans-hebrew-hebrew";
 copyFileSync(`${font}-400-normal.woff2`, `${out}/fonts/plex-hebrew-400.woff2`);
 copyFileSync(`${font}-700-normal.woff2`, `${out}/fonts/plex-hebrew-700.woff2`);
