@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
-import { AUTH_COOKIE, isValidAuthCookie } from "@/lib/auth";
+import { isAdminRequest } from "@/lib/auth";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await request.json();
   const supabase = supabaseAdmin();
-  const cookieStore = await cookies();
-  const isAdmin = isValidAuthCookie(cookieStore.get(AUTH_COOKIE)?.value);
+  const isAdmin = await isAdminRequest();
 
   const allowed = ["self_score"] as const;
   const adminOnly = ["audio_start_sec", "audio_end_sec"] as const;

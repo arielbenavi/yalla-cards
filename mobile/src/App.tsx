@@ -7,6 +7,7 @@ import { dailyQueue, laterToday, type DeckCard } from "@/lib/daily-queue";
 import * as store from "./store";
 import { PAIRS } from "@/components/PronunciationGuide";
 import { navGroups, primaryNav } from "@/lib/nav";
+import { TabIcon } from "@/lib/nav-icons";
 
 // Same hint as the web review page (app/review/page.tsx)
 function buildHint(word: string): string {
@@ -198,11 +199,11 @@ function Home({
   );
 }
 
-// The bottom tabs, on every screen of the app, the review included — the same
-// tabs as the site (lib/nav.ts). "חזרה יומית" is this app's own offline review;
-// the rest opens the site inside the app's web view (capacitor.config.ts allows
-// its host), whose own "חזרה יומית" tab leads back here. On the website's offline
-// copy (public/app) the site is the same origin.
+// The offline review: what the site's service worker shows with no network
+// (/app/), and the iPhone app's fallback before that worker exists (errorPath).
+// Same bottom bar as the site (lib/nav.ts, lib/nav-icons.tsx, NavBar's sizes),
+// so going offline doesn't look like another app. Its other tabs open the site,
+// which comes back here while there is still no network.
 function TabBar({ onReview }: { onReview: () => void }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const open = (href: string) => {
@@ -236,10 +237,12 @@ function TabBar({ onReview }: { onReview: () => void }) {
             className={l.href === "/review" ? "active" : ""}
             onClick={() => (l.href === "/review" ? (setMoreOpen(false), onReview()) : open(l.href))}
           >
+            <TabIcon href={l.href} />
             {l.label}
           </button>
         ))}
         <button className={moreOpen ? "active" : ""} onClick={() => setMoreOpen((o) => !o)}>
+          <TabIcon href="more" />
           עוד
         </button>
       </nav>

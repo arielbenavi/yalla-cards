@@ -1,19 +1,32 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-// The iPhone app: the offline daily review (mobile/src), built into mobile/www.
-// The rest of the site opens inside the same web view (allowNavigation), and the
-// site's "חזרה יומית" tab comes back here (it spots the app by appendUserAgent).
+// The iPhone app is the website itself (docs/one-app.md): one UI, one tab bar,
+// one session. It opens on the daily review, the tab he uses every day.
+//
+// Offline: the site's service worker (public/sw.js) shows the offline review
+// (/app/, built from mobile/src) when a page can't load. WKWebView runs service
+// workers only for App-Bound Domains, hence WKAppBoundDomains in Info.plist and
+// limitsNavigationsToAppBoundDomains here. Before the worker is installed (a
+// first launch with no network) the same review is served from the app bundle
+// (errorPath).
+//
+// Google sign-in runs in the system Safari sheet and returns through the
+// il.ariel.yalla:// scheme (Info.plist CFBundleURLTypes, app/login/page.tsx).
 // See docs/ios-app.md.
 const config: CapacitorConfig = {
   appId: "com.arielbenavi.yallacards",
   appName: "יאללה",
   webDir: "mobile/www",
   appendUserAgent: "YallaApp", // lib/nav.ts IN_APP_UA
-  server: { allowNavigation: ["yalla-cards.vercel.app"] },
+  server: {
+    url: "https://yalla-cards.vercel.app/review",
+    errorPath: "index.html",
+  },
   ios: {
     path: "mobile/ios",
     contentInset: "never",
     backgroundColor: "#f4f7fa",
+    limitsNavigationsToAppBoundDomains: true,
   },
   plugins: {
     // Requests go through iOS networking instead of the web view: no CORS

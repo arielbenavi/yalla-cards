@@ -131,7 +131,7 @@ bdi { unicode-bidi: isolate; }
 .guide .ar { font-size: 1.15rem; font-family: "Geeza Pro", "Noto Naskh Arabic", system-ui, sans-serif; }
 
 /* Bottom tabs on every screen (the review too); same tabs as the site */
-:root { --tabbar: 60px; }
+:root { --tabbar: 64px; } /* = NavBar's h-16 */
 .page, .review { padding-bottom: calc(env(safe-area-inset-bottom) + 16px + var(--tabbar)) !important; }
 .tabbar {
   position: fixed; inset-inline: 0; bottom: 0; z-index: 60;
@@ -140,8 +140,9 @@ bdi { unicode-bidi: isolate; }
   background: rgb(255 255 255 / 0.96); border-top: 1px solid var(--line);
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
 }
-.tabbar button { flex: 1; font-size: 0.78rem; color: var(--muted); }
-.tabbar button.active { color: var(--ink); font-weight: 700; }
+.tabbar { border-top-color: #e5e7eb; }
+.tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; color: #6b7280; }
+.tabbar button.active { color: #000; font-weight: 700; }
 .sheet { position: fixed; inset: 0; z-index: 50; }
 .sheet-backdrop { position: absolute; inset: 0; background: rgb(23 34 58 / 0.3); }
 .sheet-body {

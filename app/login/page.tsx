@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabaseAuthBrowser } from "@/lib/supabase-auth-browser";
+import { IN_APP_UA } from "@/lib/nav";
 
 function LoginForm() {
   const router = useRouter();
@@ -11,7 +12,9 @@ function LoginForm() {
   const [error, setError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [showAdminForm, setShowAdminForm] = useState(false);
+  // The password (admin cookie) is for the Playwright tests and scripts only;
+  // Ariel signs in with Google, which also makes him admin (lib/auth.ts).
+  const showAdminForm = searchParams.get("password") === "1";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,12 +44,41 @@ function LoginForm() {
     setGoogleLoading(true);
     const supabase = supabaseAuthBrowser();
     const from = searchParams.get("from") || "/today";
+    if (navigator.userAgent.includes(IN_APP_UA)) return googleInApp(from);
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(from)}`,
       },
     });
+  }
+
+  // Inside the iPhone app Google refuses the embedded web view, so the sign-in
+  // runs in the system's Safari sheet and comes back through the app's URL scheme
+  // (Info.plist CFBundleURLTypes; allowed in Supabase Auth's redirect URLs). The
+  // PKCE verifier stays in this web view's cookies, so /auth/callback finishes it
+  // here exactly as on the website.
+  async function googleInApp(from: string) {
+    const [{ Browser }, { App }] = await Promise.all([import("@capacitor/browser"), import("@capacitor/app")]);
+    const { data, error } = await supabaseAuthBrowser().auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `il.ariel.yalla://auth?next=${encodeURIComponent(from)}`, skipBrowserRedirect: true },
+    });
+    if (error || !data.url) {
+      setGoogleLoading(false);
+      return;
+    }
+    const sub = await App.addListener("appUrlOpen", async ({ url }) => {
+      const back = new URL(url);
+      const code = back.searchParams.get("code");
+      const next = back.searchParams.get("next") || from;
+      await sub.remove();
+      await Browser.close().catch(() => {});
+      location.href = code
+        ? `/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`
+        : "/login?error=oauth_failed";
+    });
+    await Browser.open({ url: data.url });
   }
 
   return (
@@ -81,16 +113,8 @@ function LoginForm() {
         {googleLoading ? "מתחבר..." : "כניסה עם Google"}
       </button>
 
-      {/* Secondary: admin link */}
-      {!showAdminForm ? (
-        <button
-          type="button"
-          onClick={() => setShowAdminForm(true)}
-          className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2"
-        >
-          כניסת אדמין
-        </button>
-      ) : (
+      {/* Tests and scripts only: /login?password=1 */}
+      {showAdminForm && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 border rounded-xl p-4 bg-gray-50 text-right">
           <label className="flex flex-col gap-1 text-sm">
             <span className="text-gray-600">סיסמה (אדמין)</span>

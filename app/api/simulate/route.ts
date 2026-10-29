@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { AUTH_COOKIE, isValidAuthCookie } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { isAdminRequest } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -42,9 +41,7 @@ async function fetchVocab(): Promise<string> {
 }
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get(AUTH_COOKIE)?.value;
-  if (!isValidAuthCookie(authCookie)) {
+  if (!(await isAdminRequest())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

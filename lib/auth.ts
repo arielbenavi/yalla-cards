@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { cookies } from "next/headers";
 import { supabaseAuthServer } from "@/lib/supabase-auth-server";
 
 export const AUTH_COOKIE = "yalla_auth";
@@ -31,6 +32,27 @@ export async function isValidSupabaseSession(): Promise<boolean> {
     const supabase = await supabaseAuthServer();
     const { data: { user } } = await supabase.auth.getUser();
     return user !== null;
+  } catch {
+    return false;
+  }
+}
+
+// The admin is Ariel: his Google account, or the password cookie (kept for the
+// Playwright tests and scripts, at /login?password=1). Before 2026-10-29 only the
+// password counted, so on his own Google login the admin tools — and /simulate —
+// were closed to him.
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "ariel5rols@gmail.com")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+export async function isAdminRequest(): Promise<boolean> {
+  const cookieStore = await cookies();
+  if (isValidAuthCookie(cookieStore.get(AUTH_COOKIE)?.value)) return true;
+  try {
+    const supabase = await supabaseAuthServer();
+    const { data: { user } } = await supabase.auth.getUser();
+    return ADMIN_EMAILS.includes((user?.email ?? "").toLowerCase());
   } catch {
     return false;
   }

@@ -48,6 +48,5 @@ export const navGroups: { title: string; links: NavLink[] }[] = [
 ];
 
 // The iPhone app (capacitor.config.ts appends this to the web view's user agent).
-// Inside it the site's "חזרה יומית" goes back to the app's own offline review.
+// The login uses it to run Google sign-in in the system sheet.
 export const IN_APP_UA = "YallaApp";
-export const APP_HOME = "capacitor://localhost/";

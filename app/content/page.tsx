@@ -133,7 +133,11 @@ function parseYTVideoId(url: string): string | null {
 }
 
 // ---- Progress storage ----
+// The server (content_progress) is the source of truth, so the phone and the
+// computer agree; localStorage is only this device's cache for a slow or absent
+// network. What was kept only in the browser before goes up once (UPLOADED_KEY).
 const STORAGE_KEY = "yc_content_progress";
+const UPLOADED_KEY = "yc_content_progress_uploaded";
 
 function loadAllProgress(): ProgressMap {
   if (typeof window === "undefined") return {};
@@ -141,10 +145,46 @@ function loadAllProgress(): ProgressMap {
   catch { return {}; }
 }
 
+function cacheProgress(all: ProgressMap) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(all)); } catch {}
+}
+
 function persistProgress(url: string, sec: number, dur: number) {
   const all = loadAllProgress();
   all[url] = { sec, dur };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  cacheProgress(all);
+  void fetch("/api/content/progress", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items: [{ url, sec, dur }] }),
+  }).catch(() => {});
+}
+
+/** Server progress merged over this device's cache; uploads the cache once. */
+async function syncProgress(): Promise<ProgressMap> {
+  const local = loadAllProgress();
+  const res = await fetch("/api/content/progress").catch(() => null);
+  if (!res?.ok) return local;
+  const server: ProgressMap = (await res.json()).progress ?? {};
+  let uploaded = false;
+  try { uploaded = localStorage.getItem(UPLOADED_KEY) === "1"; } catch {}
+  if (!uploaded) {
+    const missing = Object.entries(local)
+      .filter(([url]) => !server[url])
+      .map(([url, p]) => ({ url, sec: p.sec, dur: p.dur }));
+    if (missing.length > 0) {
+      const up = await fetch("/api/content/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: missing }),
+      }).catch(() => null);
+      if (!up?.ok) return { ...local, ...server };
+      for (const m of missing) server[m.url] = { sec: m.sec, dur: m.dur };
+    }
+    try { localStorage.setItem(UPLOADED_KEY, "1"); } catch {}
+  }
+  cacheProgress(server);
+  return server;
 }
 
 function getPct(p: Progress | undefined): number {
@@ -458,6 +498,7 @@ export default function ContentPage() {
 
   useEffect(() => {
     setProgressMap(loadAllProgress());
+    syncProgress().then(setProgressMap);
   }, []);
 
   function handleProgress(url: string, sec: number, dur: number) {
