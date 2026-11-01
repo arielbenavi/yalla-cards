@@ -91,3 +91,13 @@ if a step failed.
   וַצֵ'ע, צַעֵבּ), plus אִלְלִי ×2, וְ for וּ, חִ'לַאל and a dagesh the page
   doesn't have (נְּהַאר). The first read was from a full page at ~1×, so the
   per-line split (step 2) is now mandatory.
+- 2026-11-01, pp. 103–108 (מפגש 7: 33 table pairs, 24 sentences): stacked
+  three 2× lines per image (`mont_*` in the scratchpad) — 16 reads instead of
+  45, legible enough for everything except four spots, which got 4× crops.
+  Two traps: the crop cut off the right-hand column of the table (crop the
+  margins only on the left, or read the column from a separate crop), and an
+  Arabic string picked up a Hebrew letter while typing (أكيד) — the linter only
+  checks the Hebrew side, so a mixed-script check now runs on the Arabic too.
+  New book forms seen: יַחִ'י (with geresh), אִלִּי with a shadda here vs אִלְלִי
+  on p. 304 (the book is not consistent: copy each occurrence as printed),
+  וֻמַחְ'לִצְתֶש (the conjunction as וֻ).
