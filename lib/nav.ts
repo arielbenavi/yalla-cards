@@ -36,6 +36,7 @@ export const navGroups: { title: string; links: NavLink[] }[] = [
       { href: "/inbox", label: strings.nav.inbox },
       { href: "/lessons", label: strings.nav.lessons },
       { href: "/recordings", label: strings.nav.recordings },
+      { href: "/recordings/auto", label: strings.nav.recordingsAuto },
     ],
   },
   {

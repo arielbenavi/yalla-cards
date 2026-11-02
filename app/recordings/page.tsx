@@ -156,7 +156,14 @@ export default function RecordingsPage() {
 
   return (
     <div className="flex flex-col gap-6 p-4 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold">{strings.recordings.title}</h1>
+      <div className="flex items-baseline justify-between gap-3">
+        <h1 className="text-2xl font-bold">{strings.recordings.title}</h1>
+        {isAdmin && (
+          <Link href="/recordings/auto" className="border rounded px-3 py-1.5 text-sm">
+            {strings.recordings.auto.title}
+          </Link>
+        )}
+      </div>
 
       {isAdmin && (
         <div className="flex flex-col gap-2 border rounded p-3">

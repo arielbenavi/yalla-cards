@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { Rating } from "@/lib/fsrs";
 import {
+  FIX_ROUND_MAX,
   SESSION_SIZES,
   selectSession,
   isEligible,
@@ -44,6 +45,43 @@ export async function GET(request: Request) {
     direction: "he_to_ar" | "ar_to_he";
     card: CardJoin | CardJoin[] | null;
   };
+
+  async function toFocusedCard(row: SrsRow) {
+    const card = Array.isArray(row.card) ? row.card[0] : row.card;
+    let audioUrl: string | null = null;
+    if (card?.clip_path) {
+      const { data } = await supabase.storage.from("recordings").createSignedUrl(card.clip_path, 60 * 10);
+      audioUrl = data?.signedUrl ?? null;
+    }
+    return {
+      card_srs_id: row.id,
+      card_id: card?.id,
+      direction: row.direction,
+      hebrew_meaning: card?.hebrew_meaning,
+      translit_nikud: card?.translit_nikud,
+      arabic_script: card?.arabic_script,
+      item_type: card?.item_type,
+      notes: card?.notes,
+      audio_url: audioUrl,
+    };
+  }
+
+  // The fix round after the daily review: exactly the cards the review sent, with no
+  // eligibility rules (the same-day cooldown is what this round is an exception to).
+  const ids = (new URL(request.url).searchParams.get("ids") ?? "").split(",").filter(Boolean).slice(0, FIX_ROUND_MAX);
+  if (ids.length) {
+    const { data, error } = await supabase
+      .from("card_srs")
+      .select(
+        "id, card_id, due, stability, difficulty, lapses, state, last_review, direction, " +
+          "card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path, lesson_id)"
+      )
+      .in("id", ids);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    const rows = (data ?? []) as unknown as SrsRow[];
+    const cards = await Promise.all(rows.map(toFocusedCard));
+    return NextResponse.json({ cards, minutes, planned_items: cards.length, eligible_total: cards.length });
+  }
 
   const [srsResult, { data: lessons }] = await Promise.all([
     supabase
@@ -110,32 +148,7 @@ export async function GET(request: Request) {
   const eligibleCount = candidates.filter((c) => isEligible(c, now)).length;
   const chosen = selectSession(candidates, size, now);
 
-  const cards = await Promise.all(
-    chosen.map(async (c) => {
-      const row = byId.get(c.card_srs_id)!;
-      const card = Array.isArray(row.card) ? row.card[0] : row.card;
-
-      let audioUrl: string | null = null;
-      if (card?.clip_path) {
-        const { data } = await supabase.storage
-          .from("recordings")
-          .createSignedUrl(card.clip_path, 60 * 10);
-        audioUrl = data?.signedUrl ?? null;
-      }
-
-      return {
-        card_srs_id: row.id,
-        card_id: card?.id,
-        direction: row.direction,
-        hebrew_meaning: card?.hebrew_meaning,
-        translit_nikud: card?.translit_nikud,
-        arabic_script: card?.arabic_script,
-        item_type: card?.item_type,
-        notes: card?.notes,
-        audio_url: audioUrl,
-      };
-    })
-  );
+  const cards = await Promise.all(chosen.map((c) => toFocusedCard(byId.get(c.card_srs_id)!)));
 
   return NextResponse.json({
     cards,

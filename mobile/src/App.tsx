@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { Rating, type Grade } from "ts-fsrs";
 import { App as CapApp } from "@capacitor/app";
 import { strings } from "@/lib/strings";
-import { dailyQueue, laterToday, type DeckCard } from "@/lib/daily-queue";
+import { dailyQueue, laterToday, type DeckCard, type ReviewEvent } from "@/lib/daily-queue";
+import { buildExampleIndex, exampleFor } from "@/lib/deck-examples";
+import { FIX_ROUND_MAX } from "@/lib/focused-practice";
 import * as store from "./store";
 import { PAIRS } from "@/components/PronunciationGuide";
 import { navGroups, primaryNav } from "@/lib/nav";
@@ -130,6 +132,7 @@ export default function App({
       <Review
         queue={queue}
         cards={snap.cards}
+        reviews={snap.reviews}
         mode={mode}
         embedded={embedded}
         adminSlot={adminSlot && ((card) => adminSlot(card, () => void runSync()))}
@@ -307,6 +310,7 @@ function TabBar({ onReview }: { onReview: () => void }) {
 function Review({
   queue,
   cards,
+  reviews,
   mode,
   embedded,
   adminSlot,
@@ -315,6 +319,7 @@ function Review({
 }: {
   queue: DeckCard[];
   cards: DeckCard[];
+  reviews: ReviewEvent[];
   mode: ReviewMode;
   embedded: boolean;
   adminSlot?: (card: DeckCard) => ReactNode;
@@ -334,6 +339,22 @@ function Review({
 
   const safeIndex = Math.min(index, Math.max(0, queue.length - 1));
   const current = queue[safeIndex];
+
+  const exampleIndex = useMemo(() => buildExampleIndex(cards), [cards.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const example = current ? exampleFor(current, exampleIndex, Math.floor(Date.now() / 86_400_000)) : null;
+  const exampleId = revealed && current && example ? current.card_id : null;
+  useEffect(() => {
+    if (exampleId) logEvent("example_shown", exampleId);
+  }, [exampleId]);
+
+  // One action after the daily review (the plan's lesson from Speak's six-screen chain):
+  // what got שוב today, once more, outside FSRS.
+  const fixIds = useMemo(() => (current || mode.kind !== "daily" ? [] : fixRoundIds(reviews)), [current, mode.kind, reviews]);
+  const fixOffered = fixIds.length > 0;
+  useEffect(() => {
+    if (fixOffered) logEvent("fix_round_offered", null, { size: fixIds.length });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fixOffered]);
 
   useEffect(() => {
     setAudioUrl(null);
@@ -384,7 +405,19 @@ function Review({
         <p className="muted">
           {later > 0 ? `עוד ${later} כרטיסים יחזרו בהמשך היום` : strings.review.doneSubtitle}
         </p>
-        <button className="btn primary" onClick={onExit}>
+        {fixOffered && (
+          <button
+            className="btn primary"
+            onClick={() => {
+              logEvent("fix_round_started", null, { size: fixIds.length });
+              markFixRoundDone();
+              location.href = `${store.API_BASE}/focused?ids=${fixIds.join(",")}`;
+            }}
+          >
+            סבב תיקון: {fixIds.length} {fixIds.length === 1 ? "כרטיס" : "כרטיסים"}
+          </button>
+        )}
+        <button className={fixOffered ? "btn" : "btn primary"} onClick={onExit}>
           {embedded ? "חזרה להיום" : "חזרה"}
         </button>
       </div>
@@ -474,6 +507,12 @@ function Review({
             ) : (
               <p className="answer-main nikud">{current.hebrew_meaning}</p>
             )}
+            {example && (
+              <p className="example nikud" data-testid="deck-example">
+                {example.translit_nikud}
+                <span className="muted"> — {example.hebrew_meaning}</span>
+              </p>
+            )}
             {audioUrl && !audioOnlyPrompt && <AudioButton onClick={play} />}
             {adminSlot?.(current)}
           </div>
@@ -522,6 +561,40 @@ function Review({
       )}
     </div>
   );
+}
+
+const FIX_ROUND_KEY = "fix-round-started";
+
+function todayKey(): string {
+  return new Date().toLocaleDateString("en-CA");
+}
+
+function fixRoundIds(reviews: ReviewEvent[]): string[] {
+  try {
+    if (localStorage.getItem(FIX_ROUND_KEY) === todayKey()) return [];
+  } catch {}
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const ids = reviews
+    .filter((r) => r.rating === Rating.Again && new Date(r.reviewed_at) >= startOfDay)
+    .map((r) => r.card_srs_id);
+  return [...new Set(ids)].slice(0, FIX_ROUND_MAX);
+}
+
+function markFixRoundDone() {
+  try {
+    localStorage.setItem(FIX_ROUND_KEY, todayKey());
+  } catch {}
+}
+
+/** Best effort: a usage log, so it's fine to lose one with no network. */
+function logEvent(event: string, cardId: string | null, meta?: Record<string, unknown>) {
+  if (store.native) return;
+  fetch("/api/learning-events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event, card_id: cardId, meta }),
+  }).catch(() => {});
 }
 
 function AudioButton({ onClick, large = false }: { onClick: () => void; large?: boolean }) {

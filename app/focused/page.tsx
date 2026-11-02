@@ -6,6 +6,7 @@ import { PronunciationGuide } from "@/components/PronunciationGuide";
 import {
   COOLDOWN_HOURS,
   SESSION_SIZES,
+  clozeHint,
   reinsertOffset,
   MAX_PRESENTATIONS,
   HARD_ATTEMPT_CAP,
@@ -47,6 +48,8 @@ export default function FocusedPage() {
   const [uniqueDone, setUniqueDone] = useState<Set<string>>(new Set());
   const [done, setDone] = useState(false);
   const [latencies, setLatencies] = useState<number[]>([]);
+  const [fixRound, setFixRound] = useState(false);
+  const [clozeShown, setClozeShown] = useState(false);
 
   const shownAt = useRef<number>(Date.now());
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -58,10 +61,20 @@ export default function FocusedPage() {
     shownAt.current = Date.now();
   }, [queue]);
 
-  async function start(m: SessionMinutes) {
+  // /focused?ids=… is the fix round the daily review's last screen offers
+  useEffect(() => {
+    const ids = new URLSearchParams(location.search).get("ids");
+    if (ids) {
+      setFixRound(true);
+      void start(15, ids);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function start(m: SessionMinutes, ids?: string) {
     setMinutes(m);
     setLoading(true);
-    const d = await fetch(`/api/focused/queue?minutes=${m}`).then((r) => r.json());
+    const d = await fetch(`/api/focused/queue?minutes=${m}${ids ? `&ids=${ids}` : ""}`).then((r) => r.json());
     setQueue((d.cards ?? []).map((c: FocusedCard) => ({ card: c, attempt: 1 })));
     setEligibleTotal(d.eligible_total ?? 0);
     setLoading(false);
@@ -86,7 +99,8 @@ export default function FocusedPage() {
           outcome,
           attempt_index: item.attempt,
           latency_ms: latency,
-          hint_used: false,
+          hint_used: clozeShown,
+          source: fixRound ? "fix_round" : null,
         }),
       }).catch(() => {});
 
@@ -109,19 +123,23 @@ export default function FocusedPage() {
       }
 
       setRevealed(false);
+      setClozeShown(false);
       setQueue(rest);
       if (rest.length === 0 || attempts + 1 >= HARD_ATTEMPT_CAP) {
         setDone(true);
         // Ticks the day's focused-practice box. daily_practice only — this
-        // writes nothing to card_srs, review_log or self_score.
-        fetch("/api/today", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ task: "focused" }),
-        }).catch(() => {});
+        // writes nothing to card_srs, review_log or self_score. The few minutes
+        // of a fix round aren't the day's focused practice.
+        if (!fixRound) {
+          fetch("/api/today", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task: "focused" }),
+          }).catch(() => {});
+        }
       }
     },
-    [queue, sessionId, attempts]
+    [queue, sessionId, attempts, clozeShown, fixRound]
   );
 
   function playAudio() {
@@ -181,7 +199,7 @@ export default function FocusedPage() {
         : [...latencies].sort((a, b) => a - b)[Math.floor(latencies.length / 2)];
     return (
       <div className="flex flex-col gap-5 p-4 max-w-md mx-auto">
-        <h1 className="text-2xl font-bold">סיימת</h1>
+        <h1 className="text-2xl font-bold">{fixRound ? "סיימת את סבב התיקון" : "סיימת"}</h1>
         <dl className="flex flex-col gap-2 text-sm">
           {[
             ["פריטים ייחודיים", uniqueDone.size],
@@ -206,6 +224,8 @@ export default function FocusedPage() {
 
         <button
           onClick={() => {
+            setFixRound(false);
+            history.replaceState(null, "", "/focused");
             setMinutes(null);
             setDone(false);
             setQueue([]);
@@ -227,11 +247,12 @@ export default function FocusedPage() {
 
   // ---- drill ----
   const showArabicPrompt = current.direction === "ar_to_he";
+  const cloze = showArabicPrompt ? null : clozeHint(current.translit_nikud);
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 max-w-md mx-auto">
       <div className="flex items-center justify-between text-xs text-gray-400">
         <span>
-          נותרו {queue.length} · מתוך {eligibleTotal} מועמדים
+          {fixRound ? `סבב תיקון · נותרו ${queue.length}` : `נותרו ${queue.length} · מתוך ${eligibleTotal} מועמדים`}
         </span>
         <PronunciationGuide />
       </div>
@@ -240,6 +261,8 @@ export default function FocusedPage() {
         <p className="text-3xl font-bold nikud-text">
           {showArabicPrompt ? current.translit_nikud : current.hebrew_meaning}
         </p>
+
+        {clozeShown && !revealed && cloze && <p className="text-2xl nikud-text text-gray-600">{cloze}</p>}
 
         {revealed && (
           <div className="flex flex-col items-center gap-3">
@@ -265,15 +288,24 @@ export default function FocusedPage() {
       </div>
 
       {!revealed ? (
-        <button
-          onClick={() => setRevealed(true)}
-          className="rounded-xl bg-black py-5 text-lg font-bold text-white"
-        >
-          {strings.review.showAnswer}
-        </button>
+        <div className="flex gap-2">
+          {/* The middle rung: answering from it counts as שוב/קשה below, so the
+              sentence comes back later and has to be said whole. */}
+          {cloze && !clozeShown && (
+            <button onClick={() => setClozeShown(true)} className="rounded-xl border px-5 py-5 text-lg font-bold">
+              מילה חסרה
+            </button>
+          )}
+          <button
+            onClick={() => setRevealed(true)}
+            className="flex-1 rounded-xl bg-black py-5 text-lg font-bold text-white"
+          >
+            {strings.review.showAnswer}
+          </button>
+        </div>
       ) : (
-        <div className="grid grid-cols-4 gap-2">
-          {OUTCOMES.map((o) => (
+        <div className={`grid gap-2 ${clozeShown ? "grid-cols-2" : "grid-cols-4"}`}>
+          {OUTCOMES.filter((o) => !clozeShown || o.rating <= 2).map((o) => (
             <button
               key={o.rating}
               onClick={() => grade(o.rating)}

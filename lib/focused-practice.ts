@@ -291,3 +291,13 @@ export function browseRank(selfScore: number | null, m: FocusedMastery): number 
   if (m.strong) return base + 0.5; // push back
   return base;
 }
+
+/** Speak's ladder step between hearing and the whole sentence: the sentence with its longest word missing. Null when it is too short to have a step. */
+export function clozeHint(translit: string): string | null {
+  const words = translit.trim().split(/\s+/);
+  if (words.length < 3) return null;
+  const longest = words.reduce((best, w, i) => (w.length > words[best].length ? i : best), 0);
+  return words.map((w, i) => (i === longest ? "_____" : w)).join(" ");
+}
+
+export const FIX_ROUND_MAX = 15;

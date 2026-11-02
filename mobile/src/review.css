@@ -140,3 +140,10 @@
 .yc { color: var(--ink); }
 .yc.embedded { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .yc.embedded .page, .yc.embedded .review { flex: 1; height: auto; min-height: 0; padding: 12px 16px 16px !important; }
+
+/* The word in another sentence from the deck */
+.yc .example {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-top: 6px;
+}

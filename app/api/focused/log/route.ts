@@ -9,7 +9,7 @@ import { supabaseAdmin } from "@/lib/supabase";
  *  not move FSRS state. tests/e2e/reversibility.spec.ts enforces this.
  */
 export async function POST(request: NextRequest) {
-  const { session_id, card_srs_id, outcome, attempt_index, latency_ms, hint_used } =
+  const { session_id, card_srs_id, outcome, attempt_index, latency_ms, hint_used, source } =
     await request.json();
 
   if (!session_id || !card_srs_id || ![1, 2, 3, 4].includes(outcome)) {
@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
     attempt_index: attempt_index ?? 1,
     latency_ms: latency_ms ?? null,
     hint_used: Boolean(hint_used),
+    source: source === "fix_round" ? source : null,
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

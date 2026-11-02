@@ -11,6 +11,11 @@ export async function createClip(audioUrl: string, startSec: number, endSec: num
   const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
   await ctx.close();
 
+  return clipFromBuffer(audioBuffer, startSec, endSec);
+}
+
+/** The same cut from audio that is already decoded, for screens that cut many clips from one recording. */
+export function clipFromBuffer(audioBuffer: AudioBuffer, startSec: number, endSec: number): Blob {
   const sampleRate = audioBuffer.sampleRate;
   const startSample = Math.floor(startSec * sampleRate);
   const endSample = Math.min(Math.ceil(endSec * sampleRate), audioBuffer.length);
