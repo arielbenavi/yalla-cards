@@ -101,3 +101,11 @@ if a step failed.
   New book forms seen: יַחִ'י (with geresh), אִלִּי with a shadda here vs אִלְלִי
   on p. 304 (the book is not consistent: copy each occurrence as printed),
   וֻמַחְ'לִצְתֶש (the conjunction as וֻ).
+- 2026-11-01, pp. 105 and 108, second pass (14 sentences): the halves of a
+  stacked 2× montage (right/left, ~1450px each) were legible enough; 4× crops
+  settled seven marks. Two things to remember: `lines.py` did not create its
+  output folder (now it does), and **guessing crop coordinates from a scaled
+  preview misses the word**: crop by fractions of the line image instead. Book
+  forms: p. 105 writes the preposition as בִּ(א)ל / בִּ(אל) with a hiriq, p. 108
+  as בְּ(א)ל: copy each page as printed. Also (א)לִבְּצַ'אעַה (hiriq under the
+  lamed), דֹכְּתוֹר (holam), הֻםֵּ, מַדְרַסַתֵש.

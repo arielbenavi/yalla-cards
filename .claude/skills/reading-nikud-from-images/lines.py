@@ -11,7 +11,7 @@ letters, so the padding keeps it; a mark that falls into the next band is
 the main reason to re-check a line's neighbours. Prints one row per line:
 index, y-range, ink height, file.
 """
-import sys
+import os, sys
 from PIL import Image
 
 def main():
@@ -19,6 +19,7 @@ def main():
     if len(a) < 2:
         print(__doc__); sys.exit(1)
     page, out = a[0], a[1]
+    os.makedirs(out, exist_ok=True)
     opt = lambda k, d: type(d)(a[a.index(k) + 1]) if k in a else d
     scale, gap, pad = opt("--scale", 2), opt("--min-gap", 6), opt("--pad", 10)
     im = Image.open(page).convert("L")
