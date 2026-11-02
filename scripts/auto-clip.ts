@@ -255,8 +255,16 @@ async function saveSuggestions(picks: Pick[], heard: Record<string, string>) {
         },
       };
     });
-  for (let i = 0; i < rows.length; i += 500) {
-    const { error } = await sb.from("clip_suggestions").upsert(rows.slice(i, i + 500), { onConflict: "card_id,recording_id,start_sec" });
+  // Two picks can start at the same second and end differently; the table keeps one per start.
+  const unique = new Map<string, (typeof rows)[number]>();
+  for (const r of rows) {
+    const k = `${r.card_id}:${r.recording_id}:${r.start_sec}`;
+    const had = unique.get(k);
+    if (!had || r.confidence > had.confidence) unique.set(k, r);
+  }
+  const deduped = [...unique.values()];
+  for (let i = 0; i < deduped.length; i += 500) {
+    const { error } = await sb.from("clip_suggestions").upsert(deduped.slice(i, i + 500), { onConflict: "card_id,recording_id,start_sec" });
     if (error) throw error;
   }
 }
