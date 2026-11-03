@@ -605,16 +605,26 @@ function Review({
 function TappableWords({ card, onTap }: { card: DeckCard; onTap: (word: SentenceWord) => void }) {
   const words = sentenceWords(card.translit_nikud, card.arabic_script);
   if (words.length < 2) return <>{card.translit_nikud}</>;
+  // The text stays as written: punctuation and symbols sit outside the buttons
+  let next = 0;
   return (
     <>
-      {words.map((w, i) => (
-        <span key={i}>
-          {i > 0 && " "}
-          <button type="button" className="word-tap" onClick={() => onTap(w)}>
-            {w.text}
-          </button>
-        </span>
-      ))}
+      {card.translit_nikud.trim().split(/\s+/).map((token, i) => {
+        const word = words[next];
+        const at = word ? token.indexOf(word.text) : -1;
+        if (at < 0) return <span key={i}>{i > 0 && " "}{token}</span>;
+        next++;
+        return (
+          <span key={i}>
+            {i > 0 && " "}
+            {token.slice(0, at)}
+            <button type="button" className="word-tap" onClick={() => onTap(word)}>
+              {word.text}
+            </button>
+            {token.slice(at + word.text.length)}
+          </span>
+        );
+      })}
     </>
   );
 }
