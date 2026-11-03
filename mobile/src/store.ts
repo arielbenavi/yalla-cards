@@ -3,6 +3,7 @@
 // On the phone:
 //   deck.json     the deck with its FSRS state as the server last sent it
 //   pending.json  grades made since then, not yet confirmed by a fresh deck
+//   word-requests.json  words sent to the translation list, not yet delivered
 //   audio/…       the card clips, so audio plays with no network
 //
 // What the screen shows is deck.json with pending.json replayed on top, through
@@ -26,6 +27,7 @@ export const API_BASE = typeof __API_BASE__ === "string" ? __API_BASE__ : "";
 const DRY_RUN = typeof __DRY_RUN__ === "boolean" ? __DRY_RUN__ : false;
 
 export type Pending = ReviewEvent & { rating: Grade };
+export type WordRequest = { word: string; arabic: string | null; card_id: string; sentence: string; meaning: string };
 
 type Deck = { generated_at: string; cards: DeckCard[]; reviews: ReviewEvent[]; audio: Record<string, string> };
 
@@ -74,6 +76,7 @@ export type Snapshot = {
 
 let deck: Deck | null = null;
 let pending: Pending[] = [];
+let wordRequests: WordRequest[] = [];
 let syncedAt: string | null = null;
 let audioFiles: Record<string, string> = {}; // clip key → file name under audio/
 
@@ -109,16 +112,18 @@ export function snapshot(): Snapshot {
 }
 
 export async function load() {
-  const [d, p, meta, a] = await Promise.all([
+  const [d, p, meta, a, w] = await Promise.all([
     readJson<Deck>("deck.json"),
     readJson<Pending[]>("pending.json"),
     readJson<{ syncedAt: string | null }>("meta.json"),
     readJson<Record<string, string>>("audio-index.json"),
+    readJson<WordRequest[]>("word-requests.json"),
   ]);
   deck = d;
   pending = p ?? [];
   syncedAt = meta?.syncedAt ?? null;
   audioFiles = a ?? {};
+  wordRequests = w ?? [];
 }
 
 /** Records a grade on the phone. Saved before it returns, so it survives the app being killed. */
@@ -129,6 +134,13 @@ export async function grade(card: DeckCard, rating: Grade) {
     { card_srs_id: card.card_srs_id, rating, state: local.srs.state, reviewed_at: new Date().toISOString() },
   ];
   await writeJson("pending.json", pending);
+}
+
+/** Keeps a word for the translation list. Saved before it returns, sent now or at the next sync. */
+export async function requestWord(item: WordRequest) {
+  wordRequests = [...wordRequests, item];
+  await writeJson("word-requests.json", wordRequests);
+  void sendWordRequests();
 }
 
 // ── sync ─────────────────────────────────────────────────────────────────────
@@ -153,6 +165,21 @@ async function http<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
   return (typeof res.data === "string" ? JSON.parse(res.data) : res.data) as T;
 }
 
+// Apart from the grades' sync: a failure here must not hold back the deck.
+// Re-sending is harmless, the server skips a word that is already open.
+async function sendWordRequests() {
+  const sending = wordRequests.slice();
+  if (!sending.length || DRY_RUN) return;
+  try {
+    await http("POST", "/api/mobile/word-requests", { items: sending });
+    const sent = new Set(sending);
+    wordRequests = wordRequests.filter((w) => !sent.has(w));
+    await writeJson("word-requests.json", wordRequests);
+  } catch {
+    // Next sync tries again
+  }
+}
+
 let running: Promise<SyncResult> | null = null;
 export type SyncResult = { ok: boolean; sent: number; error?: string };
 
@@ -163,6 +190,7 @@ export function sync(): Promise<SyncResult> {
 }
 
 async function doSync(): Promise<SyncResult> {
+  void sendWordRequests();
   const sending = pending.slice();
   try {
     for (let i = 0; i < sending.length; i += 50) {

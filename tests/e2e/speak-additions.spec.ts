@@ -85,3 +85,47 @@ test("the end of the daily review offers a fix round of today's שוב, which lo
   await page.getByRole("button", { name: "קל" }).click();
   await expect(page.getByText("סיימת את סבב התיקון")).toBeVisible();
 });
+
+test("a word tapped in a sentence shows its card, and an unknown one goes to the translation list", async ({ page }) => {
+  await login(page);
+  const past = new Date(Date.now() - 3600_000).toISOString();
+  const future = new Date(Date.now() + 5 * 86_400_000).toISOString();
+  const sentence = { ...deckCard("s", "sentence", "شفت البيت الجديد", past), translit_nikud: "שֻפְת (א)לְבֵּית זְ'בַּרְגַ'ד," };
+  const known = { ...deckCard("k", "word", "بيت", future), translit_nikud: "בֵּית", hebrew_meaning: "בית" };
+  await mockDeck(page, [sentence, known], []);
+  await page.addInitScript(() => localStorage.removeItem("word-requests.json"));
+  const sent: { items: { word: string; arabic: string; sentence: string }[] }[] = [];
+  await page.route("**/api/mobile/word-requests", (r) => {
+    sent.push(r.request().postDataJSON());
+    return r.fulfill({ json: { added: 1, duplicates: 0 } });
+  });
+  let grades = 0;
+  await page.route("**/api/mobile/sync", (r) => {
+    grades += r.request().postDataJSON().reviews.length;
+    return r.fulfill({ json: { ok: true, applied: 0 } });
+  });
+
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+  const tip = page.getByRole("button", { name: "הבנתי" });
+  await tip.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
+  if (await tip.isVisible().catch(() => false)) await tip.click();
+
+  await expect(page.getByRole("button", { name: "שֻפְת" })).toHaveCount(0);
+  await page.getByRole("button", { name: "הצג תשובה" }).click();
+
+  await page.getByRole("button", { name: "(א)לְבֵּית" }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toContainText("אולי המילה הזאת");
+  await expect(sheet).toContainText("בֵּית = בית");
+  await page.keyboard.press("1");
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+
+  await page.getByRole("button", { name: "זְ'בַּרְגַ'ד", exact: true }).click();
+  await expect(page.getByRole("dialog")).toContainText("אין כרטיס למילה הזאת");
+  await page.getByRole("button", { name: "הוסף לרשימת תרגום" }).click();
+  await expect(page.getByRole("button", { name: "נוסף לרשימה ✓" })).toBeVisible();
+  await expect.poll(() => sent.length).toBe(1);
+  expect(sent[0].items[0]).toMatchObject({ word: "זְ'בַּרְגַ'ד", arabic: "الجديد", sentence: sentence.translit_nikud });
+  expect(grades, "a key pressed with the sheet open must not grade").toBe(0);
+});

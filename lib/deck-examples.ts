@@ -10,7 +10,7 @@ type ExampleCard = {
   hebrew_meaning: string;
 };
 
-function skeleton(word: string): string {
+export function skeleton(word: string): string {
   return word
     .replace(/[ً-ٰٟـ]/g, "")
     .replace(/[أإآ]/g, "ا")
@@ -20,7 +20,7 @@ function skeleton(word: string): string {
 }
 
 // The same word with an attached article or conjunction still counts: البيت, وبيت.
-function forms(word: string): string[] {
+export function forms(word: string): string[] {
   const out = [word];
   for (const prefix of ["ال", "و", "ب", "ل", "وال", "بال"]) {
     if (word.startsWith(prefix) && word.length - prefix.length >= 3) out.push(word.slice(prefix.length));

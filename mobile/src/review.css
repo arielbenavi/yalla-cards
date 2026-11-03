@@ -147,3 +147,10 @@
   line-height: 1.5;
   margin-top: 6px;
 }
+
+/* A word in a sentence on the back of a card: tap for its card or the translation list */
+.yc .word-tap { font: inherit; color: inherit; padding: 0; border-bottom: 1px dotted #9fb0c7; }
+.yc .word-tap:active { background: #e8eef7; }
+.yc .word-sheet .sheet-body { bottom: 0; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.yc .word-title { font-size: 1.5rem; }
+.yc .word-match { font-size: 1.05rem; }

@@ -5,6 +5,7 @@ import { strings } from "@/lib/strings";
 import { dailyQueue, laterToday, type DeckCard, type ReviewEvent } from "@/lib/daily-queue";
 import { buildExampleIndex, exampleFor } from "@/lib/deck-examples";
 import { FIX_ROUND_MAX } from "@/lib/focused-practice";
+import { buildWordIndex, lookupWord, sentenceWords, type SentenceWord } from "@/lib/word-lookup";
 import * as store from "./store";
 import { PAIRS } from "@/components/PronunciationGuide";
 import { navGroups, primaryNav } from "@/lib/nav";
@@ -335,12 +336,15 @@ function Review({
   const [guideOpen, setGuideOpen] = useState(false);
   const [grading, setGrading] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [tappedWord, setTappedWord] = useState<SentenceWord | null>(null);
+  const [requestedWords, setRequestedWords] = useState<Set<string>>(() => new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const safeIndex = Math.min(index, Math.max(0, queue.length - 1));
   const current = queue[safeIndex];
 
   const exampleIndex = useMemo(() => buildExampleIndex(cards), [cards.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  const wordIndex = useMemo(() => buildWordIndex(cards), [cards.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const example = current ? exampleFor(current, exampleIndex, Math.floor(Date.now() / 86_400_000)) : null;
   const exampleId = revealed && current && example ? current.card_id : null;
   useEffect(() => {
@@ -364,6 +368,7 @@ function Review({
   const reset = () => {
     setRevealed(false);
     setHintUsed(false);
+    setTappedWord(null);
   };
 
   async function grade(rating: Grade) {
@@ -381,6 +386,10 @@ function Review({
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (!current || (e.target as HTMLElement)?.closest("input, textarea")) return;
+      if (tappedWord) {
+        if (e.key === "Escape") setTappedWord(null);
+        return;
+      }
       if (e.key === " " && !revealed) {
         e.preventDefault();
         setRevealed(true);
@@ -394,7 +403,7 @@ function Review({
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [current, revealed, hintUsed]);
+  }, [current, revealed, hintUsed, tappedWord]);
 
   if (!current) {
     const later = laterToday(cards).length;
@@ -428,6 +437,15 @@ function Review({
     ? current.direction === "he_to_ar" ? "ar_to_he" : "he_to_ar"
     : current.direction;
   const audioOnlyPrompt = dir === "ar_to_he" && !!audioUrl;
+  const translit = (
+    <TappableWords
+      card={current}
+      onTap={(word) => {
+        logEvent("word_tapped", current.card_id, { word: word.text });
+        setTappedWord(word);
+      }}
+    />
+  );
   const play = () => {
     const a = audioRef.current;
     if (!a) return;
@@ -489,19 +507,19 @@ function Review({
         ) : audioOnlyPrompt ? (
           <AudioButton onClick={play} large />
         ) : (
-          <p className="prompt nikud">{current.translit_nikud}</p>
+          <p className="prompt nikud">{revealed ? translit : current.translit_nikud}</p>
         )}
 
         {revealed && (
           <div className="answer">
             {dir === "he_to_ar" ? (
               <>
-                <p className="answer-main nikud">{current.translit_nikud}</p>
+                <p className="answer-main nikud">{translit}</p>
                 {current.notes && <p className="muted">{current.notes}</p>}
               </>
             ) : audioOnlyPrompt ? (
               <>
-                <p className="answer-main nikud bold">{current.translit_nikud}</p>
+                <p className="answer-main nikud bold">{translit}</p>
                 <p className="answer-main nikud">{current.hebrew_meaning}</p>
               </>
             ) : (
@@ -559,6 +577,83 @@ function Review({
           )}
         </div>
       )}
+
+      {tappedWord && (
+        <WordSheet
+          word={tappedWord}
+          match={lookupWord(tappedWord, wordIndex, current.card_id)}
+          requested={requestedWords.has(tappedWord.text)}
+          onRequest={() => {
+            setRequestedWords((r) => new Set(r).add(tappedWord.text));
+            logEvent("word_requested", current.card_id, { word: tappedWord.text });
+            void store.requestWord({
+              word: tappedWord.text,
+              arabic: tappedWord.arabic,
+              card_id: current.card_id,
+              sentence: current.translit_nikud,
+              meaning: current.hebrew_meaning,
+            });
+          }}
+          onClose={() => setTappedWord(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// A sentence's words, each one a button. A one-word card has nothing to pick from.
+function TappableWords({ card, onTap }: { card: DeckCard; onTap: (word: SentenceWord) => void }) {
+  const words = sentenceWords(card.translit_nikud, card.arabic_script);
+  if (words.length < 2) return <>{card.translit_nikud}</>;
+  return (
+    <>
+      {words.map((w, i) => (
+        <span key={i}>
+          {i > 0 && " "}
+          <button type="button" className="word-tap" onClick={() => onTap(w)}>
+            {w.text}
+          </button>
+        </span>
+      ))}
+    </>
+  );
+}
+
+function WordSheet({
+  word,
+  match,
+  requested,
+  onRequest,
+  onClose,
+}: {
+  word: SentenceWord;
+  match: ReturnType<typeof lookupWord>;
+  requested: boolean;
+  onRequest: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="sheet word-sheet" role="dialog" aria-label={word.text}>
+      <button className="sheet-backdrop" aria-label="סגור" onClick={onClose} />
+      <div className="sheet-body">
+        <p className="word-title nikud">{word.text}</p>
+        {word.arabic && <p className="ar muted" dir="rtl">{word.arabic}</p>}
+        {match.cards.length > 0 ? (
+          <>
+            {!match.sure && <p className="muted small">אולי המילה הזאת, בצורה אחרת:</p>}
+            {match.cards.map((c) => (
+              <p key={c.card_id} className="word-match">
+                <span className="nikud bold">{c.translit_nikud}</span> = {c.hebrew_meaning}
+              </p>
+            ))}
+          </>
+        ) : (
+          <p className="muted">אין כרטיס למילה הזאת</p>
+        )}
+        <button className="btn primary" disabled={requested} onClick={onRequest}>
+          {requested ? "נוסף לרשימה ✓" : "הוסף לרשימת תרגום"}
+        </button>
+      </div>
     </div>
   );
 }
