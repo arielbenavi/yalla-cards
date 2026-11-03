@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   const now = new Date().toISOString();
 
   const cardSelect =
-    "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path, lesson_id, audio_start_sec, audio_end_sec, self_score)";
+    "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, course_verified, clip_path, lesson_id, audio_start_sec, audio_end_sec, self_score)";
 
   // PostgREST returns at most 1000 rows per request. card_srs is at ~974 and
   // growing, so these reads are about to start truncating silently. Paging
@@ -183,6 +183,8 @@ export async function GET(request: Request) {
         arabic_script: card?.arabic_script,
         item_type: card?.item_type,
         notes: card?.notes,
+        plural_form: card?.plural_form,
+        course_verified: card?.course_verified,
         audio_url: audioUrl,
         audio_start_sec: card?.audio_start_sec ?? null,
         audio_end_sec: card?.audio_end_sec ?? null,

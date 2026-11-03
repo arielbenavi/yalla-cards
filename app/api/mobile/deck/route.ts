@@ -10,7 +10,7 @@ import type { DeckCard, ReviewEvent } from "@/lib/daily-queue";
 export const maxDuration = 60;
 
 const SELECT =
-  "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, clip_path, lesson_id, audio_start_sec, audio_end_sec)";
+  "id, direction, due, stability, difficulty, elapsed_days, scheduled_days, learning_steps, reps, lapses, state, last_review, card:cards(id, hebrew_meaning, translit_nikud, arabic_script, item_type, notes, plural_form, course_verified, clip_path, lesson_id, audio_start_sec, audio_end_sec)";
 
 type Row = {
   id: string;
@@ -32,6 +32,8 @@ type Row = {
     arabic_script: string | null;
     item_type: string;
     notes: string | null;
+    plural_form: string | null;
+    course_verified: boolean | null;
     clip_path: string | null;
     lesson_id: string | null;
     audio_start_sec: number | null;
@@ -79,6 +81,8 @@ export async function GET() {
       arabic_script: r.card!.arabic_script,
       item_type: r.card!.item_type,
       notes: r.card!.notes,
+      plural_form: r.card!.plural_form,
+      course_verified: r.card!.course_verified,
       clip_path: r.card!.clip_path,
       audio_start_sec: r.card!.audio_start_sec,
       audio_end_sec: r.card!.audio_end_sec,

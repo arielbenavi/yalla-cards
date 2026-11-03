@@ -8,6 +8,7 @@ type ExampleCard = {
   arabic_script: string | null;
   translit_nikud: string;
   hebrew_meaning: string;
+  course_verified?: boolean | null;
 };
 
 export function skeleton(word: string): string {
@@ -55,5 +56,8 @@ export function exampleFor(card: ExampleCard, index: ExampleIndex, day: number):
   const key = skeleton(parts[0]);
   if (key.length < 3) return null;
   const list = (index.get(key) ?? []).filter((c) => c.card_id !== card.card_id);
-  return list.length ? list[day % list.length] : null;
+  // A sentence from the book beats one from anywhere else
+  const book = list.filter((c) => c.course_verified);
+  const pool = book.length ? book : list;
+  return pool.length ? pool[day % pool.length] : null;
 }

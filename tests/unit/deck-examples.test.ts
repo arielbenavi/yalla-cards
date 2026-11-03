@@ -27,6 +27,10 @@ assert.equal(exampleFor(card("x", "word", "شمس"), index, 0), null, "no senten
 assert.equal(exampleFor(sentence, index, 0), null, "only word cards get one");
 assert.equal(exampleFor(card("y", "word", "في"), index, 0), null, "two-letter particles are everywhere");
 
+const fromBook = { ...card("b1", "sentence", "بيت جدي كبير كتير"), course_verified: true };
+const bookIndex = buildExampleIndex([sentence, other, fromBook]);
+for (const day of [0, 1, 2]) assert.equal(exampleFor(bare, bookIndex, day)?.card_id, "b1", "a book sentence comes first");
+
 assert.equal(clozeHint("מִן בַּרַא רְחַ'אם"), "מִן בַּרַא _____");
 assert.equal(clozeHint("מַסַא (אל)נּוּר"), null, "two words have no middle rung");
 

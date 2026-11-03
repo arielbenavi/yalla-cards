@@ -109,3 +109,11 @@ if a step failed.
   forms: p. 105 writes the preposition as בִּ(א)ל / בִּ(אל) with a hiriq, p. 108
   as בְּ(א)ל: copy each page as printed. Also (א)לִבְּצַ'אעַה (hiriq under the
   lamed), דֹכְּתוֹר (holam), הֻםֵּ, מַדְרַסַתֵש.
+- 2026-11-03, pp. 104, 107, 110–112 (68-item word list, 32 table cells): the
+  scratchpad had been cleared, so re-split from the book folder
+  (`CUNI/CUNI/ARAVIT/המדרשה_ספר_מחולק_לתמונות/N.png`) and never rely on old crops.
+  The 2× montage changed nothing on the list pages; a further 2× crop of the
+  table column fixed one guess: הֻוֵּ is מַמְסִכֵּש (sheva on the second mem) but
+  הִיֵּ and הֵםּ are מַמִסְכַּתֵש, מַמִסְכּוּש (hiriq). Similar cells are not parallel,
+  so don't copy one row's pointing to the next. The book's word lists carry
+  printed plurals: check them before writing any plural from memory.

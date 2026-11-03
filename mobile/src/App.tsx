@@ -525,6 +525,9 @@ function Review({
             ) : (
               <p className="answer-main nikud">{current.hebrew_meaning}</p>
             )}
+            {current.plural_form && current.plural_form !== "—" && (
+              <p className="muted nikud" data-testid="card-plural">רבים: {current.plural_form}</p>
+            )}
             {example && (
               <p className="example nikud" data-testid="deck-example">
                 {example.translit_nikud}

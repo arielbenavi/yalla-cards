@@ -38,6 +38,19 @@ test("the back of a word card shows it in another sentence from the deck", async
   await expect(page.getByTestId("deck-example")).toContainText("תעתיק s");
 });
 
+test("the back of a card shows its plural", async ({ page }) => {
+  await login(page);
+  const past = new Date(Date.now() - 3600_000).toISOString();
+  await mockDeck(page, [{ ...deckCard("w", "word", "قميص", past), plural_form: "קֻמְצַאן" }], []);
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+  const tip = page.getByRole("button", { name: "הבנתי" });
+  await tip.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
+  if (await tip.isVisible().catch(() => false)) await tip.click();
+  await expect(page.getByTestId("card-plural")).toHaveCount(0);
+  await page.getByRole("button", { name: "הצג תשובה" }).click();
+  await expect(page.getByTestId("card-plural")).toHaveText("רבים: קֻמְצַאן");
+});
+
 test("the end of the daily review offers a fix round of today's שוב, which logs outside FSRS", async ({ page }) => {
   await login(page);
   const future = new Date(Date.now() + 5 * 86_400_000).toISOString();

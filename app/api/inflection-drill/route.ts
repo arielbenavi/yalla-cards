@@ -52,6 +52,7 @@ const SLUG_LABEL: Record<string, string> = {
   ordinals: "מספרים סודרים",
   weekdays: "ימות השבוע",
   past_sound_verb: "עבר — פועל שלם",
+  past_negation_sound: "שלילת העבר — פועל שלם",
   indirect_object_l: "נטיית ל׳ — כינויי מושא עקיף",
   past_indirect_negation: "עבר + מושא עקיף — וַצַף",
   past_indirect_object_grid: "עבר + מושא עקיף — דַפַע",

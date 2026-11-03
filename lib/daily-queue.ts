@@ -38,6 +38,8 @@ export type DeckCard = {
   arabic_script: string | null;
   item_type: string;
   notes: string | null;
+  plural_form?: string | null;
+  course_verified?: boolean | null;
   clip_path: string | null;
   audio_start_sec: number | null;
   audio_end_sec: number | null;
