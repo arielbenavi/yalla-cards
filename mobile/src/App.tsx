@@ -540,7 +540,7 @@ function Review({
         </div>
       )}
 
-      <div className="tile card">
+      <div className="tile card" key={current.card_srs_id}>
         {dir === "he_to_ar" ? (
           <p className="prompt nikud">{current.hebrew_meaning}</p>
         ) : audioOnlyPrompt ? (
@@ -594,16 +594,16 @@ function Review({
           </p>
           <div className="row">
             {peek! > 0 && (
-              <button className="btn side" onClick={back} aria-label="מילה קודמת">
-                ←
+              <button className="btn side" onClick={back}>
+                הקודם
               </button>
             )}
             <button className="btn primary grow" onClick={() => { reset(); setPeek(null); }}>
               חזרה לתור
             </button>
             {peek! < trail.length - 1 && (
-              <button className="btn side" onClick={forward} aria-label="מילה הבאה">
-                →
+              <button className="btn side" onClick={forward}>
+                הבא
               </button>
             )}
           </div>
@@ -615,8 +615,8 @@ function Review({
           )}
           <div className="row">
             {trail.length > 0 && (
-              <button className="btn side" onClick={back} aria-label="מילה קודמת">
-                ←
+              <button className="btn side" onClick={back}>
+                הקודם
               </button>
             )}
             {!hintUsed && (
@@ -628,23 +628,30 @@ function Review({
               {strings.review.showAnswer}
             </button>
             {safeIndex < queue.length - 1 && (
-              <button className="btn side" onClick={skip} aria-label="מילה הבאה">
-                →
+              <button className="btn side" onClick={skip}>
+                דלג
               </button>
             )}
           </div>
         </div>
       ) : (
         // With the hint used, only שוב/קשה — as on the web page
-        <div className={`grades ${hintUsed ? "two" : ""}`}>
-          <button className="btn again" disabled={grading} onClick={() => grade(Rating.Again)}>{strings.review.again}</button>
-          <button className="btn hard" disabled={grading} onClick={() => grade(Rating.Hard)}>{strings.review.hard}</button>
-          {!hintUsed && (
-            <>
-              <button className="btn good" disabled={grading} onClick={() => grade(Rating.Good)}>{strings.review.good}</button>
-              <button className="btn easy" disabled={grading} onClick={() => grade(Rating.Easy)}>{strings.review.easy}</button>
-            </>
+        <div className="actions">
+          {trail.length > 0 && (
+            <button className="link previous" onClick={back}>
+              לכרטיס הקודם
+            </button>
           )}
+          <div className={`grades ${hintUsed ? "two" : ""}`}>
+            <button className="btn again" disabled={grading} onClick={() => grade(Rating.Again)}>{strings.review.again}</button>
+            <button className="btn hard" disabled={grading} onClick={() => grade(Rating.Hard)}>{strings.review.hard}</button>
+            {!hintUsed && (
+              <>
+                <button className="btn good" disabled={grading} onClick={() => grade(Rating.Good)}>{strings.review.good}</button>
+                <button className="btn easy" disabled={grading} onClick={() => grade(Rating.Easy)}>{strings.review.easy}</button>
+              </>
+            )}
+          </div>
         </div>
       )}
 

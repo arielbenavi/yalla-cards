@@ -154,7 +154,7 @@ test("← shows the card just graded, to read only, and skipped cards can still 
   if (await tip.isVisible().catch(() => false)) await tip.click();
 
   const prompt = page.locator(".tile.card .prompt");
-  const previous = page.getByRole("button", { name: "מילה קודמת" });
+  const previous = page.getByRole("button", { name: "הקודם", exact: true });
   await expect(prompt).toHaveText("פירוש a");
   await expect(previous).toHaveCount(0);
 
@@ -163,6 +163,13 @@ test("← shows the card just graded, to read only, and skipped cards can still 
   await page.getByRole("button", { name: "הצג תשובה" }).click();
   await page.getByRole("button", { name: "טוב", exact: true }).click();
   await expect(prompt).toHaveText("פירוש b");
+
+  // The way back is there on the answer side too
+  await page.getByRole("button", { name: "הצג תשובה" }).click();
+  await expect(page.getByRole("button", { name: "לכרטיס הקודם" })).toBeVisible();
+  await page.getByRole("button", { name: "לכרטיס הקודם" }).click();
+  await expect(prompt).toHaveText("פירוש a");
+  await page.getByRole("button", { name: "חזרה לתור" }).click();
 
   // Back to the graded card: its answer is open and it cannot be graded twice
   await previous.click();
@@ -176,11 +183,38 @@ test("← shows the card just graded, to read only, and skipped cards can still 
 
   // A skipped card goes back to being a live card
   // dispatchEvent: in dev, Next's indicator sits over this corner and takes real clicks
-  await page.getByRole("button", { name: "מילה הבאה" }).dispatchEvent("click");
+  await page.getByRole("button", { name: "דלג" }).dispatchEvent("click");
   await expect(prompt).toHaveText("פירוש c");
   await previous.click();
   await expect(prompt).toHaveText("פירוש b");
   await expect(page.getByTestId("peek-rating")).toHaveCount(0);
   await page.getByRole("button", { name: "הצג תשובה" }).click();
   await expect(page.locator(".grades")).toBeVisible();
+});
+
+test("a long card scrolls inside its tile, with the grades above the tabs and the page still", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  const past = new Date(Date.now() - 3600_000).toISOString();
+  const long = "מילה ארוכה בתוך משפט ארוך מאוד ".repeat(14).trim();
+  await mockDeck(page, [{ ...deckCard("l", "sentence", "بيت", past), hebrew_meaning: long, translit_nikud: long }], []);
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+  const tip = page.getByRole("button", { name: "הבנתי" });
+  await tip.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
+  if (await tip.isVisible().catch(() => false)) await tip.click();
+  await page.getByRole("button", { name: "הצג תשובה" }).click();
+
+  const grades = await page.locator(".grades").boundingBox();
+  const tabs = await page.locator("nav.tabbar").boundingBox();
+  expect(grades!.y + grades!.height).toBeLessThanOrEqual(tabs!.y);
+  expect(await page.evaluate(() => document.scrollingElement!.scrollHeight <= window.innerHeight)).toBe(true);
+
+  // The top of the card can be reached
+  const card = page.locator(".tile.card");
+  expect(await card.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  await card.evaluate((el) => (el.scrollTop = 0));
+  const top = await card.boundingBox();
+  const prompt = await page.locator(".tile.card .prompt").boundingBox();
+  expect(prompt!.y).toBeGreaterThanOrEqual(top!.y);
+  await page.screenshot({ path: process.env.SHOT ?? "test-results/long-card.png" });
 });
