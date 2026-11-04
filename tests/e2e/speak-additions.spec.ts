@@ -142,3 +142,45 @@ test("a word tapped in a sentence shows its card, and an unknown one goes to the
   expect(sent[0].items[0]).toMatchObject({ word: "זְ'בַּרְגַ'ד", arabic: "الجديد", sentence: sentence.translit_nikud });
   expect(grades, "a key pressed with the sheet open must not grade").toBe(0);
 });
+
+test("← shows the card just graded, to read only, and skipped cards can still be graded", async ({ page }) => {
+  await login(page);
+  const at = (hours: number) => new Date(Date.now() - hours * 3600_000).toISOString();
+  const [a, b, c] = [deckCard("a", "word", "بيت", at(3)), deckCard("b", "word", "باب", at(2)), deckCard("c", "word", "شباك", at(1))];
+  await mockDeck(page, [a, b, c], []);
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+  const tip = page.getByRole("button", { name: "הבנתי" });
+  await tip.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
+  if (await tip.isVisible().catch(() => false)) await tip.click();
+
+  const prompt = page.locator(".tile.card .prompt");
+  const previous = page.getByRole("button", { name: "מילה קודמת" });
+  await expect(prompt).toHaveText("פירוש a");
+  await expect(previous).toHaveCount(0);
+
+  // As the server would answer the sync that follows a grade: the card is no longer due
+  await mockDeck(page, [b, c], []);
+  await page.getByRole("button", { name: "הצג תשובה" }).click();
+  await page.getByRole("button", { name: "טוב", exact: true }).click();
+  await expect(prompt).toHaveText("פירוש b");
+
+  // Back to the graded card: its answer is open and it cannot be graded twice
+  await previous.click();
+  await expect(prompt).toHaveText("פירוש a");
+  await expect(page.locator(".answer-main")).toContainText("תעתיק a");
+  await expect(page.getByTestId("peek-rating")).toHaveText("דירגת: טוב");
+  await expect(page.locator(".grades")).toHaveCount(0);
+
+  await page.getByRole("button", { name: "חזרה לתור" }).click();
+  await expect(prompt).toHaveText("פירוש b");
+
+  // A skipped card goes back to being a live card
+  // dispatchEvent: in dev, Next's indicator sits over this corner and takes real clicks
+  await page.getByRole("button", { name: "מילה הבאה" }).dispatchEvent("click");
+  await expect(prompt).toHaveText("פירוש c");
+  await previous.click();
+  await expect(prompt).toHaveText("פירוש b");
+  await expect(page.getByTestId("peek-rating")).toHaveCount(0);
+  await page.getByRole("button", { name: "הצג תשובה" }).click();
+  await expect(page.locator(".grades")).toBeVisible();
+});

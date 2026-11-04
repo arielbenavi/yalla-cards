@@ -330,7 +330,11 @@ function Review({
   // The web page reloads the queue after every grade and starts from its head;
   // the queue here is recomputed the same way, so the index only moves with ←/→
   const [index, setIndex] = useState(0);
-  const [revealed, setRevealed] = useState(false);
+  const [revealedNow, setRevealed] = useState(false);
+  // The cards left behind, oldest first. A graded card has left the queue, so ←
+  // walks this trail and shows it to read; grading happens once, on the way forward.
+  const [trail, setTrail] = useState<{ card: DeckCard; rating: Grade | null }[]>([]);
+  const [peek, setPeek] = useState<number | null>(null);
   const [hintUsed, setHintUsed] = useState(false);
   const [dirFlipped, setDirFlipped] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -341,12 +345,14 @@ function Review({
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const safeIndex = Math.min(index, Math.max(0, queue.length - 1));
-  const current = queue[safeIndex];
+  const peeked = peek === null ? null : trail[peek] ?? null;
+  const current = peeked ? peeked.card : queue[safeIndex];
+  const revealed = revealedNow || !!peeked;
 
   const exampleIndex = useMemo(() => buildExampleIndex(cards), [cards.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const wordIndex = useMemo(() => buildWordIndex(cards), [cards.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const example = current ? exampleFor(current, exampleIndex, Math.floor(Date.now() / 86_400_000)) : null;
-  const exampleId = revealed && current && example ? current.card_id : null;
+  const exampleId = revealed && !peeked && current && example ? current.card_id : null;
   useEffect(() => {
     if (exampleId) logEvent("example_shown", exampleId);
   }, [exampleId]);
@@ -372,12 +378,40 @@ function Review({
   };
 
   async function grade(rating: Grade) {
-    if (!current || grading) return;
+    if (!current || grading || peeked) return;
     setGrading(true);
     await onGrade(current, rating);
+    setTrail((t) => [...t.filter((e) => e.card.card_srs_id !== current.card_srs_id), { card: current, rating }]);
     setIndex(0);
     reset();
     setGrading(false);
+  }
+
+  function skip() {
+    setTrail((t) => [...t.filter((e) => e.card.card_srs_id !== current.card_srs_id), { card: current, rating: null }]);
+    setIndex(safeIndex + 1);
+    reset();
+  }
+
+  function back() {
+    const at = (peek ?? trail.length) - 1;
+    const entry = trail[at];
+    if (!entry) return;
+    reset();
+    // A skipped card is still waiting in the queue: go back to it and grade it
+    const waiting = entry.rating === null ? queue.findIndex((c) => c.card_srs_id === entry.card.card_srs_id) : -1;
+    if (waiting >= 0) {
+      setTrail(trail.slice(0, at));
+      setIndex(waiting);
+      setPeek(null);
+    } else {
+      setPeek(at);
+    }
+  }
+
+  function forward() {
+    reset();
+    setPeek(peek !== null && peek + 1 < trail.length ? peek + 1 : null);
   }
 
   // On a computer: space shows the answer, 1–4 grade (1–2 only after the hint)
@@ -424,6 +458,11 @@ function Review({
             }}
           >
             סבב תיקון: {fixIds.length} {fixIds.length === 1 ? "כרטיס" : "כרטיסים"}
+          </button>
+        )}
+        {trail.length > 0 && (
+          <button className="btn" onClick={back}>
+            לכרטיס הקודם
           </button>
         )}
         <button className={fixOffered ? "btn" : "btn primary"} onClick={onExit}>
@@ -541,14 +580,42 @@ function Review({
         {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
       </div>
 
-      {!revealed ? (
+      {peeked ? (
+        <div className="actions">
+          <p className="muted" data-testid="peek-rating">
+            {peeked.rating === null
+              ? "דילגת על הכרטיס הזה"
+              : `דירגת: ${{
+                  [Rating.Again]: strings.review.again,
+                  [Rating.Hard]: strings.review.hard,
+                  [Rating.Good]: strings.review.good,
+                  [Rating.Easy]: strings.review.easy,
+                }[peeked.rating]}`}
+          </p>
+          <div className="row">
+            {peek! > 0 && (
+              <button className="btn side" onClick={back} aria-label="מילה קודמת">
+                ←
+              </button>
+            )}
+            <button className="btn primary grow" onClick={() => { reset(); setPeek(null); }}>
+              חזרה לתור
+            </button>
+            {peek! < trail.length - 1 && (
+              <button className="btn side" onClick={forward} aria-label="מילה הבאה">
+                →
+              </button>
+            )}
+          </div>
+        </div>
+      ) : !revealed ? (
         <div className="actions">
           {hintUsed && dir === "he_to_ar" && (
             <p className="hint nikud">רמז: {buildHint(current.translit_nikud.split(/\s+/)[0])}</p>
           )}
           <div className="row">
-            {safeIndex > 0 && (
-              <button className="btn side" onClick={() => { setIndex(safeIndex - 1); reset(); }} aria-label="מילה קודמת">
+            {trail.length > 0 && (
+              <button className="btn side" onClick={back} aria-label="מילה קודמת">
                 ←
               </button>
             )}
@@ -561,7 +628,7 @@ function Review({
               {strings.review.showAnswer}
             </button>
             {safeIndex < queue.length - 1 && (
-              <button className="btn side" onClick={() => { setIndex(safeIndex + 1); reset(); }} aria-label="מילה הבאה">
+              <button className="btn side" onClick={skip} aria-label="מילה הבאה">
                 →
               </button>
             )}
