@@ -41,6 +41,7 @@ const sections: Section[] = [
       { name: "אסיפת הורים — إجتماع أهالي", url: "https://youtu.be/OuAwxXUZBU4", note: "1:21 · שיחה" },
       { name: "התנצלות גרועה מחטא — عذر أقبح من ذنب", url: "https://youtu.be/hFxI_jmgzVk", note: "2:18" },
       { name: "למען הדורות הבאים — عشان الأجيال الجاي", url: "https://youtu.be/I3dibv1zXac", note: "1:33" },
+      { name: "▶ המזל הרע, נגן עם כתוביות לחיצות", url: "/watch/bad-luck", note: "1:41 · לחיצה על מילה עוצרת ומתרגמת" },
       { name: "המזל הרע — الحظ العاطل", url: "https://youtu.be/6QubRNusq_g", note: "1:41 · מפגש בעל פה 6 · יש כרטיסים" },
       { name: "העכבר והדלעת — الفار والقرعة", url: "https://youtu.be/HttMrNDwhjE", note: "2:20" },
       { name: "הנער היתום והזקן החכם — الصبي اليتيم والختيار الذكي", url: "https://youtu.be/ToA75d6hWbI", note: "1:46" },

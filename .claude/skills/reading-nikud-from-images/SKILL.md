@@ -123,3 +123,9 @@ if a step failed.
   the sentence has גִ'יבְּתִלַכּ with a ב that his typed version (ג׳יתלכ) omits. Handwriting
   outranks his typing of the same word. In handwriting the marks drift off their letter,
   so compare the same letter across the page before assigning a dot.
+- 2026-11-04, burned-in subtitles of a 720p video (מינרוה, "המזל הרע", 31 lines): one crop
+  per subtitle, found by scene changes in the text band (`ffmpeg select='gt(scene,0.02)'`),
+  each line split into right and left halves at 2.5×. Minerva's letters are not ours: ס with
+  a tilde is ص, ד with a tilde is ض, ז with a tilde is ظ, and bold marks stress. Take the
+  consonants from the printed Arabic and only the vowels from the Hebrew line. It often leaves
+  a letter unpointed where we would write a sheva, so don't add one as if it were printed.

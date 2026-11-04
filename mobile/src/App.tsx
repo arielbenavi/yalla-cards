@@ -5,7 +5,8 @@ import { strings } from "@/lib/strings";
 import { dailyQueue, laterToday, type DeckCard, type ReviewEvent } from "@/lib/daily-queue";
 import { buildExampleIndex, exampleFor } from "@/lib/deck-examples";
 import { FIX_ROUND_MAX } from "@/lib/focused-practice";
-import { buildWordIndex, lookupWord, sentenceWords, type SentenceWord } from "@/lib/word-lookup";
+import { buildWordIndex, lookupWord, type SentenceWord } from "@/lib/word-lookup";
+import { TappableWords, WordSheet } from "./WordTap";
 import * as store from "./store";
 import { PAIRS } from "@/components/PronunciationGuide";
 import { navGroups, primaryNav } from "@/lib/nav";
@@ -478,7 +479,8 @@ function Review({
   const audioOnlyPrompt = dir === "ar_to_he" && !!audioUrl;
   const translit = (
     <TappableWords
-      card={current}
+      text={current.translit_nikud}
+      arabic={current.arabic_script}
       onTap={(word) => {
         logEvent("word_tapped", current.card_id, { word: word.text });
         setTappedWord(word);
@@ -674,73 +676,6 @@ function Review({
           onClose={() => setTappedWord(null)}
         />
       )}
-    </div>
-  );
-}
-
-// A sentence's words, each one a button. A one-word card has nothing to pick from.
-function TappableWords({ card, onTap }: { card: DeckCard; onTap: (word: SentenceWord) => void }) {
-  const words = sentenceWords(card.translit_nikud, card.arabic_script);
-  if (words.length < 2) return <>{card.translit_nikud}</>;
-  // The text stays as written: punctuation and symbols sit outside the buttons
-  let next = 0;
-  return (
-    <>
-      {card.translit_nikud.trim().split(/\s+/).map((token, i) => {
-        const word = words[next];
-        const at = word ? token.indexOf(word.text) : -1;
-        if (at < 0) return <span key={i}>{i > 0 && " "}{token}</span>;
-        next++;
-        return (
-          <span key={i}>
-            {i > 0 && " "}
-            {token.slice(0, at)}
-            <button type="button" className="word-tap" onClick={() => onTap(word)}>
-              {word.text}
-            </button>
-            {token.slice(at + word.text.length)}
-          </span>
-        );
-      })}
-    </>
-  );
-}
-
-function WordSheet({
-  word,
-  match,
-  requested,
-  onRequest,
-  onClose,
-}: {
-  word: SentenceWord;
-  match: ReturnType<typeof lookupWord>;
-  requested: boolean;
-  onRequest: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div className="sheet word-sheet" role="dialog" aria-label={word.text}>
-      <button className="sheet-backdrop" aria-label="סגור" onClick={onClose} />
-      <div className="sheet-body">
-        <p className="word-title nikud">{word.text}</p>
-        {word.arabic && <p className="ar muted" dir="rtl">{word.arabic}</p>}
-        {match.cards.length > 0 ? (
-          <>
-            {!match.sure && <p className="muted small">אולי המילה הזאת, בצורה אחרת:</p>}
-            {match.cards.map((c) => (
-              <p key={c.card_id} className="word-match">
-                <span className="nikud bold">{c.translit_nikud}</span> = {c.hebrew_meaning}
-              </p>
-            ))}
-          </>
-        ) : (
-          <p className="muted">אין כרטיס למילה הזאת</p>
-        )}
-        <button className="btn primary" disabled={requested} onClick={onRequest}>
-          {requested ? "נוסף לרשימה ✓" : "הוסף לרשימת תרגום"}
-        </button>
-      </div>
     </div>
   );
 }

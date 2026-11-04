@@ -218,3 +218,36 @@ test("a long card scrolls inside its tile, with the grades above the tabs and th
   expect(prompt!.y).toBeGreaterThanOrEqual(top!.y);
   await page.screenshot({ path: process.env.SHOT ?? "test-results/long-card.png" });
 });
+
+test("/watch: a tapped word pauses the video, shows its meaning and is saved to the list", async ({ page }) => {
+  await login(page);
+  await page.route("**/api/mobile/deck", (r) => r.fulfill({ json: { generated_at: new Date().toISOString(), cards: [], reviews: [], audio: {} } }));
+  await page.route("**/api/mobile/sync", (r) => r.fulfill({ json: { ok: true, applied: 0 } }));
+  await page.addInitScript(() => localStorage.removeItem("word-requests.json"));
+  const sent: { items: { word: string; card_id: string }[] }[] = [];
+  await page.route("**/api/mobile/word-requests", (r) => {
+    sent.push(r.request().postDataJSON());
+    return r.fulfill({ json: { added: 1, duplicates: 0 } });
+  });
+  await page.route("**/api/media/test-item", (r) =>
+    r.fulfill({
+      json: {
+        item: { title: "סיפור", source_url: null, glosses: { "חאכמ": "שליט" } },
+        media_url: null,
+        segments: [{ idx: 0, start_sec: 0, end_sec: 5, ar: "عن حاكم", translit: "עַן חַאכֶּם,", he: "על שליט", verified: true }],
+      },
+    })
+  );
+  await page.goto("/watch/test-item", { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("saved-count")).toContainText("0");
+  await expect(page.getByText("על שליט")).toHaveCount(0);
+  await page.getByRole("button", { name: "עברית" }).click();
+  await expect(page.getByText("על שליט").first()).toBeVisible();
+
+  await page.getByRole("button", { name: "חַאכֶּם" }).first().click();
+  await expect(page.getByTestId("word-gloss")).toHaveText("שליט");
+  await page.getByRole("button", { name: "הוסף לרשימת תרגום" }).click();
+  await expect(page.getByTestId("saved-count")).toContainText("1");
+  await expect.poll(() => sent.length).toBe(1);
+  expect(sent[0].items[0]).toMatchObject({ word: "חַאכֶּם", card_id: "watch:test-item" });
+});
