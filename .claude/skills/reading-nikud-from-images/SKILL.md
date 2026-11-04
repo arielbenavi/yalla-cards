@@ -117,3 +117,9 @@ if a step failed.
   הִיֵּ and הֵםּ are מַמִסְכַּתֵש, מַמִסְכּוּש (hiriq). Similar cells are not parallel,
   so don't copy one row's pointing to the next. The book's word lists carry
   printed plurals: check them before writing any plural from memory.
+- 2026-11-04, Ariel's handwritten class notes (two tablet images, ~1300px): lines.py
+  is not for handwriting, so fixed crops at 3-4× instead. The zoom changed four reads:
+  the "now" list is אִסַּא and אַסַּה (his handwritten א looks like ע or ה at 1×), and
+  the sentence has גִ'יבְּתִלַכּ with a ב that his typed version (ג׳יתלכ) omits. Handwriting
+  outranks his typing of the same word. In handwriting the marks drift off their letter,
+  so compare the same letter across the page before assigning a dot.
