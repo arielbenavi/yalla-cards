@@ -40,7 +40,7 @@ assert.deepEqual(sentenceWords("מַא + פֹּעַל + ש", null).map((w) => w.
 
 assert.equal(fixBet("נִבְדִי / נְבַלֵּש"), "נִבְּדִי / נְבַּלֵּש");
 assert.equal(fixBet("צַאחֵבּ בִּנְת"), "צַאחֵבּ בִּנְת", "already has one");
-assert.equal(fixBet("חַב\u0651יב"), "חַב\u05BCיב", "shadda becomes the dagesh");
+assert.equal(fixBet("חַב\u0651"), "חַב\u05BC", "shadda becomes the dagesh");
 assert.equal(fixBet("זאת הבת"), "זאת הבת", "unpointed Hebrew stays");
 
 console.log("word-lookup: ok");
