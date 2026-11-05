@@ -354,9 +354,13 @@ test("the menu: practice lives under one tab, admin screens under another, מפ�
   for (const name of ["התאמת הטיות", "סיומות שייכות", "תרגום משפטים", "שיחה", "אימון ממוקד", "משחק תמונות", "מספרים", "אותיות"]) {
     await expect(page.locator("main").getByRole("link", { name: new RegExp(name) }).first()).toBeVisible();
   }
-  // dispatchEvent: on the phone viewport the dev server's own badge sits over this corner
-  await page.getByRole("button", { name: "עוד" }).dispatchEvent("click");
+  // dispatchEvent: on the phone viewport the dev server's own badge sits over this corner.
+  // Retried because a click before hydration does nothing.
   const sheet = page.getByRole("dialog", { name: "עוד" });
+  await expect(async () => {
+    await page.getByRole("button", { name: "עוד" }).dispatchEvent("click");
+    await expect(sheet.getByRole("link", { name: "אדמין" })).toBeVisible({ timeout: 1000 });
+  }).toPass();
   await expect(sheet.getByRole("link", { name: "מפגשים" })).toHaveCount(0);
   await expect(sheet.getByRole("link", { name: "ייבוא" })).toHaveCount(0);
   await sheet.getByRole("link", { name: "אדמין" }).dispatchEvent("click");

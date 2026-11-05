@@ -4,6 +4,9 @@
  * written with verified = false until a person edits them in /watch/<slug>.
  *   npx tsx scripts/subtitle-media.ts --file a.mp4 --slug x --title "..."            # dry run, prints JSON path
  *   npx tsx scripts/subtitle-media.ts --recording <id> --slug x --title "..." --apply
+ *   npx tsx scripts/subtitle-media.ts --file a.mp4 --lines text.json --url https://... --slug x --title "..." --apply
+ *     text.json holds edited lines [{ar, he}] with no times: the audio only places them, and
+ *     --url plays the video from where it already lives, so nothing is uploaded.
  * Needs ffmpeg. Safe to rerun: the finished transcript of each chunk is kept under --cache.
  */
 import { config } from "dotenv";
@@ -62,6 +65,27 @@ async function transcribe(path: string, cacheDir: string): Promise<Line[]> {
     lines.push(...chunk.map((l) => ({ ...l, start: l.start + from, end: l.end + from })));
   }
   return lines;
+}
+
+const ALIGN_PROMPT = `These numbered lines are the exact text of this spoken Arabic audio, in order. Find when each line is said.
+Do not change, merge or skip any line. Return a JSON array with one {"n": line number, "start": seconds, "end": seconds} per line, to a tenth of a second, measured from the start of the audio.
+
+`;
+
+/** Places edited lines on the audio. Asked per whole file: the lines are short and the file is too. */
+async function align(path: string, given: { ar: string; he: string }[], cacheDir: string): Promise<Line[]> {
+  const cached = join(cacheDir, "align.json");
+  let times: { n: number; start: number; end: number }[];
+  if (existsSync(cached)) times = JSON.parse(readFileSync(cached, "utf8"));
+  else {
+    const mp3 = join(cacheDir, "align.mp3");
+    execFileSync("ffmpeg", ["-v", "error", "-y", "-i", path, "-vn", "-ac", "1", "-ar", "16000", "-b:a", "48k", mp3]);
+    const prompt = ALIGN_PROMPT + given.map((g, i) => `${i + 1}. ${g.ar}`).join("\n");
+    times = json(await generate(ASR_MODEL, [prompt, { inlineData: { mimeType: "audio/mp3", data: readFileSync(mp3).toString("base64") } }]));
+    writeFileSync(cached, JSON.stringify(times));
+  }
+  const byN = new Map(times.map((t) => [t.n, t]));
+  return given.map((g, i) => ({ ar: g.ar, he: g.he, start: byN.get(i + 1)?.start ?? -1, end: byN.get(i + 1)?.end ?? -1 }));
 }
 
 const TEXT_PROMPT = `For each line of spoken Palestinian Arabic, return an object with:
@@ -128,7 +152,7 @@ async function annotate(lines: Line[], dict: Map<string, string>, cacheDir: stri
     }
     if (!out) throw new Error(`annotation failed at line ${i}`);
     writeFileSync(cached, JSON.stringify(out));
-    out.forEach((o, n) => Object.assign(batch[n], { translit: fixBet((o.translit ?? "").replace(/ّ/g, "ּ")), he: o.he, words: o.words }));
+    out.forEach((o, n) => Object.assign(batch[n], { translit: fixBet((o.translit ?? "").replace(/ّ/g, "ּ")), he: batch[n].he || o.he, words: o.words }));
     console.log(`  annotated ${i + batch.length}/${lines.length}`);
   }
 }
@@ -151,7 +175,10 @@ async function annotate(lines: Line[], dict: Map<string, string>, cacheDir: stri
     writeFileSync(path, Buffer.from(await blob.arrayBuffer()));
   }
 
-  const lines = splitLong((await transcribe(path, cacheDir)).filter((l) => l.ar?.trim() && l.end > l.start).sort((a, b) => a.start - b.start));
+  const given = arg("lines");
+  const lines = given
+    ? (await align(path, JSON.parse(readFileSync(given, "utf8")), cacheDir)).filter((l) => l.end > l.start)
+    : splitLong((await transcribe(path, cacheDir)).filter((l) => l.ar?.trim() && l.end > l.start).sort((a, b) => a.start - b.start));
   console.log(`${lines.length} lines heard, loading the deck...`);
   const dict = await loadDictionary();
   console.log(`dictionary: ${dict.size} words`);
@@ -164,7 +191,9 @@ async function annotate(lines: Line[], dict: Map<string, string>, cacheDir: stri
   console.log(`${lines.length} lines, ${aligned} aligned word by word, ${Object.keys(glosses).length} glosses → ${out}`);
   if (!APPLY) return console.log("dry run: pass --apply");
 
-  if (file) {
+  const url = arg("url");
+  if (url) storagePath = url;
+  else if (file) {
     storagePath = `media/${slug}${file.slice(file.lastIndexOf("."))}`;
     const { error } = await sb.storage.from("recordings").upload(storagePath, readFileSync(file), { upsert: true, contentType: file.endsWith(".mp4") ? "video/mp4" : "audio/mpeg" });
     if (error) throw error;
@@ -176,7 +205,7 @@ async function annotate(lines: Line[], dict: Map<string, string>, cacheDir: stri
   if (error) throw error;
   await sb.from("media_segments").delete().eq("item_id", item.id);
   const { error: segError } = await sb.from("media_segments").insert(lines.map((l, idx) => ({
-    item_id: item.id, idx, start_sec: l.start, end_sec: l.end, ar: l.ar, translit: l.translit, he: l.he, verified: false, source: `${ASR_MODEL}+${TEXT_MODEL}`,
+    item_id: item.id, idx, start_sec: l.start, end_sec: l.end, ar: l.ar, translit: l.translit, he: l.he, verified: false, source: given ? `edited text, ${ASR_MODEL} times, ${TEXT_MODEL} translit` : `${ASR_MODEL}+${TEXT_MODEL}`,
   })));
   if (segError) throw segError;
   console.log("✅", `/watch/${slug}`);

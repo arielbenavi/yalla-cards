@@ -20,7 +20,7 @@ const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_
 const model = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!).getGenerativeModel({ model: "gemini-3.8-flash", generationConfig: { responseMimeType: "application/json" } });
 const DIR = "/Users/arismac/Sync/win_mac_sync/CUNI/CUNI/ARAVIT";
 const WORK = mkdtempSync(join(tmpdir(), "speakers-"));
-const TEACHERS = /ronen|landy|רונן/i;
+const TEACHERS = /ronen|רונן/i;
 const STUDENT_FACTOR = 0.6;
 
 const PROMPT = `This is a frame from a Zoom class recording. Who is speaking now?
