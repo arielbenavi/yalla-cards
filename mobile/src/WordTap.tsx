@@ -44,6 +44,8 @@ export function WordSheet({
   requested,
   onRequest,
   onClose,
+  added = "no",
+  onAdd,
 }: {
   word: SentenceWord;
   match: WordMatch;
@@ -52,6 +54,9 @@ export function WordSheet({
   requested: boolean;
   onRequest: () => void;
   onClose: () => void;
+  /** "Add as a card" at once, where the text comes with a meaning (the video player). */
+  added?: "no" | "adding" | "added" | "existing" | "failed";
+  onAdd?: () => void;
 }) {
   return (
     <div className="sheet word-sheet" role="dialog" aria-label={word.text}>
@@ -72,7 +77,12 @@ export function WordSheet({
         ) : (
           <p className="muted">אין כרטיס למילה הזאת</p>
         )}
-        <button className="btn primary" disabled={requested} onClick={onRequest}>
+        {onAdd && gloss && (
+          <button className="btn primary" disabled={added !== "no" && added !== "failed"} onClick={onAdd} data-testid="add-card">
+            {added === "added" ? "נוסף ככרטיס ✓ (לא מאומת)" : added === "existing" ? "כבר יש כרטיס כזה" : added === "adding" ? "מוסיף…" : added === "failed" ? "נכשל, לנסות שוב" : "הוסף ככרטיס"}
+          </button>
+        )}
+        <button className={onAdd && gloss ? "btn" : "btn primary"} disabled={requested} onClick={onRequest}>
           {requested ? "נוסף לרשימה ✓" : "הוסף לרשימת תרגום"}
         </button>
       </div>

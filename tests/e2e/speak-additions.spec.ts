@@ -369,3 +369,28 @@ test("the menu: practice lives under one tab, admin screens under another, מפ�
     await expect(page.locator("main").getByRole("link", { name })).toBeVisible();
   }
 });
+
+test("/watch: the admin adds a tapped word as an unverified card", async ({ page }) => {
+  await login(page);
+  await page.route("**/api/mobile/deck", (r) => r.fulfill({ json: { generated_at: new Date().toISOString(), cards: [], reviews: [], audio: {} } }));
+  await page.route("**/api/mobile/sync", (r) => r.fulfill({ json: { ok: true, applied: 0 } }));
+  await page.route("**/api/media/test-item", (r) =>
+    r.fulfill({
+      json: {
+        item: { title: "סצנה", source_url: null, glosses: { "חאכמ": "שליט" } },
+        media_url: null,
+        segments: [{ id: "seg-1", idx: 0, start_sec: 0, end_sec: 5, ar: "عن حاكم", translit: "עַן חַאכֶּם", he: "על שליט", verified: false }],
+      },
+    })
+  );
+  const posted: Record<string, string>[] = [];
+  await page.route("**/api/watch/add-card", (r) => {
+    posted.push(r.request().postDataJSON());
+    return r.fulfill({ json: { card_id: "new", existing: false } });
+  });
+  await page.goto("/watch/test-item", { waitUntil: "domcontentloaded" });
+  await page.getByRole("button", { name: "חַאכֶּם" }).first().click();
+  await page.getByTestId("add-card").click();
+  await expect(page.getByTestId("add-card")).toHaveText("נוסף ככרטיס ✓ (לא מאומת)");
+  expect(posted[0]).toMatchObject({ word: "חַאכֶּם", arabic: "حاكم", meaning: "שליט", source: "סצנה" });
+});

@@ -19,6 +19,7 @@ export const primaryNav: NavLink[] = [
 // 2026-11-05: the menu was too long and felt scattered). Their pages keep their addresses,
 // and the tab stays marked while inside them. /lessons left the menu; the route still resolves.
 export const practiceLinks: NavLink[] = [
+  { href: "/watch", label: "סרטונים עם תעתיק" },
   { href: "/inflection-drill", label: strings.nav.inflectionDrill },
   { href: "/possessives", label: strings.nav.possessives },
   { href: "/translate", label: strings.nav.translate },

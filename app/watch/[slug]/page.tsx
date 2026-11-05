@@ -9,7 +9,7 @@ import { TappableWords, WordSheet } from "@/mobile/src/WordTap";
 import "@/mobile/src/review.css";
 
 type Segment = { id: string; idx: number; start_sec: number; end_sec: number; ar: string | null; translit: string | null; he: string | null; verified: boolean };
-type Data = { item: { title: string; source_url: string | null; glosses: Record<string, string> }; segments: Segment[]; media_url: string | null };
+type Data = { item: { title: string; series?: string | null; source_url: string | null; glosses: Record<string, string> }; segments: Segment[]; media_url: string | null };
 type Layer = "translit" | "ar" | "he";
 
 const LAYERS: { key: Layer; label: string }[] = [
@@ -33,6 +33,7 @@ export default function WatchPage() {
   const [speed, setSpeed] = useState(1);
   const [tapped, setTapped] = useState<{ word: SentenceWord; segment: Segment } | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => new Set());
+  const [added, setAdded] = useState<Record<string, "adding" | "added" | "existing" | "failed">>({});
   const [isAdmin, setIsAdmin] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [wordIndex, setWordIndex] = useState<WordIndex>(() => buildWordIndex([]));
@@ -115,7 +116,7 @@ export default function WatchPage() {
     <div className="yc embedded">
       <div className="watch">
         <header className="watch-head">
-          <Link href="/content" className="link">חזרה</Link>
+          <Link href="/watch" className="link">חזרה</Link>
           <h1>{data.item.title}</h1>
           <span className="watch-count" data-testid="saved-count">מילים שנשמרו: <bdi>{saved.size}</bdi></span>
         </header>
@@ -203,6 +204,30 @@ export default function WatchPage() {
             });
           }}
           onClose={closeSheet}
+          added={added[tapped.word.text] ?? "no"}
+          onAdd={
+            isAdmin
+              ? async () => {
+                  const w = tapped.word.text;
+                  setAdded((a) => ({ ...a, [w]: "adding" }));
+                  const res = await fetch("/api/watch/add-card", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      word: w,
+                      arabic: tapped.word.arabic,
+                      meaning: data.item.glosses[translitKey(w)],
+                      sentence: tapped.segment.translit,
+                      source: data.item.title,
+                    }),
+                  }).catch(() => null);
+                  const body = res?.ok ? await res.json() : null;
+                  setAdded((a) => ({ ...a, [w]: !body ? "failed" : body.existing ? "existing" : "added" }));
+                  if (body && !body.existing) setSaved((x) => new Set(x).add(w));
+                  void storeRef.current?.sync().then(() => storeRef.current && setWordIndex(buildWordIndex(storeRef.current.snapshot().cards)));
+                }
+              : undefined
+          }
         />
       )}
     </div>

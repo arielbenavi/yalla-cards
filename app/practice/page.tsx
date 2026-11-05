@@ -17,6 +17,7 @@ function sinceLabel(days: number | null): string {
 const STATUS_EMOJI: Record<string, string> = { inflections: "🔁", conversation: "💬" };
 
 const PRACTICE_DESCRIPTION: Record<string, string> = {
+  "/watch": "קטעים קצרים, לחיצה על מילה מתרגמת ומוסיפה",
   "/inflection-drill": "טבלאות הטיה לפי מפגש",
   "/possessives": "הטיית שמות עם סיומות",
   "/translate": "משפטים מהספר לפי מפגש",
