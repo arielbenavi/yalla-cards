@@ -2,6 +2,15 @@ import { test, expect } from "@playwright/test";
 import { login } from "./helpers";
 
 test.describe("stored dialogues on /simulate", () => {
+  test("a draft stays out of the default list, and /simulate labels it", async ({ page }) => {
+    await login(page);
+    const plain = await page.request.get("/api/dialogues").then((r) => r.json());
+    const withDrafts = await page.request.get("/api/dialogues?drafts=1").then((r) => r.json());
+    expect(plain.dialogues.some((d: { draft: boolean }) => d.draft)).toBe(false);
+    for (const d of withDrafts.dialogues) expect(d.verified || d.draft).toBe(true);
+    expect(withDrafts.dialogues.some((d: { key: string; draft: boolean }) => d.key === "favorite_song" && d.draft)).toBe(true);
+  });
+
   test("only chatifai-verified dialogues are served", async ({ page }) => {
     await login(page);
 

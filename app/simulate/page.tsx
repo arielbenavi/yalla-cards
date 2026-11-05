@@ -35,6 +35,7 @@ type Dialogue = {
   id: number;
   key: string;
   verified: boolean;
+  draft?: boolean;
   turn_count: number;
   turns: DialogueTurn[];
   /** The lesson's own text for this scene, if there is any. */
@@ -58,6 +59,7 @@ const DIALOGUE_LABELS: Record<string, { emoji: string; label: string }> = {
   meet_stranger: { emoji: "🤝", label: "היכרות" },
   self_intro: { emoji: "🙋", label: "הצגה עצמית" },
   new_classmate: { emoji: "🎓", label: "סטודנט חדש" },
+  favorite_song: { emoji: "🎵", label: "שיר שאני אוהב" },
   meeting8_intro: { emoji: "📖", label: "מפגש 8 — היכרות" },
 };
 
@@ -129,7 +131,7 @@ function SimulateScreen() {
   useEffect(() => {
     if (tab !== "dialogue" || dialogues.length > 0) return;
     setDialoguesLoading(true);
-    fetch("/api/dialogues")
+    fetch("/api/dialogues?drafts=1")
       .then((r) => r.json())
       .then((d) => setDialogues(d.dialogues ?? []))
       .finally(() => setDialoguesLoading(false));
@@ -494,6 +496,7 @@ function SimulateScreen() {
                         )}
                         <span className="text-sm font-bold">{meta.label}</span>
                         <span className="text-xs text-gray-400">{d.turn_count} שורות</span>
+                        {d.draft && <span className="text-xs text-amber-700">טיוטה, לא נבדק</span>}
                       </button>
                     );
                   })}
@@ -601,6 +604,11 @@ function SimulateScreen() {
               <p className="text-center text-[11px] text-gray-400">
                 לחיצה על שורה מגלה את התרגום
               </p>
+              {activeDialogue.draft && (
+                <p className="text-center text-[11px] text-amber-700" data-testid="draft-note">
+                  טיוטה: chatifai עוד לא בדק את הדו-שיח הזה, אז ייתכנו טעויות
+                </p>
+              )}
 
               {/* The lesson's own text for this scene (note 97311b79). It is
                   reference, not a turn — Ariel wrote it pointed and wrote no

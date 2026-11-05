@@ -13,9 +13,15 @@ import { supabaseAdmin } from "@/lib/supabase";
  *  came from a lesson; holding it back would be applying a rule about
  *  AI-generated text to text no model wrote. Pass ?all=1 to list every dialogue
  *  with its verification state, for the admin view.
+ *
+ *  `draft` is a dialogue Ariel asked for while chatifai is down. It stays out of
+ *  the default list and of the daily suggestions; ?drafts=1 adds it, and /simulate
+ *  shows it labelled as unchecked.
  */
 export async function GET(request: Request) {
-  const includeUnverified = new URL(request.url).searchParams.get("all") === "1";
+  const params = new URL(request.url).searchParams;
+  const includeUnverified = params.get("all") === "1";
+  const includeDrafts = params.get("drafts") === "1";
   const supabase = supabaseAdmin();
 
   const { data, error } = await supabase
@@ -32,6 +38,7 @@ export async function GET(request: Request) {
         turns?: unknown[];
         chatifai_verified?: boolean;
         course_verified?: boolean;
+        draft?: boolean;
         verification_note?: string;
         description?: string;
         /** Verbatim lesson text attached to the scene (note 97311b79). Not a
@@ -50,13 +57,14 @@ export async function GET(request: Request) {
         description: d?.description ?? null,
         verified: d?.chatifai_verified === true || d?.course_verified === true,
         source: d?.course_verified === true && d?.chatifai_verified !== true ? "course" : "chatifai",
+        draft: d?.draft === true,
         verification_note: d?.verification_note ?? null,
         turn_count: Array.isArray(d?.turns) ? d.turns.length : 0,
         turns: d?.turns ?? [],
         course_material: d?.course_material ?? null,
       };
     })
-    .filter((d) => includeUnverified || d.verified);
+    .filter((d) => includeUnverified || d.verified || (includeDrafts && d.draft));
 
   return NextResponse.json({
     dialogues,
