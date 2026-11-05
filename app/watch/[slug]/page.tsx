@@ -128,6 +128,7 @@ export default function WatchPage() {
               controls
               playsInline
               className="watch-video"
+              onSeeking={(e) => setTime(e.currentTarget.currentTime)}
               onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
             />
           ) : (

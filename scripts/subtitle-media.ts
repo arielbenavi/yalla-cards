@@ -152,7 +152,7 @@ async function annotate(lines: Line[], dict: Map<string, string>, cacheDir: stri
     }
     if (!out) throw new Error(`annotation failed at line ${i}`);
     writeFileSync(cached, JSON.stringify(out));
-    out.forEach((o, n) => Object.assign(batch[n], { translit: fixBet((o.translit ?? "").replace(/ّ/g, "ּ")), he: batch[n].he || o.he, words: o.words }));
+    out.forEach((o, n) => Object.assign(batch[n], { translit: fixBet((o.translit ?? "").replace(/ّ/g, "ּ").replace(/[\u064B-\u0650\u0652]/g, "")), he: batch[n].he || o.he, words: o.words }));
     console.log(`  annotated ${i + batch.length}/${lines.length}`);
   }
 }

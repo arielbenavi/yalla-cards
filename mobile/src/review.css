@@ -169,7 +169,7 @@ body:has(.yc.embedded) main { min-height: 0; }
 .yc .watch-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .yc .watch-head h1 { font-size: 1.1rem; font-weight: 700; }
 .yc .watch-count { font-size: 0.8rem; color: #fff; background: var(--cobalt); border-radius: 8px; padding: 3px 10px; white-space: nowrap; }
-.yc .watch-video { width: 100%; border-radius: 12px; background: #000; }
+.yc .watch-video { width: 100%; max-height: 42vh; border-radius: 12px; background: #000; }
 .yc .watch-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
 .yc .watch-subs { min-height: 96px; background: var(--surface); border-radius: 16px; padding: 12px; text-align: center; }
 .yc .watch-translit { font-size: 1.3rem; line-height: 1.7; }
