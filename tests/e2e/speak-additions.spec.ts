@@ -234,7 +234,7 @@ test("/watch: a tapped word pauses the video, shows its meaning and is saved to 
       json: {
         item: { title: "סיפור", source_url: null, glosses: { "חאכמ": "שליט" } },
         media_url: null,
-        segments: [{ idx: 0, start_sec: 0, end_sec: 5, ar: "عن حاكم", translit: "עַן חַאכֶּם,", he: "על שליט", verified: true }],
+        segments: [{ id: "seg-1", idx: 0, start_sec: 0, end_sec: 5, ar: "عن حاكم", translit: "עַן חַאכֶּם,", he: "על שליט", verified: true }],
       },
     })
   );
@@ -250,4 +250,28 @@ test("/watch: a tapped word pauses the video, shows its meaning and is saved to 
   await expect(page.getByTestId("saved-count")).toContainText("1");
   await expect.poll(() => sent.length).toBe(1);
   expect(sent[0].items[0]).toMatchObject({ word: "חַאכֶּם", card_id: "watch:test-item" });
+});
+
+test("/watch: an unchecked line says so, and the admin's edit saves and marks it checked", async ({ page }) => {
+  await login(page);
+  await page.route("**/api/mobile/deck", (r) => r.fulfill({ json: { generated_at: new Date().toISOString(), cards: [], reviews: [], audio: {} } }));
+  await page.route("**/api/mobile/sync", (r) => r.fulfill({ json: { ok: true, applied: 0 } }));
+  const segment = { id: "seg-1", idx: 0, start_sec: 0, end_sec: 5, ar: "عن حاكم", translit: "עַן חַאכֶּם", he: "על שליט", verified: false };
+  await page.route("**/api/media/test-item", (r) =>
+    r.fulfill({ json: { item: { title: "סיפור", source_url: null, glosses: {} }, media_url: null, segments: [segment] } })
+  );
+  const saved: Record<string, unknown>[] = [];
+  await page.route("**/api/media/segments/seg-1", (r) => {
+    const body = r.request().postDataJSON();
+    saved.push(body);
+    return r.fulfill({ json: { segment: { ...segment, ...body } } });
+  });
+  await page.goto("/watch/test-item", { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("unchecked")).toBeVisible();
+  await page.getByRole("button", { name: "ערוך שורה" }).click();
+  await page.getByLabel("עברית").last().fill("על השליט");
+  await page.getByRole("button", { name: "שמור ואשר" }).click();
+  await expect.poll(() => saved.length).toBe(1);
+  expect(saved[0]).toMatchObject({ he: "על השליט", verified: true });
+  await expect(page.getByTestId("unchecked")).toHaveCount(0);
 });

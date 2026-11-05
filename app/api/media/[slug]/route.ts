@@ -14,7 +14,7 @@ export async function GET(_: NextRequest, context: { params: Promise<{ slug: str
   if (error || !item) return NextResponse.json({ error: error?.message ?? "not found" }, { status: 404 });
 
   const [{ data: segments, error: segError }, signed] = await Promise.all([
-    supabase.from("media_segments").select("idx, start_sec, end_sec, ar, translit, he, verified").eq("item_id", item.id).order("idx"),
+    supabase.from("media_segments").select("id, idx, start_sec, end_sec, ar, translit, he, verified").eq("item_id", item.id).order("idx"),
     item.storage_path
       ? supabase.storage.from("recordings").createSignedUrl(item.storage_path, 60 * 60 * 4)
       : Promise.resolve({ data: null }),

@@ -182,3 +182,11 @@ body:has(.yc.embedded) main { min-height: 0; }
 .yc .watch-line.small .watch-translit { font-size: 1rem; }
 .yc .watch-line.small .watch-ar { font-size: 0.95rem; }
 .yc .watch-line.small .watch-he { font-size: 0.9rem; }
+.yc .watch-lines li.unchecked { border-inline-start: 3px solid #d9a441; }
+.yc .watch-lines li > .watch-line { flex: 1; min-width: 0; }
+.yc .watch-line-tools { display: flex; gap: 4px; flex: none; }
+.yc .watch-editor { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.yc .watch-editor label { display: flex; flex-direction: column; gap: 2px; font-size: 0.8rem; color: var(--muted); flex: 1; min-width: 0; }
+.yc .watch-editor textarea, .yc .watch-editor input { width: 100%; font-size: 1rem; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
+.yc .watch-editor textarea { min-height: 62px; }
+.yc .watch-audio { width: 100%; }
