@@ -76,3 +76,26 @@ test("the queue shows the surest guess, nudges replay, approve sends the moved e
   await expect.poll(() => patches[1]?.body.action).toBe("reject");
   await expect(page.getByText("אין כרטיסים שמחכים לאישור")).toBeVisible();
 });
+
+test("a card that got its clip does not come back, even from a refill that raced the approval", async ({ page }) => {
+  await login(page);
+  const first = item("a", 0.93, "מַרְחַבַּא");
+  const sameCardNextGuess = { ...item("a2", 0.8, "מַרְחַבַּא שוב"), card_id: first.card_id };
+  let items = [first, item("b", 0.5, "שוּ")];
+
+  await page.route("**/mock-audio.wav", (r) => r.fulfill({ body: wav(8), contentType: "audio/wav" }));
+  await page.route("**/api/clip-suggestions?**", (r) => r.fulfill({ json: { remaining: items.length, bands: [], items } }));
+  await page.route("**/api/clip-suggestions/*", async (r) => {
+    // What a refill sent just before the approval landed still carries the card's next guess
+    items = [sameCardNextGuess, item("b", 0.5, "שוּ")];
+    await r.fulfill({ json: { ok: true } });
+  });
+  await page.route("**/api/recordings/upload-url", (r) => r.fulfill({ json: { path: "clip.wav", token: "t" } }));
+  await page.route("**/storage/v1/object/upload/sign/**", (r) => r.fulfill({ json: { Key: "recordings/clip.wav" } }));
+
+  await page.goto("/recordings/auto", { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("waveform")).toBeVisible();
+  await page.getByRole("button", { name: "✓ אשר" }).click();
+  await expect(page.getByText("שוּ")).toBeVisible();
+  await expect(page.getByText("מַרְחַבַּא שוב")).toHaveCount(0);
+});

@@ -41,6 +41,9 @@ export default function AutoClipPage() {
   const [failed, setFailed] = useState(false);
   const skipped = useRef(new Set<string>());
   const handled = useRef(new Set<string>());
+  // A card that got its clip never comes back, even if a refill raced the approval and
+  // still carries that card's next guess.
+  const clippedCards = useRef(new Set<string>());
   const ctxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const decoded = useRef(new Map<string, Promise<AudioBuffer>>());
@@ -87,7 +90,7 @@ export default function AutoClipPage() {
     const data = await res.json();
     setRemaining(data.remaining ?? 0);
     setBands(data.bands ?? []);
-    setItems((data.items ?? []).filter((i: Item) => !handled.current.has(i.id)));
+    setItems((data.items ?? []).filter((i: Item) => !handled.current.has(i.id) && !clippedCards.current.has(i.card_id)));
     setLoaded(true);
   }, []);
 
@@ -118,7 +121,7 @@ export default function AutoClipPage() {
   }, [itemId]);
 
   function advance() {
-    const rest = items.slice(1);
+    const rest = items.slice(1).filter((i) => !clippedCards.current.has(i.card_id));
     setItems(rest);
     if (rest.length < 4) void fetchQueue();
   }
@@ -169,6 +172,7 @@ export default function AutoClipPage() {
       });
       if (!res.ok) throw new Error(await res.text());
       handled.current.add(item.id);
+      clippedCards.current.add(item.card_id);
       setRemaining((n) => n - 1);
       advance();
     } catch {

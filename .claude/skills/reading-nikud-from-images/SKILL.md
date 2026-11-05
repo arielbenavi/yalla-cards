@@ -73,6 +73,9 @@ if a step failed.
 | וּ / וְ | shuruk vs vav + sheva | the dot is inside the vav for וּ, under it for וְ |
 | אִלְּי | אִלְלִי | the book writes the doubled lamed as two letters |
 | ב / בּ | dagesh missing | ב here is always ب, so always בּ: never leave it to read as v (Ariel, 2026-11-05) |
+| ן / וְ | final nun vs vav + sheva | צַ'וְ read as צַ'ן: look for the sheva under a word-final stroke |
+| ֵ under a low letter | tsere vs kubbutz | בַּכְּתֻבּ read as ֵ: three dots with one trailing can look like two at 2× |
+| פ with a "dot" | the glyph's own curl | bold פ always looks dotted: not a dagesh unless the book's other פ differ |
 | ח' / ח | geresh missing | خ is ח' in this deck; ض is צ' in the book, ד' in some older cards |
 
 ## Course book conventions (המדרשה)
@@ -135,3 +138,10 @@ if a step failed.
   הֻוֵּ, printed with two hiriqs (מַפִשִלֵש), unlike the p. 107 מַמְסִכֵּש. The dots under מ in the
   participle rows run diagonally, so it is מֻש, not the מֵש I typed from p. 108 (7b); those older
   cards are worth a look. One cell is printed מַש: copied as is, and flagged.
+- 2026-11-05, blind test (train.md), 100 chatifai-verified entries on clean print at 2.4×: 90 exact
+  with one careful read, no second pass. Of the 10 differences, 3 were typos in the deck (a dagesh on
+  א, two vowels on one letter, a missing hiriq) and 7 mine: hiriq/sheva and tsere/segol once each,
+  tsere/kubbutz, kubbutz/sheva, patach/sheva, a missed dagesh on ס, ן for וְ. So about 1 word in 14
+  is wrong before the second read, always a single mark and mostly a vowel under a narrow letter:
+  zoom further on those. Clean print is a ceiling; book scans are harder. Knowing a word pulls the
+  reading: אִסַּהֵל lost its dagesh that way.
