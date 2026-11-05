@@ -130,3 +130,8 @@ if a step failed.
   a tilde is ص, ד with a tilde is ض, ז with a tilde is ظ, and bold marks stress. Take the
   consonants from the printed Arabic and only the vowels from the Hebrew line. It often leaves
   a letter unpointed where we would write a sheva, so don't add one as if it were printed.
+- 2026-11-05, pp. 306–310 (12 verbs × 12 cells, 20 sentences): crops of half a table missed the
+  column between them and the top rows, so crop by column too. A 3× crop of the פִעֵל verbs settled
+  הֻוֵּ, printed with two hiriqs (מַפִשִלֵש), unlike the p. 107 מַמְסִכֵּש. The dots under מ in the
+  participle rows run diagonally, so it is מֻש, not the מֵש I typed from p. 108 (7b); those older
+  cards are worth a look. One cell is printed מַש: copied as is, and flagged.

@@ -293,3 +293,56 @@ test("a card with a clip keeps its question centred in the card", async ({ page 
   const [p, c] = await Promise.all([prompt.boundingBox(), page.locator(".tile.card").boundingBox()]);
   expect(Math.abs(p!.y + p!.height / 2 - (c!.y + c!.height / 2))).toBeLessThan(6);
 });
+
+test("the practice tab shows a red dot when practice has waited, and /practice leads to it", async ({ page }) => {
+  await login(page);
+  await page.route("**/api/practice-status", (r) =>
+    r.fulfill({
+      json: {
+        current_meeting: 7,
+        stale: true,
+        next: { label: "הטיות ממפגש 7", href: "/inflection-drill?meeting=7" },
+        items: [
+          { task: "inflections", label: "הטיות ממפגש 7", href: "/inflection-drill?meeting=7", days_since: null, stale: true },
+          { task: "conversation", label: "סיטואציה לתרגול", href: "/simulate?tab=dialogue", days_since: 0, stale: false },
+        ],
+      },
+    })
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/practice", { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("practice-dot")).toBeVisible();
+  await expect(page.getByTestId("practice-status")).toContainText("עוד לא תרגלת");
+  await expect(page.getByTestId("practice-status")).toContainText("תרגלת היום");
+});
+
+test("the end of the daily review offers what has waited longest", async ({ page }) => {
+  await login(page);
+  await mockDeck(page, [], []);
+  await page.addInitScript(() => localStorage.setItem("fix-round-started", new Date().toLocaleDateString("en-CA")));
+  await page.route("**/api/practice-status", (r) =>
+    r.fulfill({ json: { current_meeting: 7, stale: true, items: [], next: { label: "הטיות ממפגש 7", href: "/inflection-drill?meeting=7" } } })
+  );
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("next-practice")).toHaveText("עכשיו: הטיות ממפגש 7");
+});
+
+test("drills and translations start from the current meeting, and ?meeting= goes straight in", async ({ page }) => {
+  await login(page);
+  const drills = await page.request.get("/api/inflection-drill").then((r) => r.json());
+  const current = drills.current_meeting;
+  expect(current).toBeGreaterThan(0);
+  await page.goto("/inflection-drill", { waitUntil: "domcontentloaded" });
+  await expect(page.locator(".grid button").first()).toContainText(`מפגש ${current}`);
+  await expect(page.locator(".grid button").first()).toContainText("המפגש הנוכחי");
+
+  const negation = drills.sets.filter((s: { id: string; group: string }) => s.group === "מפגש 7" && s.id.includes(":kasar"));
+  expect(negation.length).toBe(1);
+  expect(negation[0].slots.length).toBe(12);
+
+  await page.goto(`/inflection-drill?meeting=${current}`, { waitUntil: "domcontentloaded" });
+  await expect(page.getByRole("button", { name: "חזרה לרשימה" })).toBeVisible();
+
+  await page.goto("/translate", { waitUntil: "domcontentloaded" });
+  await expect(page.locator("h2").first()).toHaveText(`מפגש ${current}`);
+});

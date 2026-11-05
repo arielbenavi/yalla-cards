@@ -4,6 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { strings } from "@/lib/strings";
 
+type StatusItem = { task: string; label: string; href: string; days_since: number | null; stale: boolean };
+
+function sinceLabel(days: number | null): string {
+  if (days == null) return "עוד לא תרגלת";
+  if (days === 0) return "תרגלת היום";
+  if (days === 1) return "תרגלת אתמול";
+  return `לפני ${days} ימים`;
+}
+
+const STATUS_EMOJI: Record<string, string> = { inflections: "🔁", conversation: "💬" };
+
 type PracticeCard = {
   href: string;
   emoji: string;
@@ -15,6 +26,15 @@ type PracticeCard = {
 
 export default function PracticePage() {
   const [pictureSceneCount, setPictureSceneCount] = useState<number | null>(null);
+
+  const [status, setStatus] = useState<StatusItem[]>([]);
+
+  useEffect(() => {
+    fetch("/api/practice-status")
+      .then((r) => r.json())
+      .then((d) => setStatus(d.items ?? []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/picture-scenes")
@@ -53,6 +73,25 @@ export default function PracticePage() {
   return (
     <div className="flex flex-col flex-1 p-4 gap-6 max-w-md mx-auto w-full">
       <h1 className="text-xl font-bold">{strings.nav.practice}</h1>
+      {status.length > 0 && (
+        <div className="grid grid-cols-1 gap-3" data-testid="practice-status">
+          {status.map((item) => (
+            <Link
+              key={item.task}
+              href={item.href}
+              className="relative flex items-center gap-4 rounded-2xl border p-5 hover:bg-gray-50"
+            >
+              <span className="flex-shrink-0 text-4xl">{STATUS_EMOJI[item.task]}</span>
+              <div className="flex min-w-0 flex-col gap-1">
+                <span className="text-base font-bold">{item.label}</span>
+                <span className={`text-sm ${item.stale ? "font-medium text-red-700" : "text-gray-500"}`}>{sinceLabel(item.days_since)}</span>
+              </div>
+              {item.stale && <span className="absolute left-4 top-4 h-2.5 w-2.5 rounded-full bg-red-600" />}
+              <span className="mr-auto text-gray-300">←</span>
+            </Link>
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3">
         {cards.map((card) =>
           card.available ? (

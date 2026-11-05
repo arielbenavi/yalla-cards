@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { strings } from "@/lib/strings";
+import { byMeetingOrder } from "@/lib/current-meeting";
 import { matchAnswer, type MatchResult } from "@/lib/translation-match";
 
 // The book's translation exercises, one sentence at a time: the prompt in one
@@ -21,6 +22,7 @@ export default function TranslatePage() {
   const [sets, setSets] = useState<DrillSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [active, setActive] = useState<DrillSet | null>(null);
+  const [currentMeeting, setCurrentMeeting] = useState<number | null>(null);
   const [dir, setDir] = useState<Dir>("ar_to_he");
   const [order, setOrder] = useState<Item[]>([]);
   const [i, setI] = useState(0);
@@ -32,7 +34,10 @@ export default function TranslatePage() {
   useEffect(() => {
     fetch("/api/translation-drill")
       .then((r) => r.json())
-      .then((d) => setSets(d.sets ?? []))
+      .then((d) => {
+        setSets(d.sets ?? []);
+        setCurrentMeeting(d.current_meeting ?? null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -71,8 +76,8 @@ export default function TranslatePage() {
   const grouped = useMemo(() => {
     const m = new Map<number, DrillSet[]>();
     for (const s of sets) m.set(s.meeting, [...(m.get(s.meeting) ?? []), s]);
-    return [...m.entries()].sort((a, b) => a[0] - b[0]);
-  }, [sets]);
+    return [...m.entries()].sort((a, b) => byMeetingOrder(currentMeeting)(a[0], b[0]));
+  }, [sets, currentMeeting]);
 
   if (loading) return <div className="flex flex-1 items-center justify-center">{strings.common.loading}</div>;
 

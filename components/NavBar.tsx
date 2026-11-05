@@ -16,6 +16,16 @@ export default function NavBar() {
 
   useEffect(() => setMoreOpen(false), [pathname]);
 
+  // The red dot on the practice tab: inflections or situations left alone for days
+  const [practiceStale, setPracticeStale] = useState(false);
+  useEffect(() => {
+    if (pathname === "/login") return;
+    fetch("/api/practice-status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setPracticeStale(Boolean(d?.stale)))
+      .catch(() => {});
+  }, [pathname]);
+
   if (pathname === "/login") return null;
 
   const isActive = (href: string) => pathname?.startsWith(href) ?? false;
@@ -68,7 +78,16 @@ export default function NavBar() {
                   isActive(link.href) ? "font-bold text-black" : "text-gray-500"
                 }`}
               >
-                <TabIcon href={link.href} />
+                <span className="relative">
+                  <TabIcon href={link.href} />
+                  {link.href === "/practice" && practiceStale && (
+                    <span
+                      data-testid="practice-dot"
+                      aria-label="יש תרגול שמחכה"
+                      className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white"
+                    />
+                  )}
+                </span>
                 {link.label}
               </Link>
             ))}

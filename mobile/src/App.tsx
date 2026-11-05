@@ -362,6 +362,17 @@ function Review({
   // what got שוב today, once more, outside FSRS.
   const fixIds = useMemo(() => (current || mode.kind !== "daily" ? [] : fixRoundIds(reviews)), [current, mode.kind, reviews]);
   const fixOffered = fixIds.length > 0;
+  // After the daily review, the one thing that has waited longest. Only with a network.
+  const [nextPractice, setNextPractice] = useState<{ label: string; href: string } | null>(null);
+  const reviewDone = !current;
+  useEffect(() => {
+    if (!reviewDone || store.native) return;
+    fetch("/api/practice-status")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setNextPractice(d?.next ?? null))
+      .catch(() => {});
+  }, [reviewDone]);
+
   useEffect(() => {
     if (fixOffered) logEvent("fix_round_offered", null, { size: fixIds.length });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -466,7 +477,19 @@ function Review({
             לכרטיס הקודם
           </button>
         )}
-        <button className={fixOffered ? "btn" : "btn primary"} onClick={onExit}>
+        {nextPractice && (
+          <button
+            className={fixOffered ? "btn" : "btn primary"}
+            data-testid="next-practice"
+            onClick={() => {
+              logEvent("next_practice_started", null, { href: nextPractice.href });
+              location.href = `${store.API_BASE}${nextPractice.href}`;
+            }}
+          >
+            עכשיו: {nextPractice.label}
+          </button>
+        )}
+        <button className={fixOffered || nextPractice ? "btn" : "btn primary"} onClick={onExit}>
           {embedded ? "חזרה להיום" : "חזרה"}
         </button>
       </div>

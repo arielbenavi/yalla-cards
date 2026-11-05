@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { strings } from "@/lib/strings";
+import { byMeetingOrder } from "@/lib/current-meeting";
 
 type Slot = { person: string; answer: string };
 /** One draggable form. `id` keeps duplicate forms apart; see `pool` below. */
@@ -48,11 +49,19 @@ export default function InflectionDrillPage() {
   const [wrong, setWrong] = useState<string | null>(null);
   const [pool, setPool] = useState<Tile[]>([]);
   const [mistakes, setMistakes] = useState(0);
+  const [currentMeeting, setCurrentMeeting] = useState<number | null>(null);
 
   useEffect(() => {
     fetch("/api/inflection-drill")
       .then((r) => r.json())
-      .then((d) => setSets(d.sets ?? []))
+      .then((d) => {
+        setSets(d.sets ?? []);
+        setCurrentMeeting(d.current_meeting ?? null);
+        // /inflection-drill?meeting=7 (the practice page, the end of the review) goes straight in
+        const wanted = new URLSearchParams(location.search).get("meeting");
+        const run = ((d.sets ?? []) as DrillSet[]).filter((x) => x.group === `מפגש ${wanted}`);
+        if (run.length) startRun(run);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -128,7 +137,16 @@ export default function InflectionDrillPage() {
       if (!byGroup.has(s.group)) byGroup.set(s.group, []);
       byGroup.get(s.group)!.push(s);
     }
-    const groups = [...byGroup.entries()].sort((a, b) => b[1].length - a[1].length);
+    // The current meeting first, then the other meetings from new to old, then the general topics
+    const meetingOf = (group: string) => Number(group.match(/^מפגש (\d+)$/)?.[1] ?? NaN);
+    const groups = [...byGroup.entries()].sort((a, b) => {
+      const [ma, mb] = [meetingOf(a[0]), meetingOf(b[0])];
+      if (Number.isNaN(ma) || Number.isNaN(mb)) {
+        if (Number.isNaN(ma) && Number.isNaN(mb)) return b[1].length - a[1].length;
+        return Number.isNaN(ma) ? 1 : -1;
+      }
+      return byMeetingOrder(currentMeeting)(ma, mb);
+    });
 
     return (
       <div className="flex flex-col gap-6 p-4 max-w-2xl mx-auto">
@@ -146,7 +164,12 @@ export default function InflectionDrillPage() {
               onClick={() => startRun(items)}
               className="flex items-center justify-between border rounded-xl p-4 text-right hover:bg-gray-50 transition-colors"
             >
-              <span className="font-bold">{group}</span>
+              <span className="font-bold">
+                {group}
+                {group === `מפגש ${currentMeeting}` && (
+                  <span className="mr-2 rounded-full bg-black px-2 py-0.5 text-[11px] font-normal text-white">המפגש הנוכחי</span>
+                )}
+              </span>
               <span className="text-xs text-gray-400">{items.length} טבלאות</span>
             </button>
           ))}

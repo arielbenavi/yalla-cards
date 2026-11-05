@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { currentMeeting } from "@/lib/current-meeting";
 
 /** Drag-the-inflection-into-its-box drill (task #4).
  *
@@ -53,6 +54,7 @@ const SLUG_LABEL: Record<string, string> = {
   weekdays: "ימות השבוע",
   past_sound_verb: "עבר — פועל שלם",
   past_negation_sound: "שלילת העבר — פועל שלם",
+  past_negation_book_306: "שלילה",
   indirect_object_l: "נטיית ל׳ — כינויי מושא עקיף",
   past_indirect_negation: "עבר + מושא עקיף — וַצַף",
   past_indirect_object_grid: "עבר + מושא עקיף — דַפַע",
@@ -124,7 +126,8 @@ function primaryForm(s: string): string {
 export async function GET() {
   const supabase = supabaseAdmin();
 
-  const [{ data: verbs }, { data: paradigms }] = await Promise.all([
+  const [meeting, { data: verbs }, { data: paradigms }] = await Promise.all([
+    currentMeeting(supabase),
     supabase
       .from("verb_conjugations")
       .select("id, root, root_translit, meaning_he, forms_full, chatifai_verified")
@@ -235,5 +238,5 @@ export async function GET() {
     }
   }
 
-  return NextResponse.json({ sets, total: sets.length });
+  return NextResponse.json({ sets, total: sets.length, current_meeting: meeting });
 }
