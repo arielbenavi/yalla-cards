@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { strings } from "@/lib/strings";
-import { navGroups, primaryNav as primary, type NavLink } from "@/lib/nav";
+import { navGroups, navOwner, primaryNav as primary, type NavLink } from "@/lib/nav";
 import { TabIcon } from "@/lib/nav-icons";
 
 // The menu itself (order, sections) lives in lib/nav.ts, shared with the iPhone app.
-const secondary: NavLink[] = navGroups.flatMap((g) => g.links);
+const allSecondary: NavLink[] = navGroups.flatMap((g) => g.links);
 
 export default function NavBar() {
   const pathname = usePathname();
@@ -26,9 +26,22 @@ export default function NavBar() {
       .catch(() => {});
   }, [pathname]);
 
+  // After login the page changes without a reload, so ask again when the path changes
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    if (pathname === "/login") return;
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(Boolean(d.isAdmin)))
+      .catch(() => {});
+  }, [pathname]);
+
   if (pathname === "/login") return null;
 
-  const isActive = (href: string) => pathname?.startsWith(href) ?? false;
+  const showLink = (l: NavLink) => l.href !== "/admin" || isAdmin;
+  const secondary = allSecondary.filter(showLink);
+  const owner = navOwner(pathname ?? "");
+  const isActive = (href: string) => owner.startsWith(href);
   const moreActive = secondary.some((l) => isActive(l.href));
   // Shown everywhere, the review included (Ariel, 2026-10-23): with it hidden
   // there was no visible way out of a screen. The grading buttons keep their
@@ -122,7 +135,7 @@ export default function NavBar() {
                 <div key={group.title}>
                   <p className="mb-1.5 px-1 text-xs font-medium text-gray-400">{group.title}</p>
                   <div className="grid grid-cols-2 gap-2">
-                    {group.links.map((link) => (
+                    {group.links.filter(showLink).map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}

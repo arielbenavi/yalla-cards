@@ -18,7 +18,7 @@ const PUBLIC = [
   // outright, and with it the whole offline copy. It holds no data.
   "/sw.js",
 ];
-const ADMIN_ONLY = ["/inbox", "/recordings", "/notes"];
+const ADMIN_ONLY = ["/inbox", "/recordings", "/notes", "/admin"];
 // Lowercased on both sides: the list is hand-edited, and an address typed with
 // a capital (Jonikremer1@gmail.com) would never match what the provider returns.
 const ALLOWED_EMAILS = (process.env.ALLOWED_EMAILS ?? "")

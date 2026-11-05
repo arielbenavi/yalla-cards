@@ -53,7 +53,9 @@ test.describe("stored dialogues on /simulate", () => {
     // Navigate by link — page.goto races the dev server's compile and aborts.
     // Scoped to the nav: the daily checklist now carries a "תרגול שיחה" link to
     // the same route, so an unscoped locator matches two elements.
-    await page.locator("nav").getByRole("link", { name: "שיחה" }).click();
+    await page.locator("nav").getByRole("link", { name: "תרגול" }).first().click();
+    await page.waitForURL("**/practice");
+    await page.locator("main").getByRole("link", { name: /שיחה/ }).click();
 
     await page.getByRole("button", { name: "דו-שיח" }).click();
     await page.waitForLoadState("networkidle");

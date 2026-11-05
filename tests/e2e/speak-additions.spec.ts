@@ -346,3 +346,22 @@ test("drills and translations start from the current meeting, and ?meeting= goes
   await page.goto("/translate", { waitUntil: "domcontentloaded" });
   await expect(page.locator("h2").first()).toHaveText(`מפגש ${current}`);
 });
+
+test("the menu: practice lives under one tab, admin screens under another, מפגשים is gone", async ({ page }) => {
+  await login(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/practice", { waitUntil: "domcontentloaded" });
+  for (const name of ["התאמת הטיות", "סיומות שייכות", "תרגום משפטים", "שיחה", "אימון ממוקד", "משחק תמונות", "מספרים", "אותיות"]) {
+    await expect(page.locator("main").getByRole("link", { name: new RegExp(name) }).first()).toBeVisible();
+  }
+  // dispatchEvent: on the phone viewport the dev server's own badge sits over this corner
+  await page.getByRole("button", { name: "עוד" }).dispatchEvent("click");
+  const sheet = page.getByRole("dialog", { name: "עוד" });
+  await expect(sheet.getByRole("link", { name: "מפגשים" })).toHaveCount(0);
+  await expect(sheet.getByRole("link", { name: "ייבוא" })).toHaveCount(0);
+  await sheet.getByRole("link", { name: "אדמין" }).dispatchEvent("click");
+  await page.waitForURL("**/admin");
+  for (const name of ["ייבוא", "שיוך אוטומטי", "הקלטות", "סטטיסטיקה", "משימות"]) {
+    await expect(page.locator("main").getByRole("link", { name })).toBeVisible();
+  }
+});

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { strings } from "@/lib/strings";
+import { gameLinks, practiceLinks, type NavLink } from "@/lib/nav";
 
 type StatusItem = { task: string; label: string; href: string; days_since: number | null; stale: boolean };
 
@@ -15,18 +16,37 @@ function sinceLabel(days: number | null): string {
 
 const STATUS_EMOJI: Record<string, string> = { inflections: "🔁", conversation: "💬" };
 
-type PracticeCard = {
-  href: string;
-  emoji: string;
-  title: string;
-  description: string;
-  progress?: string | null;
-  available: boolean;
+const PRACTICE_DESCRIPTION: Record<string, string> = {
+  "/inflection-drill": "טבלאות הטיה לפי מפגש",
+  "/possessives": "הטיית שמות עם סיומות",
+  "/translate": "משפטים מהספר לפי מפגש",
+  "/simulate": "סיטואציות ושיחות",
+  "/focused": "מה שנכשל לאחרונה ומה שעומד להישכח",
+  "/picture-game": "זיהוי מילים בתמונות",
+  "/numbers": "מספרים בערבית",
+  "/letters": "אותיות לפי מיקום במילה",
 };
 
-export default function PracticePage() {
-  const [pictureSceneCount, setPictureSceneCount] = useState<number | null>(null);
+function LinkRows({ title, links }: { title: string; links: NavLink[] }) {
+  return (
+    <section className="flex flex-col gap-2">
+      <h2 className="px-1 text-sm font-medium text-gray-500">{title}</h2>
+      <div className="grid grid-cols-1 divide-y overflow-hidden rounded-2xl border">
+        {links.map((l) => (
+          <Link key={l.href} href={l.href} className="flex items-center justify-between gap-3 p-4 hover:bg-gray-50">
+            <span className="flex min-w-0 flex-col">
+              <span className="font-bold">{l.label}</span>
+              <span className="text-sm text-gray-500">{PRACTICE_DESCRIPTION[l.href]}</span>
+            </span>
+            <span className="text-gray-300">←</span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
 
+export default function PracticePage() {
   const [status, setStatus] = useState<StatusItem[]>([]);
 
   useEffect(() => {
@@ -35,40 +55,6 @@ export default function PracticePage() {
       .then((d) => setStatus(d.items ?? []))
       .catch(() => {});
   }, []);
-
-  useEffect(() => {
-    fetch("/api/picture-scenes")
-      .then((r) => r.json())
-      .then((d) => setPictureSceneCount((d.scenes ?? []).length))
-      .catch(() => setPictureSceneCount(null));
-  }, []);
-
-  const cards: PracticeCard[] = [
-    {
-      href: "/picture-game",
-      emoji: "🖼️",
-      title: strings.nav.pictureGame,
-      description: "זיהוי מילים בתמונות אמיתיות",
-      progress: pictureSceneCount != null ? `${pictureSceneCount} תמונות` : null,
-      available: true,
-    },
-    {
-      href: "/numbers",
-      emoji: "🔢",
-      title: strings.nav.numbers,
-      description: "תרגול מספרים בערבית",
-      progress: null,
-      available: true,
-    },
-    {
-      href: "/letters",
-      emoji: "🔤",
-      title: strings.nav.letters,
-      description: "זיהוי אותיות ערביות לפי מיקומן במילה",
-      progress: null,
-      available: true,
-    },
-  ];
 
   return (
     <div className="flex flex-col flex-1 p-4 gap-6 max-w-md mx-auto w-full">
@@ -92,41 +78,8 @@ export default function PracticePage() {
           ))}
         </div>
       )}
-      <div className="grid grid-cols-1 gap-3">
-        {cards.map((card) =>
-          card.available ? (
-            <Link
-              key={card.href}
-              href={card.href}
-              className="flex items-center gap-4 border rounded-2xl p-5 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors"
-            >
-              <span className="text-4xl flex-shrink-0">{card.emoji}</span>
-              <div className="flex flex-col gap-1 min-w-0">
-                <span className="font-bold text-base">{card.title}</span>
-                <span className="text-sm text-gray-500">{card.description}</span>
-                {card.progress && (
-                  <span className="text-xs text-gray-400">{card.progress}</span>
-                )}
-              </div>
-              <span className="text-gray-300 mr-auto">←</span>
-            </Link>
-          ) : (
-            <div
-              key={card.href}
-              className="flex items-center gap-4 border rounded-2xl p-5 opacity-50 cursor-not-allowed"
-            >
-              <span className="text-4xl flex-shrink-0">{card.emoji}</span>
-              <div className="flex flex-col gap-1 min-w-0">
-                <span className="font-bold text-base">{card.title}</span>
-                <span className="text-sm text-gray-500">{card.description}</span>
-                {card.progress && (
-                  <span className="text-xs text-gray-400">{card.progress}</span>
-                )}
-              </div>
-            </div>
-          )
-        )}
-      </div>
+      <LinkRows title="תרגול" links={practiceLinks} />
+      <LinkRows title="משחקים" links={gameLinks} />
     </div>
   );
 }

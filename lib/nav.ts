@@ -15,35 +15,45 @@ export const primaryNav: NavLink[] = [
   { href: "/content", label: strings.nav.content },
 ];
 
-// Behind "עוד", in sections. "נטיות" left the menu on Ariel's call (note e165eccf);
-// the route still resolves, so it is one line to undo.
+// Everything practised lives under the תרגול tab and every admin screen under אדמין (Ariel,
+// 2026-11-05: the menu was too long and felt scattered). Their pages keep their addresses,
+// and the tab stays marked while inside them. /lessons left the menu; the route still resolves.
+export const practiceLinks: NavLink[] = [
+  { href: "/inflection-drill", label: strings.nav.inflectionDrill },
+  { href: "/possessives", label: strings.nav.possessives },
+  { href: "/translate", label: strings.nav.translate },
+  { href: "/simulate", label: strings.nav.simulate },
+  { href: "/focused", label: strings.nav.focused },
+];
+export const gameLinks: NavLink[] = [
+  { href: "/picture-game", label: strings.nav.pictureGame },
+  { href: "/numbers", label: strings.nav.numbers },
+  { href: "/letters", label: strings.nav.letters },
+];
+export const adminLinks: NavLink[] = [
+  { href: "/inbox", label: strings.nav.inbox },
+  { href: "/recordings/auto", label: strings.nav.recordingsAuto },
+  { href: "/recordings", label: strings.nav.recordings },
+  { href: "/stats", label: strings.nav.stats },
+  { href: "/notes", label: strings.nav.notes },
+];
+
+/** The menu entry a page belongs to, for marking it as active. */
+export function navOwner(pathname: string): string {
+  const inside = (links: NavLink[]) => links.some((l) => pathname.startsWith(l.href));
+  if (inside(practiceLinks) || inside(gameLinks)) return "/practice";
+  if (inside(adminLinks)) return "/admin";
+  return pathname;
+}
+
+// Behind "עוד".
 export const navGroups: { title: string; links: NavLink[] }[] = [
   {
-    title: "תרגול",
+    title: "עוד",
     links: [
       { href: "/today", label: strings.nav.today },
-      { href: "/simulate", label: strings.nav.simulate },
-      { href: "/focused", label: strings.nav.focused },
-      { href: "/translate", label: strings.nav.translate },
-      { href: "/inflection-drill", label: strings.nav.inflectionDrill },
-      { href: "/possessives", label: strings.nav.possessives },
       { href: "/songs", label: strings.nav.songs },
-    ],
-  },
-  {
-    title: "כרטיסים",
-    links: [
-      { href: "/inbox", label: strings.nav.inbox },
-      { href: "/lessons", label: strings.nav.lessons },
-      { href: "/recordings", label: strings.nav.recordings },
-      { href: "/recordings/auto", label: strings.nav.recordingsAuto },
-    ],
-  },
-  {
-    title: "מעקב",
-    links: [
-      { href: "/stats", label: strings.nav.stats },
-      { href: "/notes", label: strings.nav.notes },
+      { href: "/admin", label: strings.nav.admin },
     ],
   },
 ];

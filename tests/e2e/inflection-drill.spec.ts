@@ -76,7 +76,9 @@ test.describe("inflection matching drill", () => {
       await tip.waitFor({ state: "detached" });
     }
 
-    await page.getByRole("link", { name: "התאמת הטיות" }).click();
+    await page.locator("nav").getByRole("link", { name: "תרגול" }).first().click();
+    await page.waitForURL("**/practice");
+    await page.locator("main").getByRole("link", { name: /התאמת הטיות/ }).click();
     await page.waitForLoadState("networkidle");
     await page.getByRole("button", { name: rx(target.group) }).first().click();
 
