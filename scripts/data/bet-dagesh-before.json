@@ -1,0 +1,112 @@
+[
+ {
+  "id": "c67f97e1-b9b4-44dc-bf10-3ce4a6bc5108",
+  "translit_nikud": "שַׁאבֵּה",
+  "plural_form": "שַאבַّאת"
+ },
+ {
+  "id": "e1e3118c-8abd-4178-9764-bc4a3f4919f3",
+  "translit_nikud": "מַרְחַבְּתֵין יַא צַאחֵב (א)לְבֵּית",
+  "plural_form": null
+ },
+ {
+  "id": "3d87bae6-5268-4a81-ba90-8e87587df8f2",
+  "translit_nikud": "אִנְתּ צַאחֵב (א)לְדַּאר?",
+  "plural_form": null
+ },
+ {
+  "id": "1bce2473-ebdb-46c8-ac76-40fede98b58e",
+  "translit_nikud": "(א)לְאִסֵם פִי וְרַאק (א)לְכִּתַּאב",
+  "plural_form": null
+ },
+ {
+  "id": "30551276-652a-476a-93b6-870a154e857d",
+  "translit_nikud": "הַאדַא (א)לְגַ'וַּאב! כַּמַאן סֻאַאל?",
+  "plural_form": null
+ },
+ {
+  "id": "d1f6a345-5928-4d90-97eb-d6cd84bdbd34",
+  "translit_nikud": "הַאדַא סַקְף (א)לְמַכְּתַב",
+  "plural_form": null
+ },
+ {
+  "id": "46a29709-38ce-4f7a-9d8a-8e421955d36a",
+  "translit_nikud": "בִּעְמַל מְנִّ (א)לְחַבֵּّה קֻבֵּّה",
+  "plural_form": null
+ },
+ {
+  "id": "5f9a35ae-6d15-4938-93f8-f1902d1ca60a",
+  "translit_nikud": "צַלַאת (א)לְמַעְ'רֵב",
+  "plural_form": null
+ },
+ {
+  "id": "94f6cff7-b3bb-4fd5-91e0-a41ca2a8eea9",
+  "translit_nikud": "חַבַסוּה",
+  "plural_form": null
+ },
+ {
+  "id": "2ae8c36c-46d1-42c5-adec-ced514c2d999",
+  "translit_nikud": "גַ'אבוּ",
+  "plural_form": null
+ },
+ {
+  "id": "94a71f67-dff4-4abe-8007-c9d420457bb5",
+  "translit_nikud": "פִי יוֹם (אל)סַבְּת טִלְעוּ כֻּלּ (א)לְוְלַאד מִנּ (א)לְבְּיוּת וְלִעְבוּ בַּרַּא מַע בַּעַצ'",
+  "plural_form": null
+ },
+ {
+  "id": "e074e354-c67f-4000-9493-10b4cb2c4a98",
+  "translit_nikud": "כֻּלּ וְלַאד (א)לְחַארַה לִעְבוּ מַע בַּעַצ' בְּ(א)לְמַלְעַבּ לַחַדּ (א)לְמַעְ'רְבִּיַּאת",
+  "plural_form": null
+ },
+ {
+  "id": "2ddd4cf7-42bd-4a9f-b344-45a72bde2f50",
+  "translit_nikud": "אִלְמֻמַרְּצַ'ה בְּ(א)לְעִיַאדֵה בַּעְתַת (א)לְפֻחֻצַאת עַלַא (א)לְמֻחְ'תַבַּר קַבֵל גֻ'מְעַה (אֻסְבּוּע), פַחַצְנַא, מַפִש גַ'וַאבּ",
+  "plural_form": null
+ },
+ {
+  "id": "8f1d8b3d-9ea6-4d61-832a-2d22d718ecd2",
+  "translit_nikud": "קַבֵל שַהֵר כַּאנַת (א)לְחֻ'טְבֵּה עִנַּא פִי (א)לְעֵילֵה וְקַבֵל אֻסְבּוּע עִמִלְנַא חַפְלֵת גַ'וַאז פִי קַאעַת אַפְרַאח",
+  "plural_form": null
+ },
+ {
+  "id": "355271ac-7755-48e0-b436-872662699569",
+  "translit_nikud": "טַבַח",
+  "plural_form": null
+ },
+ {
+  "id": "5ca5f474-79fc-42b2-9e30-a3414f740886",
+  "translit_nikud": "סִבֵח",
+  "plural_form": null
+ },
+ {
+  "id": "1c9c4b00-4962-4117-bbbe-c725dc69c3ca",
+  "translit_nikud": "מַלְחִקְתֶש וֻמַחְ'לִצְתֶש אִ(ל)שֻּעֻ'ל עַ(א)לְוַקֵת, רְגִ'עֵת עַ(אל)דַּאר בַּסּ קַבֵל סֵיעַה",
+  "plural_form": null
+ },
+ {
+  "id": "73cad07d-e2d1-4a9f-a339-d116aa4dffee",
+  "translit_nikud": "הַאדַא בִּנְתוֹ מֵש מֻוְהוּבֶה, מַדְרַסַתֵש טִבּ פִי (אל)גַּ'אמְעַה",
+  "plural_form": null
+ },
+ {
+  "id": "1507cded-db4f-4168-bbf6-279ce4351270",
+  "translit_nikud": "מֻוְהוּבֶה",
+  "plural_form": null
+ },
+ {
+  "id": "93cccba6-6d95-4323-9a54-d50f64482327",
+  "translit_nikud": "חַבִּיבּ",
+  "plural_form": "אַחִבַּאא, חַבַאיֵבּ"
+ },
+ {
+  "id": "c7fcce28-7606-42c5-a884-8e6f0118e6cd",
+  "translit_nikud": "רִבֵח",
+  "plural_form": null
+ },
+ {
+  "id": "959f6e0a-de78-4e6e-88fa-6d7b3d885a4a",
+  "translit_nikud": "נִבְדִי / נְבַלֵּש",
+  "plural_form": null
+ }
+]

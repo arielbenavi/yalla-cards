@@ -275,3 +275,21 @@ test("/watch: an unchecked line says so, and the admin's edit saves and marks it
   expect(saved[0]).toMatchObject({ he: "על השליט", verified: true });
   await expect(page.getByTestId("unchecked")).toHaveCount(0);
 });
+
+test("a card with a clip keeps its question centred in the card", async ({ page }) => {
+  await login(page);
+  const past = new Date(Date.now() - 3600_000).toISOString();
+  const card = { ...deckCard("c", "word", "دقيقة", past), hebrew_meaning: "דקה (זמן)", clip_path: "clips/c.mp3" };
+  await page.route("**/api/mobile/deck", (r) => r.fulfill({ json: { generated_at: new Date().toISOString(), cards: [card], reviews: [], audio: { "clips/c.mp3": "/nothing.mp3" } } }));
+  await page.route("**/api/mobile/sync", (r) => r.fulfill({ json: { ok: true, applied: 0 } }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/review", { waitUntil: "domcontentloaded" });
+  const tip = page.getByRole("button", { name: "הבנתי" });
+  await tip.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
+  if (await tip.isVisible().catch(() => false)) await tip.click();
+  const prompt = page.getByText("דקה (זמן)");
+  await prompt.waitFor();
+  await expect(page.locator("audio")).toHaveCount(1);
+  const [p, c] = await Promise.all([prompt.boundingBox(), page.locator(".tile.card").boundingBox()]);
+  expect(Math.abs(p!.y + p!.height / 2 - (c!.y + c!.height / 2))).toBeLessThan(6);
+});

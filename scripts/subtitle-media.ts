@@ -14,7 +14,7 @@ import { join } from "path";
 import { createClient } from "@supabase/supabase-js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { forms, skeleton } from "../lib/deck-examples";
-import { sentenceWords, translitKey } from "../lib/word-lookup";
+import { fixBet, sentenceWords, translitKey } from "../lib/word-lookup";
 config({ path: ".env.local" });
 
 const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false }, realtime: { transport: class {} as any } });
@@ -128,7 +128,7 @@ async function annotate(lines: Line[], dict: Map<string, string>, cacheDir: stri
     }
     if (!out) throw new Error(`annotation failed at line ${i}`);
     writeFileSync(cached, JSON.stringify(out));
-    out.forEach((o, n) => Object.assign(batch[n], { translit: (o.translit ?? "").replace(/ّ/g, "ּ"), he: o.he, words: o.words }));
+    out.forEach((o, n) => Object.assign(batch[n], { translit: fixBet((o.translit ?? "").replace(/ّ/g, "ּ")), he: o.he, words: o.words }));
     console.log(`  annotated ${i + batch.length}/${lines.length}`);
   }
 }

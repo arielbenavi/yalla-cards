@@ -27,6 +27,24 @@ export function translitKey(word: string): string {
     .replace(/[ךםןףץ]/g, (c) => FINALS[c]);
 }
 
+/**
+ * ב in a transliteration is always ب, so a pointed word's ב always takes a dagesh (b, never v).
+ * A word with no nikud may be Hebrew and stays as it is. An Arabic shadda becomes the dagesh it stands for.
+ */
+export function fixBet(text: string): string {
+  return text
+    .split(/(\s+)/)
+    .map((word) =>
+      /[\u0591-\u05C7]/.test(word)
+        ? word.replace(/ב([\u0591-\u05C7\u0651]*)/g, (_, marks: string) => {
+            const m = marks.replace(/\u0651/g, "\u05BC");
+            return m.includes("\u05BC") ? `ב${m}` : `ב${m}\u05BC`;
+          })
+        : word
+    )
+    .join("");
+}
+
 const letterCount = (key: string) => key.replace(/'/g, "").length;
 
 // Attached article, preposition or conjunction, and possessive endings. Rules this

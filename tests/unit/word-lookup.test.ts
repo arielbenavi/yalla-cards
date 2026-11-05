@@ -1,7 +1,7 @@
 /**
  * Run: npx tsx tests/unit/word-lookup.test.ts
  */
-import { buildWordIndex, lookupWord, sentenceWords, translitKey } from "../../lib/word-lookup";
+import { buildWordIndex, fixBet, lookupWord, sentenceWords, translitKey } from "../../lib/word-lookup";
 import assert from "node:assert";
 
 const card = (id: string, translit_nikud: string, arabic_script: string | null = null) => ({
@@ -37,5 +37,10 @@ assert.deepEqual(sentenceWords("שֻפְת (א)לְבֵּית, יַא זַלַמ
 assert.equal(sentenceWords("שֻפְת (א)לְבֵּית", "شفت البيت")[1].arabic, "البيت");
 assert.equal(sentenceWords("שֻפְת (א)לְבֵּית הון", "شفت البيت")[1].arabic, null, "uneven sides: no guessing which Arabic word");
 assert.deepEqual(sentenceWords("מַא + פֹּעַל + ש", null).map((w) => w.text), ["מַא", "פֹּעַל", "ש"], "symbols are not words");
+
+assert.equal(fixBet("נִבְדִי / נְבַלֵּש"), "נִבְּדִי / נְבַּלֵּש");
+assert.equal(fixBet("צַאחֵבּ בִּנְת"), "צַאחֵבּ בִּנְת", "already has one");
+assert.equal(fixBet("חַב\u0651יב"), "חַב\u05BCיב", "shadda becomes the dagesh");
+assert.equal(fixBet("זאת הבת"), "זאת הבת", "unpointed Hebrew stays");
 
 console.log("word-lookup: ok");

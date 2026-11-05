@@ -72,6 +72,7 @@ if a step failed.
 | a letter with a dot inside | dagesh vs nothing | compare with the same letter elsewhere on the line; the book also uses a shadda-like sign over letters (ّ) for doubling |
 | וּ / וְ | shuruk vs vav + sheva | the dot is inside the vav for וּ, under it for וְ |
 | אִלְּי | אִלְלִי | the book writes the doubled lamed as two letters |
+| ב / בּ | dagesh missing | ב here is always ب, so always בּ: never leave it to read as v (Ariel, 2026-11-05) |
 | ח' / ח | geresh missing | خ is ח' in this deck; ض is צ' in the book, ד' in some older cards |
 
 ## Course book conventions (המדרשה)

@@ -579,8 +579,9 @@ function Review({
             {adminSlot?.(current)}
           </div>
         )}
-        {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
       </div>
+      {/* Outside the card: its first and last children are what centre the content */}
+      {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
 
       {peeked ? (
         <div className="actions">

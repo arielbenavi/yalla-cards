@@ -32,6 +32,8 @@ def lint(s):
         v = [c for c in marks if c in VOWELS]
         if len(v) > 1 and not (len(v) == 2 and "ֹ" in v and m.group(1) == "ו"):
             out.append(f"'{m.group(0)}' at {m.start()} has {len(v)} vowels")
+        if m.group(1) == "ב" and "ּ" not in marks:
+            out.append(f"'{m.group(0)}' at {m.start()} has no dagesh: ב is always ب, a b and never a v")
         if marks.count("ּ") > 1:
             out.append(f"'{m.group(0)}' at {m.start()} has two dagesh")
     for w in re.findall(r"[א-ת֑-ׇ']+", s):
