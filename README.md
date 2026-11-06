@@ -29,3 +29,9 @@ type LyricLine = { line: string; words: LyricWord[]; timestamp?: string }
 type LyricWord = { ar: string; he: string; translit: string }
 ```
 Non-Arabic lines (English, German): set `words: []`.
+
+## Where to start
+
+- Latest state and next steps: [docs/handoff-2026-11-05.md](docs/handoff-2026-11-05.md)
+- Video with tappable transliteration: [docs/watch-plan.md](docs/watch-plan.md)
+- Rules for any change: [CLAUDE.md](CLAUDE.md)
