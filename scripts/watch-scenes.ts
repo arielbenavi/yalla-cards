@@ -21,7 +21,9 @@ const arg = (n: string) => { const i = process.argv.indexOf(`--${n}`); return i 
 const APPLY = process.argv.includes("--apply");
 const READ_MODEL = "gemini-4-argon";
 const TEXT_MODEL = "gemini-3.1-pro-preview";
-const [file, series, slug, cache] = [arg("file")!, arg("series")!, arg("slug")!, arg("cache")!];
+const [file, series, slug] = [arg("file")!, arg("series")!, arg("slug")!];
+// One folder per slug: a shared --cache once served one episode's video and subtitles for another (2026-11-07).
+const cache = join(arg("cache")!, slug);
 mkdirSync(cache, { recursive: true });
 
 type Line = { start: number; end: number; ar: string; heard?: string; translit?: string; he?: string; words?: { t: string; he: string }[] };

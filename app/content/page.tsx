@@ -68,6 +68,7 @@ const sections: Section[] = [
     title: "סיפורים של מינרוה",
     emoji: "📖",
     items: [
+      { name: "▶ סיפורים של מינרוה, נגן עם כתוביות לחיצות", url: "/watch", note: "העכבר והדלעת, דברי האדמה, אסיפת הורים, למען הדורות הבאים, המזל הרע" },
       { name: "דברי האדמה — كلام الأرض", url: "https://youtu.be/jf782k4Eb-g", note: "0:41" },
       { name: "אסיפת הורים — إجتماع أهالي", url: "https://youtu.be/OuAwxXUZBU4", note: "1:21 · שיחה" },
       { name: "התנצלות גרועה מחטא — عذر أقبح من ذنب", url: "https://youtu.be/hFxI_jmgzVk", note: "2:18" },

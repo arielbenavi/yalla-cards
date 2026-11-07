@@ -27,7 +27,7 @@ More detail, only when needed:
 1. **Reversible, additive changes only.** Never write FSRS state (`card_srs`, `review_log`), except the `card_srs` row (`direction: "he_to_ar"`) of a new card.
    - Before deleting a card, back it up to `scripts/data/*.json`.
 2. **Migrations:**
-   - Write `supabase/migrations/00XX_*.sql`, then run `npx tsx scripts/migrate.ts`. The last one is 0033.
+   - Write `supabase/migrations/00XX_*.sql`, then run `npx tsx scripts/migrate.ts`. The last one is 0034.
    - Never ask Ariel to run SQL.
 3. **Tests:** a change to review, inbox or recordings needs `npx playwright test` to pass in full.
    - Do not skip tests.
@@ -59,6 +59,9 @@ More detail, only when needed:
 
 ## 3. Done (latest first)
 - **7.11**
+  - **Palestinian check, separate from chatifai:** skill `.claude/skills/check-palestinian` + `scripts/check-palestinian.ts` compare cards with Madrasa's spoken dictionary and Wiktionary South Levantine, and store the result in `cards.dialect_check` (migration 0034). Ronen says Madrasa is sometimes imprecise, so it is one voice of several. First run fixed the smoking cards: סִיגַארַה / סַגַאיֵר (ג without geresh), تتن → تبغ תַבַּע', and noted that Palestinians say شرب سيجارة.
+  - **Minerva in the player:** העכבר והדלעת (2 scenes), דברי האדמה, אסיפת הורים, למען הדורות הבאים on `/watch` (series "סיפורים של מינרוה"), linked from תכנים. `watch-scenes.ts` now keeps a cache folder per slug (a shared one mixed up episodes).
+  - **Daily proverb:** `lib/proverbs.ts`, 33 Palestinian sayings from Madrasa's "ביטויים" list. Even days show the tip, odd days a proverb, in a fixed random order with no repeats.
   - **Cards, smoking (unverified, משוער):** תַדְחִ'ין עישון, דַחַּ'ן / בִּדַחֵּ'ן, סִיגַ'ארַה / סַגַ'איֵר, וַלַּאעַה מצית, תֻתֻן טבק, מַנְפַצַ'ה מאפרה, מַמְנוּע (א)תַּדְחִ'ין (`scripts/insert-smoking-words.ts`).
   - **תכנים → אוכל:** a new first button "▶ תפצ'לו ע(א)לעשא, נגן עם כתוביות לחיצות" opens `/watch` in the same window (internal links no longer open a new tab). The YouTube playlists stay below it. Test: `tests/e2e/content-watch.spec.ts`.
   - **iPhone renewal fixed:** it now runs at 08:30, 13:30 and 20:30, warns before expiry, and the app is installed until 14/11.
