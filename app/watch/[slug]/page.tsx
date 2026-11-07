@@ -279,7 +279,7 @@ function PhraseSheet({
   const guess = wholeLine && segment.he ? segment.he : words.map((w) => glosses[translitKey(w.text)] ?? "…").join(" ");
   const [meaning, setMeaning] = useState(guess);
   useEffect(() => setMeaning(guess), [guess]);
-  const state: "no" | (typeof added)[string] = added[text] ?? "no";
+  const state = (added[text] as (typeof added)[string] | undefined) ?? "no";
   return (
     <div className="sheet word-sheet" role="dialog" aria-label={text} data-testid="phrase-sheet">
       <button className="sheet-backdrop" aria-label="סגור" onClick={onClose} />
