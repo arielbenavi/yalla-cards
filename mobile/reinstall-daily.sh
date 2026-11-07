@@ -7,8 +7,8 @@
 # Log: ~/Library/Logs/yalla-reinstall.log
 export NVM_DIR="$HOME/.nvm"
 . "$NVM_DIR/nvm.sh" >/dev/null 2>&1
-nvm use 20 >/dev/null 2>&1 || true
-export PATH="$HOME/.nvm/versions/node/v20.19.3/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH"
+nvm use 24 >/dev/null 2>&1 || true  # Capacitor needs Node 22+
+export PATH="$HOME/.nvm/versions/node/v24.22.2/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH"
 echo "── $(date '+%Y-%m-%d %H:%M')"
 if "$(dirname "$0")/install-iphone.sh"; then exit 0; fi
 
