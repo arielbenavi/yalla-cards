@@ -2,7 +2,9 @@
 
 ## Session start
 
-Run this first, address open items before anything else:
+Read `docs/STATE.md` first: current state, rules, what is next, Ariel's ideas. Update it in the same commit as any work you finish.
+
+Then run this, address open items before anything else:
 ```sql
 SELECT id, body, tag, created_at FROM notes WHERE status = 'open' ORDER BY created_at DESC
 ```

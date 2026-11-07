@@ -32,6 +32,7 @@ Non-Arabic lines (English, German): set `words: []`.
 
 ## Where to start
 
-- Latest state and next steps: [docs/handoff-2026-11-05.md](docs/handoff-2026-11-05.md)
+- **Current state, plans and ideas: [docs/STATE.md](docs/STATE.md)** (start here)
+- Commit history of November: [docs/handoff-2026-11-05.md](docs/handoff-2026-11-05.md)
 - Video with tappable transliteration: [docs/watch-plan.md](docs/watch-plan.md)
 - Rules for any change: [CLAUDE.md](CLAUDE.md)
