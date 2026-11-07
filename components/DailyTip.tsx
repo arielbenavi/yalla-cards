@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { TIPS, type Tip } from "@/lib/tips";
-import { PROVERBS, type Proverb } from "@/lib/proverbs";
+import { EXTRA_PROVERBS, type Proverb } from "@/lib/proverbs";
 
 function todayKey(): string {
   return new Date().toISOString().slice(0, 10); // "2026-07-30"
@@ -27,13 +27,21 @@ function shuffled(n: number, seed: number): number[] {
 
 type Daily = { kind: "tip"; tip: Tip } | { kind: "proverb"; proverb: Proverb };
 
-/** Even days a tip, odd days a proverb: never both on the same day, never one right after the other. */
-function pickDaily(): Daily {
+/** Even days a tip, odd days a proverb from the deck: never both on the same day, never one right after the other. */
+async function pickDaily(): Promise<Daily> {
   const day = dayNumber();
   const half = Math.floor(day / 2);
-  if (day % 2 === 0) return { kind: "tip", tip: TIPS[half % TIPS.length] };
-  const order = shuffled(PROVERBS.length, new Date().getFullYear());
-  return { kind: "proverb", proverb: PROVERBS[order[half % PROVERBS.length]] };
+  const tip: Daily = { kind: "tip", tip: TIPS[half % TIPS.length] };
+  if (day % 2 === 0) return tip;
+  try {
+    const { items } = (await (await fetch("/api/proverbs")).json()) as { items: Proverb[] };
+    const all = [...items, ...EXTRA_PROVERBS];
+    if (!all.length) return tip;
+    const order = shuffled(all.length, new Date().getFullYear());
+    return { kind: "proverb", proverb: all[order[half % all.length]] };
+  } catch {
+    return tip; // offline: a tip instead
+  }
 }
 
 export default function DailyTip() {
@@ -43,7 +51,7 @@ export default function DailyTip() {
     const today = todayKey();
     const lastShown = localStorage.getItem("daily_tip_date");
     if (lastShown === today) return;
-    setDaily(pickDaily());
+    pickDaily().then(setDaily);
   }, []);
 
   function dismiss() {
@@ -95,8 +103,7 @@ export default function DailyTip() {
             <p className="text-xl font-arabic text-gray-600 dark:text-gray-400" dir="rtl" lang="ar">{daily.proverb.ar}</p>
             <p className="text-base font-medium">{daily.proverb.he}</p>
             {daily.proverb.note && <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{daily.proverb.note}</p>}
-            <p className="text-xs text-gray-400">מקור: מילון מדרסה</p>
-          </>
+                      </>
         )}
 
         <button
