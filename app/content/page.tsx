@@ -44,6 +44,7 @@ const sections: Section[] = [
     title: "אוכל",
     emoji: "🍲",
     items: [
+      { name: "▶ תפצ'לו ע(א)לעשא, נגן עם כתוביות לחיצות", url: "/watch", note: "סצנות קצרות · לחיצה על מילה עוצרת ומתרגמת" },
       { type: "playlist", name: "תפצ'לו ע(א)לעשא 1 — בואו לאכול איתי", playlistId: "PL1QztFTkh_cdceBeFh7NVbjAfBDYz8ijR" },
       { type: "playlist", name: "תפצ'לו ע(א)לעשא 2 — בואו לאכול איתי 2", playlistId: "PL1QztFTkh_ceXivgcmWQL1nPeHs3pMz3j" },
       { type: "playlist", name: "טנג'רה וע'טאהא", playlistId: "PL1QztFTkh_cdPhzCKGuYzsdTXt9q3Mhw9" },
@@ -374,6 +375,8 @@ function ResourceRow({
   function handleClick() {
     if (isYT) {
       onExpand(isExpanded ? null : item.url);
+    } else if (item.url.startsWith("/")) {
+      window.location.href = item.url;
     } else {
       window.open(item.url, "_blank", "noopener,noreferrer");
     }

@@ -59,6 +59,7 @@ More detail, only when needed:
 
 ## 3. Done (latest first)
 - **7.11**
+  - **תכנים → אוכל:** a new first button "▶ תפצ'לו ע(א)לעשא, נגן עם כתוביות לחיצות" opens `/watch` in the same window (internal links no longer open a new tab). The YouTube playlists stay below it. Test: `tests/e2e/content-watch.spec.ts`.
   - **iPhone renewal fixed:** it now runs at 08:30, 13:30 and 20:30, warns before expiry, and the app is installed until 14/11.
     - It had been failing since 31/10: `node` was not found, Node 20 was too old for Capacitor, and it exited silently on days the iPhone was unreachable.
   - **Watch:** a phrase can be selected (+ המילה הקודמת / הבאה) with an editable meaning and added as an unverified `phrase` card. The player now scrolls on a phone.
@@ -93,27 +94,26 @@ More detail, only when needed:
 - **iPhone:** renews by itself. The log is at `~/Library/Logs/yalla-reinstall.log`. Ariel is considering the Apple Developer Program ($99), which gives a 1-year signature or TestFlight. `mobile/release.sh` is ready for that.
 
 ## 5. Next, in order
-1. **The תפצ'לו button in "תכנים"** gives "youtube failed to fetch" on the iPhone. Point it at `/watch`.
-2. **Cut the rest of the תפצ'לו episodes into scenes:**
+1. **Cut the rest of the תפצ'לו episodes into scenes:**
    ```bash
    npx tsx scripts/watch-scenes.ts --file <mp4> --series "תפצ'לו ע(א)לעשא" --slug tafaddalu-<name> --cache <dir> --apply
    ```
    The files are in `ARAVIT/תכנים/תפצ'לו ע(א)לעשא/`.
-3. **Single-word translation in a scene** sometimes translates the whole sentence (חַ'לְצוּנַא). Improve the per-word prompt in `scripts/watch-scenes.ts`.
-4. **Burned-in subtitles:** classify each playlist in "תכנים" as colloquial, literary or none, and reorder. Start with colloquial.
+2. **Single-word translation in a scene** sometimes translates the whole sentence (חַ'לְצוּנַא). Improve the per-word prompt in `scripts/watch-scenes.ts`.
+3. **Burned-in subtitles:** classify each playlist in "תכנים" as colloquial, literary or none, and reorder. Start with colloquial.
    - Look for Palestinian or Levantine series that can be downloaded with no burned-in subtitles.
    - Burned-in Hebrew ruins practice.
-5. **Watch, stage 4:**
+4. **Watch, stage 4:**
    - A bar that hides burned-in subtitles.
    - YouTube playback.
    - Import 10–20 short clips from videosinarabic (permission given; embedding is blocked, so download).
    - "קטע היום" at the end of the daily review.
    - Attach the video clip to the card it came from.
-6. **Restart the transcription** (section 4).
-7. **chatifai checks when it is back:**
+5. **Restart the transcription** (section 4).
+6. **chatifai checks when it is back:**
    - All the unverified cards: רים פרג', מפגש 7, oral meeting 4.11, pp. 87–98, 304–305, Preply Roa, the cards added from videos.
    - The situation "שיר שאני אוהב".
-8. **Deck typos waiting for Ariel's approval:** אִלְחַאּ' מַעַכּ, גֹ'וֹז, דַפַעְת עַן חַאלי.
+7. **Deck typos waiting for Ariel's approval:** אִלְחַאּ' מַעַכּ, גֹ'וֹז, דַפַעְת עַן חַאלי.
 
 ## 6. Open questions for Ariel (from notes, status open)
 - **מפגש 4.11:** ביזבט ושתייה, מחל פי, the past of "הוא אהב", "אבא שלי רוצה שתבואו למסעדה שלו", (זבן), תנקיד.
