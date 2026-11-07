@@ -59,6 +59,7 @@ More detail, only when needed:
 
 ## 3. Done (latest first)
 - **7.11**
+  - **Cards, smoking (unverified, משוער):** תַדְחִ'ין עישון, דַחַּ'ן / בִּדַחֵּ'ן, סִיגַ'ארַה / סַגַ'איֵר, וַלַּאעַה מצית, תֻתֻן טבק, מַנְפַצַ'ה מאפרה, מַמְנוּע (א)תַּדְחִ'ין (`scripts/insert-smoking-words.ts`).
   - **תכנים → אוכל:** a new first button "▶ תפצ'לו ע(א)לעשא, נגן עם כתוביות לחיצות" opens `/watch` in the same window (internal links no longer open a new tab). The YouTube playlists stay below it. Test: `tests/e2e/content-watch.spec.ts`.
   - **iPhone renewal fixed:** it now runs at 08:30, 13:30 and 20:30, warns before expiry, and the app is installed until 14/11.
     - It had been failing since 31/10: `node` was not found, Node 20 was too old for Capacitor, and it exited silently on days the iPhone was unreachable.
@@ -80,8 +81,8 @@ More detail, only when needed:
   - "תכנים": missing playlists added, plus food and series sections.
 
 ## 4. Running / waiting
-- **Class transcription** (`npx tsx scripts/auto-clip.ts --hear`) stopped when the old session ended. 3 of 14 were done.
-  - Run it again in the background. Groq allows about 2 hours of audio per hour.
+- **Class transcription** (`npx tsx scripts/auto-clip.ts --hear`) restarted 7.11 in the background. 69 of 77 recordings heard, 8 left (about 10 hours of audio). Groq allows about 2 hours of audio per hour.
+  - If the session ends before it finishes, run it again: it skips what was already heard.
   - Then run:
     ```bash
     npx tsx scripts/auto-clip.ts --write
@@ -109,11 +110,10 @@ More detail, only when needed:
    - Import 10–20 short clips from videosinarabic (permission given; embedding is blocked, so download).
    - "קטע היום" at the end of the daily review.
    - Attach the video clip to the card it came from.
-5. **Restart the transcription** (section 4).
-6. **chatifai checks when it is back:**
-   - All the unverified cards: רים פרג', מפגש 7, oral meeting 4.11, pp. 87–98, 304–305, Preply Roa, the cards added from videos.
+5. **chatifai checks when it is back:**
+   - All the unverified cards: רים פרג', מפגש 7, oral meeting 4.11, pp. 87–98, 304–305, Preply Roa, the cards added from videos, the 7 smoking cards (7.11).
    - The situation "שיר שאני אוהב".
-7. **Deck typos waiting for Ariel's approval:** אִלְחַאּ' מַעַכּ, גֹ'וֹז, דַפַעְת עַן חַאלי.
+6. **Deck typos waiting for Ariel's approval:** אִלְחַאּ' מַעַכּ, גֹ'וֹז, דַפַעְת עַן חַאלי.
 
 ## 6. Open questions for Ariel (from notes, status open)
 - **מפגש 4.11:** ביזבט ושתייה, מחל פי, the past of "הוא אהב", "אבא שלי רוצה שתבואו למסעדה שלו", (זבן), תנקיד.

@@ -49,3 +49,6 @@ backups/
 /public/app
 /mobile/build
 /mobile/*.p8
+
+# graphify knowledge graph (local)
+/graphify-out/
