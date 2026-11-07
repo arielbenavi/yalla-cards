@@ -46,6 +46,7 @@ export function WordSheet({
   onClose,
   added = "no",
   onAdd,
+  onExtend,
 }: {
   word: SentenceWord;
   match: WordMatch;
@@ -57,6 +58,8 @@ export function WordSheet({
   /** "Add as a card" at once, where the text comes with a meaning (the video player). */
   added?: "no" | "adding" | "added" | "existing" | "failed";
   onAdd?: () => void;
+  /** Grow the selection into a phrase by the word before (-1) or after (1). */
+  onExtend?: (dir: -1 | 1) => void;
 }) {
   return (
     <div className="sheet word-sheet" role="dialog" aria-label={word.text}>
@@ -76,6 +79,12 @@ export function WordSheet({
           </>
         ) : (
           <p className="muted">אין כרטיס למילה הזאת</p>
+        )}
+        {onExtend && (
+          <div className="row" data-testid="extend">
+            <button className="btn side" onClick={() => onExtend(-1)}>+ המילה הקודמת</button>
+            <button className="btn side" onClick={() => onExtend(1)}>+ המילה הבאה</button>
+          </div>
         )}
         {onAdd && gloss && (
           <button className="btn primary" disabled={added !== "no" && added !== "failed"} onClick={onAdd} data-testid="add-card">

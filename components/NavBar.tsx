@@ -70,7 +70,8 @@ export default function NavBar() {
             </Link>
           ))}
         </div>
-        <form action="/api/auth/logout" method="POST" className="shrink-0">
+        {/* Wide screens only: on a phone it looked like "back" and signed Ariel out (2026-11-07). There it sits at the bottom of "עוד". */}
+        <form action="/api/auth/logout" method="POST" className="hidden shrink-0 md:block">
           <button type="submit" className="text-sm text-gray-500 hover:text-gray-800">
             {strings.nav.logout}
           </button>
@@ -150,6 +151,11 @@ export default function NavBar() {
                 </div>
               ))}
             </div>
+            <form action="/api/auth/logout" method="POST" className="mt-4 text-center">
+              <button type="submit" className="text-xs text-gray-400">
+                התנתקות מהחשבון
+              </button>
+            </form>
           </div>
         </div>
       )}

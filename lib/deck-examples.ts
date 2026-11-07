@@ -38,7 +38,8 @@ export function buildExampleIndex(cards: ExampleCard[]): ExampleIndex {
     if (c.item_type === "word" || !c.arabic_script || seen.has(c.card_id)) continue;
     seen.add(c.card_id);
     const words = c.arabic_script.split(/[\s،,.؟?!:;/]+/).map(skeleton).filter(Boolean);
-    if (words.length < 3) continue;
+    // A paragraph is not an example: it filled the back of the card (Ariel, 2026-11-07)
+    if (words.length < 3 || words.length > 12) continue;
     for (const key of new Set(words.flatMap(forms))) {
       const list = index.get(key);
       if (list) list.push(c);

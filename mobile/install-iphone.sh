@@ -15,14 +15,14 @@ TEAM_ID=${TEAM_ID:-Y93Y9ZACWZ}            # personal team of the Apple ID signed
 BUNDLE_ID=il.ariel.yalla.personal
 OUT=mobile/build/personal
 
-DEVICE=$(xcrun devicectl list devices 2>/dev/null | grep -i iphone | grep -E ' (available|connected)' | grep -v unavailable | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' | head -1)
+DEVICE=$(xcrun devicectl list devices 2>/dev/null | grep -i iphone | grep -E ' (available|connected)' | grep -v unavailable | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' | head -1 || true)
 [[ -n "$DEVICE" ]] || { echo "✗ no iPhone available — same Wi-Fi as the Mac, unlocked, or plug it in"; exit 1; }
-UDID=$(xcrun xctrace list devices 2>/dev/null | awk -F'[()]' '/iPhone/ && !/Simulator/ {print $(NF-1); exit}')
+UDID=$(xcrun xctrace list devices 2>/dev/null | awk -F'[()]' '/iPhone/ && !/Simulator/ {print $(NF-1); exit}' || true)
 
 # Xcode reuses a cached free profile until it expires, so reinstalling does not
 # by itself renew anything: on 2026-10-31 the app stopped ("no longer
 # available") with a profile from 23/10 while this script reported a date a
-# week ahead. Drop the cached profile when it has under 3 days left, so the
+# week ahead. Drop the cached profile when it has under 4 days left, so the
 # build below makes a fresh 7-day one.
 for dir in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME/Library/MobileDevice/Provisioning Profiles"; do
   [[ -d "$dir" ]] || continue
@@ -32,7 +32,7 @@ for dir in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" "$HOME
     [[ $(echo "$plist" | plutil -extract Entitlements.application-identifier raw -o - - 2>/dev/null) == *"$BUNDLE_ID" ]] || continue
     exp=$(echo "$plist" | plutil -extract ExpirationDate raw -o - - 2>/dev/null)
     left=$(( $(date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$exp" +%s) - $(date +%s) ))
-    if (( left < 3 * 86400 )); then echo "renewing the signing profile (expires $exp)"; rm "$f"; fi
+    if (( left < 4 * 86400 )); then echo "renewing the signing profile (expires $exp)"; rm "$f"; fi
   done
 done
 

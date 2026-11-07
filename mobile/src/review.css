@@ -190,3 +190,7 @@ body:has(.yc.embedded) main { min-height: 0; }
 .yc .watch-editor textarea, .yc .watch-editor input { width: 100%; font-size: 1rem; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 8px; }
 .yc .watch-editor textarea { min-height: 62px; }
 .yc .watch-audio { width: 100%; }
+/* The page around .yc.embedded does not scroll (body:has(.yc.embedded) above), so the
+   player scrolls itself: on a phone the line list runs past the screen. */
+.yc.embedded .watch { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.yc .word-sheet textarea { display: block; width: 100%; min-height: 64px; margin-top: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; font: inherit; color: var(--ink); text-align: right; }

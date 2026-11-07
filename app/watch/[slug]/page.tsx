@@ -32,6 +32,8 @@ export default function WatchPage() {
   const [time, setTime] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [tapped, setTapped] = useState<{ word: SentenceWord; segment: Segment } | null>(null);
+  // The words selected in the tapped line, as indexes into its words: more than one makes a phrase
+  const [span, setSpan] = useState<{ from: number; to: number } | null>(null);
   const [saved, setSaved] = useState<Set<string>>(() => new Set());
   const [added, setAdded] = useState<Record<string, "adding" | "added" | "existing" | "failed">>({});
   const [isAdmin, setIsAdmin] = useState(false);
@@ -87,10 +89,13 @@ export default function WatchPage() {
     wasPlaying.current = !!v && !v.paused;
     v?.pause();
     setTapped({ word, segment });
+    const at = sentenceWords(segment.translit ?? "", segment.ar).findIndex((w) => w.text === word.text);
+    setSpan(at >= 0 ? { from: at, to: at } : null);
   }, []);
 
   const closeSheet = () => {
     setTapped(null);
+    setSpan(null);
     if (wasPlaying.current) void videoRef.current?.play();
   };
 
@@ -105,6 +110,20 @@ export default function WatchPage() {
     setData((d) => d && { ...d, segments: d.segments.map((x) => (x.id === segment.id ? { ...x, ...segment } : x)) });
     setEditing(null);
     return true;
+  };
+
+  // A word or phrase becomes an unverified card at once (admin only)
+  const addCard = async (text: string, arabic: string | null, meaning: string, segment: Segment) => {
+    setAdded((a) => ({ ...a, [text]: "adding" }));
+    const res = await fetch("/api/watch/add-card", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ word: text, arabic, meaning, sentence: segment.translit, source: data?.item.title }),
+    }).catch(() => null);
+    const body = res?.ok ? await res.json() : null;
+    setAdded((a) => ({ ...a, [text]: !body ? "failed" : body.existing ? "existing" : "added" }));
+    if (body && !body.existing) setSaved((x) => new Set(x).add(text));
+    void storeRef.current?.sync().then(() => storeRef.current && setWordIndex(buildWordIndex(storeRef.current.snapshot().cards)));
   };
 
   const unchecked = data?.segments.filter((s) => !s.verified).length ?? 0;
@@ -187,7 +206,19 @@ export default function WatchPage() {
         </ol>
       </div>
 
-      {tapped && (
+      {tapped && span && span.to > span.from && (
+        <PhraseSheet
+          words={sentenceWords(tapped.segment.translit ?? "", tapped.segment.ar).slice(span.from, span.to + 1)}
+          wholeLine={span.from === 0 && span.to === sentenceWords(tapped.segment.translit ?? "", tapped.segment.ar).length - 1}
+          segment={tapped.segment}
+          glosses={data.item.glosses}
+          added={added}
+          onExtend={(dir) => setSpan(grow(span, dir, tapped.segment))}
+          onAdd={(text, arabic, meaning) => void addCard(text, arabic, meaning, tapped.segment)}
+          onClose={closeSheet}
+        />
+      )}
+      {tapped && !(span && span.to > span.from) && (
         <WordSheet
           word={tapped.word}
           gloss={data.item.glosses[translitKey(tapped.word.text)]}
@@ -207,29 +238,71 @@ export default function WatchPage() {
           added={added[tapped.word.text] ?? "no"}
           onAdd={
             isAdmin
-              ? async () => {
-                  const w = tapped.word.text;
-                  setAdded((a) => ({ ...a, [w]: "adding" }));
-                  const res = await fetch("/api/watch/add-card", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      word: w,
-                      arabic: tapped.word.arabic,
-                      meaning: data.item.glosses[translitKey(w)],
-                      sentence: tapped.segment.translit,
-                      source: data.item.title,
-                    }),
-                  }).catch(() => null);
-                  const body = res?.ok ? await res.json() : null;
-                  setAdded((a) => ({ ...a, [w]: !body ? "failed" : body.existing ? "existing" : "added" }));
-                  if (body && !body.existing) setSaved((x) => new Set(x).add(w));
-                  void storeRef.current?.sync().then(() => storeRef.current && setWordIndex(buildWordIndex(storeRef.current.snapshot().cards)));
-                }
+              ? () => void addCard(tapped.word.text, tapped.word.arabic, data.item.glosses[translitKey(tapped.word.text)] ?? "", tapped.segment)
               : undefined
           }
+          onExtend={isAdmin && span ? (dir) => setSpan(grow(span, dir, tapped.segment)) : undefined}
         />
       )}
+    </div>
+  );
+}
+
+function grow(span: { from: number; to: number }, dir: -1 | 1, segment: Segment) {
+  const last = sentenceWords(segment.translit ?? "", segment.ar).length - 1;
+  return dir < 0 ? { from: Math.max(0, span.from - 1), to: span.to } : { from: span.from, to: Math.min(last, span.to + 1) };
+}
+
+/** Several words of a line selected together, added as one phrase card with a meaning the admin can fix. */
+function PhraseSheet({
+  words,
+  wholeLine,
+  segment,
+  glosses,
+  added,
+  onExtend,
+  onAdd,
+  onClose,
+}: {
+  words: SentenceWord[];
+  wholeLine: boolean;
+  segment: Segment;
+  glosses: Record<string, string>;
+  added: Record<string, "adding" | "added" | "existing" | "failed">;
+  onExtend: (dir: -1 | 1) => void;
+  onAdd: (text: string, arabic: string | null, meaning: string) => void;
+  onClose: () => void;
+}) {
+  const text = words.map((w) => w.text).join(" ");
+  const arabic = words.every((w) => w.arabic) ? words.map((w) => w.arabic).join(" ") : null;
+  // The line's own translation when the whole line is chosen, else the words' meanings in order
+  const guess = wholeLine && segment.he ? segment.he : words.map((w) => glosses[translitKey(w.text)] ?? "…").join(" ");
+  const [meaning, setMeaning] = useState(guess);
+  useEffect(() => setMeaning(guess), [guess]);
+  const state: "no" | (typeof added)[string] = added[text] ?? "no";
+  return (
+    <div className="sheet word-sheet" role="dialog" aria-label={text} data-testid="phrase-sheet">
+      <button className="sheet-backdrop" aria-label="סגור" onClick={onClose} />
+      <div className="sheet-body">
+        <p className="word-title nikud">{text}</p>
+        {arabic && <p className="ar muted" dir="rtl">{arabic}</p>}
+        <label className="muted small">
+          פירוש (אפשר לתקן)
+          <textarea dir="rtl" value={meaning} onChange={(e) => setMeaning(e.target.value)} data-testid="phrase-meaning" />
+        </label>
+        <div className="row">
+          <button className="btn side" onClick={() => onExtend(-1)}>+ המילה הקודמת</button>
+          <button className="btn side" onClick={() => onExtend(1)}>+ המילה הבאה</button>
+        </div>
+        <button
+          className="btn primary"
+          disabled={!meaning.trim() || (state !== "no" && state !== "failed")}
+          onClick={() => onAdd(text, arabic, meaning.trim())}
+          data-testid="add-phrase"
+        >
+          {state === "added" ? "נוסף ככרטיס ✓ (לא מאומת)" : state === "existing" ? "כבר יש כרטיס כזה" : state === "adding" ? "מוסיף…" : state === "failed" ? "נכשל, לנסות שוב" : "הוסף ביטוי ככרטיס"}
+        </button>
+      </div>
     </div>
   );
 }

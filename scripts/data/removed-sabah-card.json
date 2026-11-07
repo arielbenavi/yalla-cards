@@ -1,0 +1,43 @@
+{
+ "removed_at": "2026-11-07T08:33:49.164Z",
+ "reason": "Ariel 2026-11-07: says צֻבֵּח, not צַבַּאח, for בוקר (card exists)",
+ "card": {
+  "id": "c784fba6-e392-4774-8dd9-199bf045a1b2",
+  "lesson_id": null,
+  "hebrew_meaning": "בוקר",
+  "translit_nikud": "צַבַּאח",
+  "translit_normalized": "צבאח",
+  "arabic_script": "صباح",
+  "item_type": "word",
+  "recording_id": "21dfae1a-b497-4496-867b-40c0ee0abb3e",
+  "audio_start_sec": 17.3,
+  "audio_end_sec": 18.00363068533416,
+  "notes": "chatifai: מופיעה בהרבה צירופים",
+  "created_at": "2026-08-03T21:31:55.576188+00:00",
+  "clip_path": "f4ceb6c1-3fe0-45c0-b390-8d21172df86c.wav",
+  "batch_id": null,
+  "plural_form": null,
+  "self_score": null,
+  "chatifai_verified": true,
+  "course_verified": false,
+  "course_note": null
+ },
+ "srs": [
+  {
+   "id": "fb4239ff-dbfc-4bac-8bfa-0575cff9014d",
+   "card_id": "c784fba6-e392-4774-8dd9-199bf045a1b2",
+   "direction": "he_to_ar",
+   "due": "2026-08-03T21:31:55.672933+00:00",
+   "stability": 0,
+   "difficulty": 0,
+   "elapsed_days": 0,
+   "scheduled_days": 0,
+   "learning_steps": 0,
+   "reps": 0,
+   "lapses": 0,
+   "state": 0,
+   "last_review": null
+  }
+ ],
+ "logs": []
+}
