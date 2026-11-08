@@ -13,6 +13,13 @@ type ProgressMap = Record<string, Progress>;
 // ---- Data ----
 const sections: Section[] = [
   {
+    title: "פיד",
+    emoji: "📱",
+    items: [
+      { name: "▶ פיד מ־X: פוסטים בעאמיה, מילים לחיצות", url: "/feed", note: "ערבית בלבד, ובלחיצה תעתיק או עברית · מילה לחיצה הופכת לכרטיס" },
+    ],
+  },
+  {
     title: "סרטונים בערבית",
     emoji: "🎬",
     items: [

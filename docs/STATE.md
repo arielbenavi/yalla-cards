@@ -27,7 +27,7 @@ More detail, only when needed:
 1. **Reversible, additive changes only.** Never write FSRS state (`card_srs`, `review_log`), except the `card_srs` row (`direction: "he_to_ar"`) of a new card.
    - Before deleting a card, back it up to `scripts/data/*.json`.
 2. **Migrations:**
-   - Write `supabase/migrations/00XX_*.sql`, then run `npx tsx scripts/migrate.ts`. The last one is 0034.
+   - Write `supabase/migrations/00XX_*.sql`, then run `npx tsx scripts/migrate.ts`. The last one is 0036.
    - Never ask Ariel to run SQL.
 3. **Tests:** a change to review, inbox or recordings needs `npx playwright test` to pass in full.
    - Do not skip tests.
@@ -58,6 +58,11 @@ More detail, only when needed:
     - The daily queue takes 40 new cards a day.
 
 ## 3. Done (latest first)
+- **8.11**
+  - **Feed MVP (`/feed`, under תכנים → פיד):** 59 dialect posts from 9 Gazan X accounts that Ariel follows. Arabic only by default; each post can show its transliteration (משוער) or Hebrew. Tapping a word shows its meaning and card, "+ המילה הבאה" makes a phrase, and admin adds an unverified card (same lesson as video words).
+    - Table `feed_posts` (0035–0036). Per-word translit and meanings by Gemini (`lib/feed-annotate.ts`). Seed: `scripts/feed-seed.ts scripts/data/feed-seed-2026-11-08.json`.
+    - Daily cron `/api/feed/fetch` (`vercel.json`) pulls new posts through the X API (`lib/feed-accounts.ts`). It does nothing until Ariel opens an X developer account, buys credit (about $15/month) and sets `X_BEARER_TOKEN` (+ `CRON_SECRET`) in Vercel.
+    - Watch's add-card sheets moved to `app/watch/sheets.tsx` (shared). Test: `tests/e2e/feed.spec.ts`.
 - **7.11**
   - **Adding a word from a video:** "הוסף ככרטיס" now opens a sheet with the base form (no ל/ה/ו/ב, no suffixes) and all its forms (m / f / pl, or past / present), suggested by Gemini (`/api/watch/base-form`) and checked against Madrasa (`lib/dialect-sources.ts`), every field editable. The card gets the line's audio cut from the video (`clip_path`). Not yet tried on the iPhone.
   - **The 47 word cards from videos** were moved to their base form with all forms (`scripts/fix-video-cards-base-forms.ts`, backup `scripts/data/video-cards-backup-2026-11-07.json`), noted "צורות משוערות". The duplicate (אל)צַּבִּיַּה was deleted on Ariel's request (8.11; it is in the backup).
@@ -146,7 +151,7 @@ More detail, only when needed:
 - **Notifications for new features:** "האם התאמנת על שיחה היום?" with a button that opens 3 random situations.
 - **Conversation simulations built from all the cards:** a strong model derives building blocks for several kinds of conversations.
 - **Social feed:** reels in Arabic (Instagram/Facebook, for example the girl who cooks).
-  - **Twitter/X research (7.11):** [twitter-feed-research.md](twitter-feed-research.md). The X API on pay-per-use costs about $15/month for 3,000 posts. His following list adds 10 Gazan dialect accounts (Jerusalem/Jaffa voices still missing); most dialect content is on Instagram/Facebook, not X. Next: Ariel builds a public X List. It reverses one decision of [arabic-feed.md](arabic-feed.md) (no X import), so it needs his OK.
+  - **Twitter/X research (7.11):** [twitter-feed-research.md](twitter-feed-research.md). The X API on pay-per-use costs about $15/month for 3,000 posts. His following list adds 10 Gazan dialect accounts (Jerusalem/Jaffa voices still missing); most dialect content is on Instagram/Facebook, not X. MVP built 8.11 (see Done), Ariel approved importing from X. Waiting for his feedback and an `X_BEARER_TOKEN`.
 - **Playlists over 15 videos:** need a YouTube Data API key (ג'ארכ קריבכ, סלם ותעלם, תעלם ותכלם).
 - **Offline:** done for review (service worker plus the iPhone app). Not done for the other screens.
 - **Practice beyond the daily review:** a red dot exists. A popup or "next practice" is still open.

@@ -194,3 +194,12 @@ body:has(.yc.embedded) main { min-height: 0; }
    player scrolls itself: on a phone the line list runs past the screen. */
 .yc.embedded .watch { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .yc .word-sheet textarea { display: block; width: 100%; min-height: 64px; margin-top: 4px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; font: inherit; color: var(--ink); text-align: right; }
+
+/* /feed: social posts in spoken Arabic, one card each */
+.yc .feed-posts { display: flex; flex-direction: column; gap: 10px; list-style: none; padding: 0; }
+.yc .feed-post { background: var(--surface); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+.yc .feed-meta { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.yc .feed-author { font-weight: 700; }
+.yc .feed-tools { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.yc .feed-tools .link { margin-inline-start: auto; }
+.yc .word-tap.sel { background: #dbe6f6; border-radius: 4px; }

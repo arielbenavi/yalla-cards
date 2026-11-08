@@ -6,6 +6,7 @@ import Link from "next/link";
 import { strings } from "@/lib/strings";
 import { buildWordIndex, lookupWord, sentenceWords, translitKey, type SentenceWord, type WordIndex } from "@/lib/word-lookup";
 import { TappableWords, WordSheet } from "@/mobile/src/WordTap";
+import { AddWordSheet, PhraseSheet } from "../sheets";
 import "@/mobile/src/review.css";
 import { createClip } from "@/lib/clip";
 import { supabaseBrowser } from "@/lib/supabase-browser";
@@ -237,9 +238,7 @@ export default function WatchPage() {
       {tapped && span && span.to > span.from && (
         <PhraseSheet
           words={sentenceWords(tapped.segment.translit ?? "", tapped.segment.ar).slice(span.from, span.to + 1)}
-          wholeLine={span.from === 0 && span.to === sentenceWords(tapped.segment.translit ?? "", tapped.segment.ar).length - 1}
-          segment={tapped.segment}
-          glosses={data.item.glosses}
+          guess={phraseGuess(tapped.segment, span, data.item.glosses)}
           added={added}
           onExtend={(dir) => setSpan(grow(span, dir, tapped.segment))}
           onAdd={(text, arabic, meaning) => void addCard(text, arabic, meaning, tapped.segment)}
@@ -275,7 +274,7 @@ export default function WatchPage() {
       {baseFor && (
         <AddWordSheet
           word={baseFor.word}
-          segment={baseFor.segment}
+          sentence={baseFor.segment.translit}
           gloss={data.item.glosses[translitKey(baseFor.word.text)] ?? ""}
           onAdd={(text, arabic, meaning, seen, withAudio) => addCard(text, arabic, meaning, baseFor.segment, { seen, withAudio })}
           onClose={() => setBaseFor(null)}
@@ -285,147 +284,16 @@ export default function WatchPage() {
   );
 }
 
+/** The line's own translation when the whole line is chosen, else the words' meanings in order */
+function phraseGuess(segment: Segment, span: { from: number; to: number }, glosses: Record<string, string>) {
+  const words = sentenceWords(segment.translit ?? "", segment.ar);
+  if (span.from === 0 && span.to === words.length - 1 && segment.he) return segment.he;
+  return words.slice(span.from, span.to + 1).map((w) => glosses[translitKey(w.text)] ?? "…").join(" ");
+}
+
 function grow(span: { from: number; to: number }, dir: -1 | 1, segment: Segment) {
   const last = sentenceWords(segment.translit ?? "", segment.ar).length - 1;
   return dir < 0 ? { from: Math.max(0, span.from - 1), to: span.to } : { from: span.from, to: Math.min(last, span.to + 1) };
-}
-
-/** Before a tapped word becomes a card: its base form (no ל/ה/ו/ב, no suffixes) and all its forms,
- *  suggested by /api/watch/base-form and checked against Madrasa, every field editable. */
-function AddWordSheet({
-  word,
-  segment,
-  gloss,
-  onAdd,
-  onClose,
-}: {
-  word: SentenceWord;
-  segment: Segment;
-  gloss: string;
-  onAdd: (text: string, arabic: string | null, meaning: string, seen: string, withAudio: boolean) => Promise<string>;
-  onClose: () => void;
-}) {
-  const [translit, setTranslit] = useState(word.text);
-  const [arabic, setArabic] = useState(word.arabic ?? "");
-  const [meaning, setMeaning] = useState(gloss);
-  const [seen, setSeen] = useState("");
-  const [withAudio, setWithAudio] = useState(true);
-  const [madrasa, setMadrasa] = useState<{ agrees: boolean | null; entries: { he: string; ar: string; tr: string }[] } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [state, setState] = useState("no");
-  useEffect(() => {
-    fetch("/api/watch/base-form", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ word: word.text, arabic: word.arabic, sentence: segment.translit, gloss }),
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((s) => {
-        if (s) {
-          setTranslit(s.translit);
-          setArabic(s.arabic);
-          setMeaning(s.meaning);
-          setSeen(s.seen);
-          setMadrasa(s.madrasa);
-        }
-      })
-      .finally(() => setLoading(false));
-  }, [word, segment, gloss]);
-  return (
-    <div className="sheet word-sheet" role="dialog" aria-label={word.text} data-testid="add-word-sheet">
-      <button className="sheet-backdrop" aria-label="סגור" onClick={onClose} />
-      <div className="sheet-body">
-        <p className="muted small">{loading ? "מחפש צורת בסיס…" : seen || "צורת בסיס"}</p>
-        <label className="muted small">
-          תעתיק (כל הצורות)
-          <input dir="rtl" className="nikud" value={translit} onChange={(e) => setTranslit(e.target.value)} data-testid="base-translit" />
-        </label>
-        <label className="muted small">
-          ערבית
-          <input dir="rtl" value={arabic} onChange={(e) => setArabic(e.target.value)} />
-        </label>
-        <label className="muted small">
-          פירוש
-          <input dir="rtl" value={meaning} onChange={(e) => setMeaning(e.target.value)} />
-        </label>
-        {madrasa && (
-          <p className="muted small">
-            {madrasa.agrees === null ? "מדרסה: אין ערך" : madrasa.agrees ? "✓ תואם מדרסה" : "✗ מדרסה אומרת אחרת:"}
-            {madrasa.agrees === false && madrasa.entries.map((e) => ` ${e.he}: ${e.ar} ${e.tr}`).join(" ·")}
-          </p>
-        )}
-        <label className="muted small">
-          <input type="checkbox" checked={withAudio} onChange={(e) => setWithAudio(e.target.checked)} /> עם הקול של השורה מהסרטון
-        </label>
-        <button
-          className="btn primary"
-          disabled={loading || !translit.trim() || !meaning.trim() || (state !== "no" && state !== "failed")}
-          onClick={async () => {
-            setState("adding");
-            const s = await onAdd(translit.trim(), arabic.trim() || null, meaning.trim(), seen, withAudio);
-            setState(s);
-          }}
-          data-testid="add-base-word"
-        >
-          {state === "added" ? "נוסף ככרטיס ✓ (לא מאומת)" : state === "existing" ? "כבר יש כרטיס כזה" : state === "adding" ? "מוסיף…" : state === "failed" ? "נכשל, לנסות שוב" : "הוסף ככרטיס"}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/** Several words of a line selected together, added as one phrase card with a meaning the admin can fix. */
-function PhraseSheet({
-  words,
-  wholeLine,
-  segment,
-  glosses,
-  added,
-  onExtend,
-  onAdd,
-  onClose,
-}: {
-  words: SentenceWord[];
-  wholeLine: boolean;
-  segment: Segment;
-  glosses: Record<string, string>;
-  added: Record<string, "adding" | "added" | "existing" | "failed">;
-  onExtend: (dir: -1 | 1) => void;
-  onAdd: (text: string, arabic: string | null, meaning: string) => void;
-  onClose: () => void;
-}) {
-  const text = words.map((w) => w.text).join(" ");
-  const arabic = words.every((w) => w.arabic) ? words.map((w) => w.arabic).join(" ") : null;
-  // The line's own translation when the whole line is chosen, else the words' meanings in order
-  const guess = wholeLine && segment.he ? segment.he : words.map((w) => glosses[translitKey(w.text)] ?? "…").join(" ");
-  const [meaning, setMeaning] = useState(guess);
-  useEffect(() => setMeaning(guess), [guess]);
-  const state = (added[text] as (typeof added)[string] | undefined) ?? "no";
-  return (
-    <div className="sheet word-sheet" role="dialog" aria-label={text} data-testid="phrase-sheet">
-      <button className="sheet-backdrop" aria-label="סגור" onClick={onClose} />
-      <div className="sheet-body">
-        <p className="word-title nikud">{text}</p>
-        {arabic && <p className="ar muted" dir="rtl">{arabic}</p>}
-        <label className="muted small">
-          פירוש (אפשר לתקן)
-          <textarea dir="rtl" value={meaning} onChange={(e) => setMeaning(e.target.value)} data-testid="phrase-meaning" />
-        </label>
-        <div className="row">
-          <button className="btn side" onClick={() => onExtend(-1)}>+ המילה הקודמת</button>
-          <button className="btn side" onClick={() => onExtend(1)}>+ המילה הבאה</button>
-        </div>
-        <button
-          className="btn primary"
-          disabled={!meaning.trim() || (state !== "no" && state !== "failed")}
-          onClick={() => onAdd(text, arabic, meaning.trim())}
-          data-testid="add-phrase"
-        >
-          {state === "added" ? "נוסף ככרטיס ✓ (לא מאומת)" : state === "existing" ? "כבר יש כרטיס כזה" : state === "adding" ? "מוסיף…" : state === "failed" ? "נכשל, לנסות שוב" : "הוסף ביטוי ככרטיס"}
-        </button>
-      </div>
-    </div>
-  );
 }
 
 function LineEditor({
