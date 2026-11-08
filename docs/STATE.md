@@ -144,7 +144,7 @@ More detail, only when needed:
 - **Notifications for new features:** "האם התאמנת על שיחה היום?" with a button that opens 3 random situations.
 - **Conversation simulations built from all the cards:** a strong model derives building blocks for several kinds of conversations.
 - **Social feed:** reels in Arabic (Instagram/Facebook, for example the girl who cooks).
-  - **Twitter/X research (7.11):** [twitter-feed-research.md](twitter-feed-research.md). The X API on pay-per-use costs about $15/month for 3,000 posts. Only 3 handles are verified, and most dialect content is on Instagram/Facebook, not X. Next: Ariel builds a public X List. It reverses one decision of [arabic-feed.md](arabic-feed.md) (no X import), so it needs his OK.
+  - **Twitter/X research (7.11):** [twitter-feed-research.md](twitter-feed-research.md). The X API on pay-per-use costs about $15/month for 3,000 posts. His following list adds 9 Gazan dialect accounts (Jerusalem/Jaffa voices still missing); most dialect content is on Instagram/Facebook, not X. Next: Ariel builds a public X List. It reverses one decision of [arabic-feed.md](arabic-feed.md) (no X import), so it needs his OK.
 - **Playlists over 15 videos:** need a YouTube Data API key (ג'ארכ קריבכ, סלם ותעלם, תעלם ותכלם).
 - **Offline:** done for review (service worker plus the iPhone app). Not done for the other screens.
 - **Practice beyond the daily review:** a red dot exists. A popup or "next practice" is still open.

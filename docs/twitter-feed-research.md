@@ -45,6 +45,36 @@ The research also dropped some accounts as poor fits. These are mostly-English j
 
 **Next step to finish the list:** Ariel spends 10 minutes on x.com building one **public X List**. He can start from the names above, open each profile to check that it is live and how much of it is dialect, and add accounts that show up in their replies. He then sends the list URL. The List is also the input that the fetch step polls. A later session with browser access could do the same check instead.
 
+### Update 7.11: Ariel's own following list (@PudaBeats)
+
+Ariel's account follows 317 accounts. 33 of them are Arab, Palestinian or Israeli Arabic-speakers. About 6 recent posts from each were read in his logged-in Chrome (read-only).
+
+The account has Grok auto-translation on, so many Arabic posts showed up in English. The Arabic share below is therefore a lower bound. "Last" is the newest post on the profile and may be a pinned post. Almost all of these accounts are Gazan, and Gazan dialect differs from Jerusalem/Jaffa (for example ق, and some vocabulary), so the cards still need a Jerusalem check.
+
+**Dialect-heavy (candidates for the List):**
+
+| Handle | Who | Sample | Arabic share seen | Last |
+|---|---|---|---|---|
+| `@Suliman_y0unis` | Gaza, computer engineer | دخلت فترة بعدت عن كل اشي… انو اركز… وهيك | 4/6 | 2026-10-28 |
+| `@aya_megahed12` | Gaza, everyday life | ظلو مفهمينا… وكبرنا واحنا فاهمين هيك | 2/6 (the rest translated) | 2026-11-06 |
+| `@DimaAbuuMousa` | Gaza | من ثلاث سنين وإحنا بنقول: يومين وراجعين… ولسا | 2/4, plus religious فصحى | 2026-11-05 |
+| `@YazanEzzedin` | Copywriter (Arabic marketing) | مش فاضي لمنصة x… قبل لا تستخدم هالأداة | 5/6 | 2026-04 |
+| `@MysaraGaza` | Gazan expat | اصبر شوية احتمال يلومونا احنا | 1/6 (the rest translated) | 2025-12 |
+| `@Ahmed_marzouq19` | Palestinian, medicine | صباح الخييير يا اهل الخير ردو الصباح علينا | 2/6 | 2026-09 |
+| `@ibrahimzaeem23` | Palestinian | فهموني بس كيف بتسافروا؟؟ / هداك الوقت | 6/6 | unclear (2023 pinned?) |
+| `@Gazabibliophile` | Gaza, reader | معلش لازم نفرح عشان… | 3/6, mixed | unclear |
+| `@Xgazag` | Gaza | short, mostly quote-posts | 6/6 | 2025-11 |
+
+**Mostly فصحى, news, English or not Palestinian:**
+- **News or فصحى:** `@WaelAboOmer` (Gaza journalist, posts daily, news), `@NajiS1911`, `@Muhanned27027`, `@mohabusaif` (فصحى and religious, some dialect).
+- **English:** `@motazazaiza9` (confirmed; it corrects `azaizamotaz9` above), `@Almeqdad`, `@HowidyHamza`, `@afalkhatib`.
+- **Unclear, everything showed as translated:** `@Hanzpal2`, `@kamelshiakh22`, `@ustafa_ad`, `@henoouda_`, `@ahmedhijazee`, `@HasanDorr`.
+- **Not Palestinian dialect:** `@7anaf22` writes Egyptian (ده، احا، هحاول).
+- **Dormant:** `@hassan1sms` (2014), `@AnasAlSharif0`, `@HossamShabat` (both killed).
+- **Confirmed handle:** `@AyOdeh` is followed.
+
+**Result:** 9 dialect candidates, all ordinary Gazan accounts. Turning Grok translation off (Settings → Language) would show the original text and give a fairer count. Jerusalem/Jaffa/48 voices are still missing.
+
 ## The official API wins on fragility, and the scrapers win on price
 
 | Option | Cost for ~3,000 posts/month | Fragility | Verdict |
