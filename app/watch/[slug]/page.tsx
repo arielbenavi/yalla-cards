@@ -7,6 +7,8 @@ import { strings } from "@/lib/strings";
 import { buildWordIndex, lookupWord, sentenceWords, translitKey, type SentenceWord, type WordIndex } from "@/lib/word-lookup";
 import { TappableWords, WordSheet } from "@/mobile/src/WordTap";
 import "@/mobile/src/review.css";
+import { createClip } from "@/lib/clip";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type Segment = { id: string; idx: number; start_sec: number; end_sec: number; ar: string | null; translit: string | null; he: string | null; verified: boolean };
 type Data = { item: { title: string; series?: string | null; source_url: string | null; glosses: Record<string, string> }; segments: Segment[]; media_url: string | null };
@@ -37,6 +39,8 @@ export default function WatchPage() {
   const [saved, setSaved] = useState<Set<string>>(() => new Set());
   const [added, setAdded] = useState<Record<string, "adding" | "added" | "existing" | "failed">>({});
   const [isAdmin, setIsAdmin] = useState(false);
+  // A tapped word on its way to becoming a card: its base form and forms are suggested first
+  const [baseFor, setBaseFor] = useState<{ word: SentenceWord; segment: Segment } | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [wordIndex, setWordIndex] = useState<WordIndex>(() => buildWordIndex([]));
   const storeRef = useRef<typeof import("@/mobile/src/store") | null>(null);
@@ -113,17 +117,41 @@ export default function WatchPage() {
   };
 
   // A word or phrase becomes an unverified card at once (admin only)
-  const addCard = async (text: string, arabic: string | null, meaning: string, segment: Segment) => {
+  const addCard = async (
+    text: string,
+    arabic: string | null,
+    meaning: string,
+    segment: Segment,
+    extra: { seen?: string; withAudio?: boolean } = { withAudio: true },
+  ) => {
     setAdded((a) => ({ ...a, [text]: "adding" }));
+    // The line's own audio, cut from the video, so the card comes with its pronunciation
+    let clip_path: string | null = null;
+    if (extra.withAudio && data?.media_url) {
+      try {
+        const blob = await createClip(data.media_url, Number(segment.start_sec), Number(segment.end_sec));
+        const { path, token } = await fetch("/api/recordings/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ extension: "wav" }),
+        }).then((r) => r.json());
+        const { error } = await supabaseBrowser().storage.from("recordings").uploadToSignedUrl(path, token, blob);
+        if (!error) clip_path = path;
+      } catch {
+        // no audio is better than no card
+      }
+    }
     const res = await fetch("/api/watch/add-card", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ word: text, arabic, meaning, sentence: segment.translit, source: data?.item.title }),
+      body: JSON.stringify({ word: text, arabic, meaning, sentence: segment.translit, source: data?.item.title, seen: extra.seen, clip_path }),
     }).catch(() => null);
     const body = res?.ok ? await res.json() : null;
-    setAdded((a) => ({ ...a, [text]: !body ? "failed" : body.existing ? "existing" : "added" }));
+    const state = !body ? "failed" : body.existing ? "existing" : "added";
+    setAdded((a) => ({ ...a, [text]: state }));
     if (body && !body.existing) setSaved((x) => new Set(x).add(text));
     void storeRef.current?.sync().then(() => storeRef.current && setWordIndex(buildWordIndex(storeRef.current.snapshot().cards)));
+    return state;
   };
 
   const unchecked = data?.segments.filter((s) => !s.verified).length ?? 0;
@@ -238,10 +266,19 @@ export default function WatchPage() {
           added={added[tapped.word.text] ?? "no"}
           onAdd={
             isAdmin
-              ? () => void addCard(tapped.word.text, tapped.word.arabic, data.item.glosses[translitKey(tapped.word.text)] ?? "", tapped.segment)
+              ? () => setBaseFor({ word: tapped.word, segment: tapped.segment })
               : undefined
           }
           onExtend={isAdmin && span ? (dir) => setSpan(grow(span, dir, tapped.segment)) : undefined}
+        />
+      )}
+      {baseFor && (
+        <AddWordSheet
+          word={baseFor.word}
+          segment={baseFor.segment}
+          gloss={data.item.glosses[translitKey(baseFor.word.text)] ?? ""}
+          onAdd={(text, arabic, meaning, seen, withAudio) => addCard(text, arabic, meaning, baseFor.segment, { seen, withAudio })}
+          onClose={() => setBaseFor(null)}
         />
       )}
     </div>
@@ -251,6 +288,90 @@ export default function WatchPage() {
 function grow(span: { from: number; to: number }, dir: -1 | 1, segment: Segment) {
   const last = sentenceWords(segment.translit ?? "", segment.ar).length - 1;
   return dir < 0 ? { from: Math.max(0, span.from - 1), to: span.to } : { from: span.from, to: Math.min(last, span.to + 1) };
+}
+
+/** Before a tapped word becomes a card: its base form (no ל/ה/ו/ב, no suffixes) and all its forms,
+ *  suggested by /api/watch/base-form and checked against Madrasa, every field editable. */
+function AddWordSheet({
+  word,
+  segment,
+  gloss,
+  onAdd,
+  onClose,
+}: {
+  word: SentenceWord;
+  segment: Segment;
+  gloss: string;
+  onAdd: (text: string, arabic: string | null, meaning: string, seen: string, withAudio: boolean) => Promise<string>;
+  onClose: () => void;
+}) {
+  const [translit, setTranslit] = useState(word.text);
+  const [arabic, setArabic] = useState(word.arabic ?? "");
+  const [meaning, setMeaning] = useState(gloss);
+  const [seen, setSeen] = useState("");
+  const [withAudio, setWithAudio] = useState(true);
+  const [madrasa, setMadrasa] = useState<{ agrees: boolean | null; entries: { he: string; ar: string; tr: string }[] } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState("no");
+  useEffect(() => {
+    fetch("/api/watch/base-form", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ word: word.text, arabic: word.arabic, sentence: segment.translit, gloss }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => {
+        if (s) {
+          setTranslit(s.translit);
+          setArabic(s.arabic);
+          setMeaning(s.meaning);
+          setSeen(s.seen);
+          setMadrasa(s.madrasa);
+        }
+      })
+      .finally(() => setLoading(false));
+  }, [word, segment, gloss]);
+  return (
+    <div className="sheet word-sheet" role="dialog" aria-label={word.text} data-testid="add-word-sheet">
+      <button className="sheet-backdrop" aria-label="סגור" onClick={onClose} />
+      <div className="sheet-body">
+        <p className="muted small">{loading ? "מחפש צורת בסיס…" : seen || "צורת בסיס"}</p>
+        <label className="muted small">
+          תעתיק (כל הצורות)
+          <input dir="rtl" className="nikud" value={translit} onChange={(e) => setTranslit(e.target.value)} data-testid="base-translit" />
+        </label>
+        <label className="muted small">
+          ערבית
+          <input dir="rtl" value={arabic} onChange={(e) => setArabic(e.target.value)} />
+        </label>
+        <label className="muted small">
+          פירוש
+          <input dir="rtl" value={meaning} onChange={(e) => setMeaning(e.target.value)} />
+        </label>
+        {madrasa && (
+          <p className="muted small">
+            {madrasa.agrees === null ? "מדרסה: אין ערך" : madrasa.agrees ? "✓ תואם מדרסה" : "✗ מדרסה אומרת אחרת:"}
+            {madrasa.agrees === false && madrasa.entries.map((e) => ` ${e.he}: ${e.ar} ${e.tr}`).join(" ·")}
+          </p>
+        )}
+        <label className="muted small">
+          <input type="checkbox" checked={withAudio} onChange={(e) => setWithAudio(e.target.checked)} /> עם הקול של השורה מהסרטון
+        </label>
+        <button
+          className="btn primary"
+          disabled={loading || !translit.trim() || !meaning.trim() || (state !== "no" && state !== "failed")}
+          onClick={async () => {
+            setState("adding");
+            const s = await onAdd(translit.trim(), arabic.trim() || null, meaning.trim(), seen, withAudio);
+            setState(s);
+          }}
+          data-testid="add-base-word"
+        >
+          {state === "added" ? "נוסף ככרטיס ✓ (לא מאומת)" : state === "existing" ? "כבר יש כרטיס כזה" : state === "adding" ? "מוסיף…" : state === "failed" ? "נכשל, לנסות שוב" : "הוסף ככרטיס"}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /** Several words of a line selected together, added as one phrase card with a meaning the admin can fix. */

@@ -370,7 +370,7 @@ test("the menu: practice lives under one tab, admin screens under another, מפ�
   }
 });
 
-test("/watch: the admin adds a tapped word as an unverified card", async ({ page }) => {
+test("/watch: the admin adds a tapped word, in its base form, as an unverified card", async ({ page }) => {
   await login(page);
   await page.route("**/api/mobile/deck", (r) => r.fulfill({ json: { generated_at: new Date().toISOString(), cards: [], reviews: [], audio: {} } }));
   await page.route("**/api/mobile/sync", (r) => r.fulfill({ json: { ok: true, applied: 0 } }));
@@ -388,9 +388,18 @@ test("/watch: the admin adds a tapped word as an unverified card", async ({ page
     posted.push(r.request().postDataJSON());
     return r.fulfill({ json: { card_id: "new", existing: false } });
   });
+  // The word comes back as its base form with all its forms, checked against Madrasa
+  await page.route("**/api/watch/base-form", (r) =>
+    r.fulfill({
+      json: { translit: "חַאכֶּם / חֻכַּאם", arabic: "حاكم / حكّام", meaning: "שליט / שליטים", seen: "", madrasa: { agrees: true, entries: [] } },
+    })
+  );
   await page.goto("/watch/test-item", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "חַאכֶּם" }).first().click();
   await page.getByTestId("add-card").click();
-  await expect(page.getByTestId("add-card")).toHaveText("נוסף ככרטיס ✓ (לא מאומת)");
-  expect(posted[0]).toMatchObject({ word: "חַאכֶּם", arabic: "حاكم", meaning: "שליט", source: "סצנה" });
+  await expect(page.getByTestId("base-translit")).toHaveValue("חַאכֶּם / חֻכַּאם");
+  await expect(page.getByText("✓ תואם מדרסה")).toBeVisible();
+  await page.getByTestId("add-base-word").click();
+  await expect(page.getByTestId("add-base-word")).toHaveText("נוסף ככרטיס ✓ (לא מאומת)");
+  expect(posted[0]).toMatchObject({ word: "חַאכֶּם / חֻכַּאם", arabic: "حاكم / حكّام", meaning: "שליט / שליטים", source: "סצנה" });
 });

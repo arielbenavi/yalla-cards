@@ -10,9 +10,10 @@ const LESSON_TITLE = "נוסף מסרטונים (לא מאומת)";
 
 export async function POST(request: NextRequest) {
   if (!(await isAdminRequest())) return NextResponse.json({ error: "admin only" }, { status: 403 });
-  const { word, arabic, meaning, sentence, source } = (await request.json()) as Record<string, string | null>;
+  const { word, arabic, meaning, sentence, source, seen, clip_path } = (await request.json()) as Record<string, string | null>;
   // Several words selected in the player make a phrase card
-  const itemType = word && word.trim().split(/\s+/).length > 1 ? "phrase" : "word";
+  // Several words selected in the player make a phrase card; "a / b / c" is one word's forms
+  const itemType = word && word.replace(/\s*\/\s*/g, "/").trim().split(/\s+/).length > 1 ? "phrase" : "word";
   if (!word?.trim() || !meaning?.trim()) return NextResponse.json({ error: "word and meaning required" }, { status: 400 });
   const supabase = supabaseAdmin();
 
@@ -36,7 +37,8 @@ export async function POST(request: NextRequest) {
     .from("cards")
     .insert({
       translit_nikud: word.trim(), arabic_script: arabic?.trim() || null, hebrew_meaning: meaning.trim(), item_type: itemType,
-      notes: `מסרטון, לא מאומת: ${source ?? ""} · ${sentence ?? ""}`.slice(0, 500),
+      notes: [seen, `מסרטון, לא מאומת: ${source ?? ""} · ${sentence ?? ""}`].filter(Boolean).join(" · ").slice(0, 500),
+      clip_path: clip_path || null,
       lesson_id: lesson!.id, chatifai_verified: false, course_verified: false,
     })
     .select("id")
