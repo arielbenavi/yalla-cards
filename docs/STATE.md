@@ -63,6 +63,8 @@ More detail, only when needed:
     - Table `feed_posts` (0035–0036). Per-word translit and meanings by Gemini (`lib/feed-annotate.ts`). Seed: `scripts/feed-seed.ts scripts/data/feed-seed-2026-11-08.json`.
     - Daily cron `/api/feed/fetch` (`vercel.json`) pulls new posts through the X API (`lib/feed-accounts.ts`). It does nothing until Ariel opens an X developer account, buys credit (about $15/month) and sets `X_BEARER_TOKEN` (+ `CRON_SECRET`) in Vercel.
     - Watch's add-card sheets moved to `app/watch/sheets.tsx` (shared). Test: `tests/e2e/feed.spec.ts`.
+- **8.11**
+  - **Preply Roa K. 2:** 31 cards from Ariel's lesson notes (`scripts/insert-preply-roa-2.ts`, data in `scripts/data/preply-roa-2.ts`), base forms with all their forms, unverified. 8 already in the deck were skipped. Madrasa agreed with 9; the ✗s only list other words. The second block he sent was Roa 1, already in. The duplicate check by unvocalized Arabic gives false hits (بكره ≠ بكرة, مثل, هادي), so those were forced in.
 - **7.11**
   - **Adding a word from a video:** "הוסף ככרטיס" now opens a sheet with the base form (no ל/ה/ו/ב, no suffixes) and all its forms (m / f / pl, or past / present), suggested by Gemini (`/api/watch/base-form`) and checked against Madrasa (`lib/dialect-sources.ts`), every field editable. The card gets the line's audio cut from the video (`clip_path`). Not yet tried on the iPhone.
   - **The 47 word cards from videos** were moved to their base form with all forms (`scripts/fix-video-cards-base-forms.ts`, backup `scripts/data/video-cards-backup-2026-11-07.json`), noted "צורות משוערות". The duplicate (אל)צַּבִּיַּה was deleted on Ariel's request (8.11; it is in the backup).
@@ -121,7 +123,7 @@ More detail, only when needed:
    - "קטע היום" at the end of the daily review.
    - Attach the video clip to the card it came from.
 5. **chatifai checks when it is back:**
-   - All the unverified cards: רים פרג', מפגש 7, oral meeting 4.11, pp. 87–98, 304–305, Preply Roa, the cards added from videos, the 7 smoking cards (7.11).
+   - All the unverified cards: רים פרג', מפגש 7, oral meeting 4.11, pp. 87–98, 304–305, Preply Roa (1 and 2), the cards added from videos, the 7 smoking cards (7.11).
    - The situation "שיר שאני אוהב".
 6. **Deck typos waiting for Ariel's approval:** אִלְחַאּ' מַעַכּ, גֹ'וֹז, דַפַעְת עַן חַאלי.
 
@@ -138,6 +140,7 @@ More detail, only when needed:
 - **Songs:**
   - New songs in the playlist need their lyrics pasted (Inez, TUL8TE and others).
   - The 11 existing songs hold Latin transliteration instead of Hebrew.
+- **Roa 2:** what is חַפְלֵת בְּלַאיְז (حفلة بلايز)? And שַחְטַה (شحطة) came with no meaning.
 - **Words for the translation list** (tag "מילה לתרגום"): טַיַרַאן, מֻבַּאשַר, אִיזַא, וְאַחְיַאנַן, תוּצַל, לִף.
 
 ## 7. Ariel's ideas (not built yet; full text in `notes`)
