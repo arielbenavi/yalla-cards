@@ -94,16 +94,11 @@ More detail, only when needed:
   - "תכנים": missing playlists added, plus food and series sections.
 
 ## 4. Running / waiting
-- **Class transcription** (`npx tsx scripts/auto-clip.ts --hear`) restarted 7.11 in the background. 69 of 77 recordings heard, 8 left (about 10 hours of audio). Groq allows about 2 hours of audio per hour.
-  - If the session ends before it finishes, run it again: it skips what was already heard.
-  - Then run:
-    ```bash
-    npx tsx scripts/auto-clip.ts --write
-    ```
+- **Class clips:** transcription done 10.11 (77/77 recordings), `auto-clip.ts --write` done: 4015 clips proposed, 3120 still pending review. `clip-speakers.ts --apply` (who speaks, from the video) stopped on a network timeout (fetch failed) on 10.11. It is safe to rerun and skips what it already read:
     ```bash
     npx tsx scripts/clip-speakers.ts --apply
     ```
-  - Report how many cards got a clip.
+  Takes over 10 minutes, so run it in the background. Then report to Ariel how many cards got a clip.
 - **Storage:** approved clips are WAV. Compress them to mp3/opus before Ariel approves many more, or the 1GB fills up.
 - **iPhone:** renews by itself. The log is at `~/Library/Logs/yalla-reinstall.log`. Ariel is considering the Apple Developer Program ($99), which gives a 1-year signature or TestFlight. `mobile/release.sh` is ready for that.
 
