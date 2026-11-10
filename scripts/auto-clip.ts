@@ -84,8 +84,13 @@ async function recordingPcm(rec: Rec): Promise<Buffer> {
   if (!existsSync(out)) {
     const src = join(CACHE, `${rec.id}.src`);
     const { data, error } = await sb.storage.from("recordings").download(rec.storage_path);
-    if (error || !data) throw new Error(`download ${rec.id}: ${error?.message}`);
-    writeFileSync(src, Buffer.from(await data.arrayBuffer()));
+    if (data) writeFileSync(src, Buffer.from(await data.arrayBuffer()));
+    else {
+      // large files sometimes fail through fetch; curl a signed URL instead
+      const signed = await sb.storage.from("recordings").createSignedUrl(rec.storage_path, 3600);
+      if (!signed.data) throw new Error(`download ${rec.id}: ${error?.message}`);
+      execFileSync("curl", ["-sSfL", "--retry", "3", "-o", src, signed.data.signedUrl]);
+    }
     execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", src, "-ac", "1", "-ar", String(RATE), "-f", "s16le", out]);
   }
   return readFileSync(out);

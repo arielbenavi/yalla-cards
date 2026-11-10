@@ -145,3 +145,9 @@ if a step failed.
   is wrong before the second read, always a single mark and mostly a vowel under a narrow letter:
   zoom further on those. Clean print is a ceiling; book scans are harder. Knowing a word pulls the
   reading: אִסַּהֵל lost its dagesh that way.
+- 2026-11-10, pp. 311–312 (20 answer sentences) and p. 122 again: 3 stacked 2× lines per image, then
+  2–4× crops of four spots (מִנְּ with both shadda and sheva, מַאִלְנַאש, הֻוֵּ, the slide). The August read
+  of p. 122 had רְגִ'עְלְהַא / כַּתַבְּלְהֹם with a sheva; the page has a hiriq, and Ronen circled exactly
+  that mark on his slide. The linking hiriq before -לְהַא / -לְכֹּם / -לְהֹם is easy to read as sheva
+  because the word "should" have one: zoom on any vowel before a suffix. Ariel's annotated slides
+  point at what the class corrected, so read the circled marks first.

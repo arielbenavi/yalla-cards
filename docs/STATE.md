@@ -58,6 +58,7 @@ More detail, only when needed:
     - The daily queue takes 40 new cards a day.
 
 ## 3. Done (latest first)
+- **10.11: מפגש 8, השלמה.** 85 new cards in "מפגש 8" (`scripts/insert-meeting-8-more.ts`, data `scripts/data/meeting-8-more.ts`): the pp. 132–133 translation drill with the book's answers from pp. 311–312 (20 sentences, course_verified), 59 items from Ariel's oral notes (pointing from his Latin hints, "ניקוד משוער" where not in the book), and the p. 122 forms (בַּעַתְלִי…). 27 were already in the deck. 13 existing cards got the plural he gave (זֻמַלַא, טֻקוּס, תַזַאכֵּר…); backup `scripts/data/meeting-8-more-backup.json`. The p. 122 examples were read in August with a sheva; the page and Ronen's slide have the linking hiriq (רְגִ'עִלְהַא, רְגִ'עִלְכֹּם, כַּתַבִּלְהֹם), now fixed in the paradigm. The new cards' first review is dated 1.1.26 so the daily queue serves them first; the 185 older מפגש 8 cards (never reviewed) were not moved. Tip added: הווה = פַאעֵל. Madrasa agrees with 11 of the new words and contradicts none. `auto-clip.ts` now falls back to curl when a big recording fails to download.
 - **8.11**
   - **Feed MVP (`/feed`, under תכנים → פיד):** 59 dialect posts from 9 Gazan X accounts that Ariel follows. Arabic only by default; each post can show its transliteration (משוער) or Hebrew. Tapping a word shows its meaning and card, "+ המילה הבאה" makes a phrase, and admin adds an unverified card (same lesson as video words).
     - Table `feed_posts` (0035–0036). Per-word translit and meanings by Gemini (`lib/feed-annotate.ts`). Seed: `scripts/feed-seed.ts scripts/data/feed-seed-2026-11-08.json`.
@@ -140,6 +141,7 @@ More detail, only when needed:
 - **Songs:**
   - New songs in the playlist need their lyrics pasted (Inez, TUL8TE and others).
   - The 11 existing songs hold Latin transliteration instead of Hebrew.
+- **מפגש 8 (10.11):** what is אלי ביראיתכ? "עשאן טרוד עלה" = so that I (אַרֻדּ) or you (תְרֻדּ) answer him? ארה"ב: he wrote אלאומאם אלמותחידה, which is the UN; the US is (א)לְוִלַאיַאת (א)לְמֻתַּחִדֵה. "באיש מהמת..." was cut off. None of these went in.
 - **Roa 2:** what is חַפְלֵת בְּלַאיְז (حفلة بلايز)? And שַחְטַה (شحطة) came with no meaning.
 - **Words for the translation list** (tag "מילה לתרגום"): טַיַרַאן, מֻבַּאשַר, אִיזַא, וְאַחְיַאנַן, תוּצַל, לִף.
 

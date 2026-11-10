@@ -1,0 +1,151 @@
+{
+ "forms": [
+  {
+   "id": "3f1192fd-dda5-4068-86c4-fc6dbd29631d",
+   "arabic_script": "زميل",
+   "translit_nikud": "זַמִיל",
+   "hebrew_meaning": "עמית, קולגה"
+  },
+  {
+   "id": "ce4aebef-5158-4675-9ba6-1292ac104241",
+   "arabic_script": "غريب",
+   "translit_nikud": "עַ'רִיבּ",
+   "hebrew_meaning": "זר, מוזר"
+  },
+  {
+   "id": "644ff8b7-161e-4313-bd9e-c883668ffb7c",
+   "arabic_script": "طقس",
+   "translit_nikud": "טַקֵס",
+   "hebrew_meaning": "מזג אוויר"
+  },
+  {
+   "id": "548eb17c-15e0-4ffb-957c-391b239c13a3",
+   "arabic_script": "شأن",
+   "translit_nikud": "שַאֵן",
+   "hebrew_meaning": "עניין, דבר"
+  },
+  {
+   "id": "292c7415-93ad-4a74-b723-59111b68408c",
+   "arabic_script": "مهرجان",
+   "translit_nikud": "מִהְרַגַ'אן",
+   "hebrew_meaning": "פסטיבל, עצרת"
+  },
+  {
+   "id": "b5f2eaa4-4a17-4493-b7ca-486ac0492ecc",
+   "arabic_script": "محاضرة",
+   "translit_nikud": "מְחַאצַ'רַה",
+   "hebrew_meaning": "הרצאה"
+  },
+  {
+   "id": "5159a0fe-dbe3-44e5-bc38-36a87627ad4a",
+   "arabic_script": "نادي",
+   "translit_nikud": "נַאדִי",
+   "hebrew_meaning": "מועדון"
+  },
+  {
+   "id": "0b5b9663-9267-4d74-9974-067a65f9f5ff",
+   "arabic_script": "شكل",
+   "translit_nikud": "שִכֵּל",
+   "hebrew_meaning": "צורה, סוג, אופן"
+  },
+  {
+   "id": "2bff40a2-7e01-4545-9ed2-62e239a08f39",
+   "arabic_script": "عادة",
+   "translit_nikud": "עַאדֵה",
+   "hebrew_meaning": "מנהג, הרגל"
+  },
+  {
+   "id": "338eaecb-d7cd-40e6-ad92-444df5272746",
+   "arabic_script": "تذكرة",
+   "translit_nikud": "תַזְכַּרַה",
+   "hebrew_meaning": "כרטיס"
+  },
+  {
+   "id": "8357ad4e-fc10-48c4-bfb5-1f49950351d1",
+   "arabic_script": "موصول",
+   "translit_nikud": "מַוְצוּל",
+   "hebrew_meaning": "מחובר, מתמשך"
+  },
+  {
+   "id": "c3b57f03-19da-444c-86d3-02ccf382e170",
+   "arabic_script": "خيارة",
+   "translit_nikud": "חְ'יַארַה",
+   "hebrew_meaning": "מלפפון"
+  },
+  {
+   "id": "79309248-b8e7-4708-8f56-5c24bccac82a",
+   "arabic_script": "معرض",
+   "translit_nikud": "מַעְרַץ'",
+   "hebrew_meaning": "תערוכה, תצוגה, יריד"
+  }
+ ],
+ "hiriq": [],
+ "paradigm": {
+  "id": 105,
+  "data": {
+   "rows": [
+    {
+     "form": "לִי",
+     "person": "אַנַא"
+    },
+    {
+     "form": "לַכּ",
+     "person": "אִנְתֵ"
+    },
+    {
+     "form": "לֵכּ",
+     "person": "אִנְתִי"
+    },
+    {
+     "form": "לוֹ",
+     "person": "הֻוֵּ"
+    },
+    {
+     "form": "לְהַא / לַא",
+     "person": "הִיֵּ"
+    },
+    {
+     "form": "לְנַא",
+     "person": "אִחְנַא"
+    },
+    {
+     "form": "לְכֹּם",
+     "person": "אִנְתוּ"
+    },
+    {
+     "form": "לְהֹם",
+     "person": "הֵםּ"
+    }
+   ],
+   "slug": "indirect_object_l",
+   "meeting": 8,
+   "examples": [
+    {
+     "he": "שלח לי",
+     "translit": "בַּעַתְלִי"
+    },
+    {
+     "he": "שלחה לנו",
+     "translit": "בַּעְתַתְלְנַא"
+    },
+    {
+     "he": "חזר אליה",
+     "translit": "רְגִ'עְלְהַא"
+    },
+    {
+     "he": "חזר אליכם",
+     "translit": "רְגִ'עְלְכֹּם"
+    },
+    {
+     "he": "כתב להם",
+     "translit": "כַּתַבְּלְהֹם"
+    },
+    {
+     "he": "כתב לך",
+     "translit": "כַּתַבְּלַכּ"
+    }
+   ],
+   "description": "נטיית \"ל\" + כינויי מושא עקיף (עמ' 122)"
+  }
+ }
+}
