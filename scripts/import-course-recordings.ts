@@ -6,6 +6,7 @@
 // Rollback: delete from recordings where tag in ('שיעור זום','מפגש בעל פה'), and the files under course/.
 import { config } from "dotenv";
 import { execFileSync } from "child_process";
+import { randomUUID } from "crypto";
 import { mkdirSync, readdirSync, readFileSync, statSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -32,12 +33,12 @@ mkdirSync(WORK, { recursive: true });
     if (!APPLY) continue;
     const out = join(WORK, `${i}.m4a`);
     execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", src, "-vn", "-ac", "1", "-ar", "16000", "-c:a", "aac", "-b:a", "32k", out]);
-    const path = `course/${crypto.randomUUID()}.m4a`;
+    const path = `course/${randomUUID()}.m4a`;
     const { error } = await sb.storage.from("recordings").upload(path, readFileSync(out), { contentType: "audio/mp4" });
     if (error) throw error;
     const { error: e2 } = await sb.from("recordings").insert({
       title: f.replace(/\.mp4$/i, ""), storage_path: path, duration_sec: duration, source_filename: f,
-      tag: f.startsWith("מפגש בעל פה") ? "מפגש בעל פה" : "שיעור זום",
+      tag: f.includes("מפגש בעל פה") ? "מפגש בעל פה" : "שיעור זום",
     });
     if (e2) throw e2;
     console.log(`  ✓ ${(statSync(out).size / 1e6).toFixed(0)} MB`);

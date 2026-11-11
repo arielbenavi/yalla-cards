@@ -58,6 +58,7 @@ More detail, only when needed:
     - The daily queue takes 40 new cards a day.
 
 ## 3. Done (latest first)
+- **11.11: oral meeting 11.11.26.** New lesson "מפגש בעל פה 11.11.26", 42 cards (`scripts/insert-oral-2026-11-11.ts`, data `scripts/data/oral-2026-11-11.ts`): his notes, the situation with נעמה (10 lines), and 14 items found in the recording's Groq transcript (the payment-delay sentence, אִסְתַתְ'מַר = invest, ע'רַאמֵה, נַיַּאלַכּ, שֻפְתַכּ צֻדְפֵה…). All chatifai_verified=false, pointing "משוער". The recording (61 min) and "הקלטת שיעור 8" (164 min) were imported and transcribed (`import-course-recordings.ts` now tags any file with "מפגש בעל פה" in its name). Tip added: יִחְ'רֵבּ בֵּיתַכּ. The song line from his screenshot stays out (lyrics).
 - **10.11: אימון ממוקד left the תרגול tab** (Ariel); /focused still resolves. He says practice in general "doesn't work for him": open idea note, to talk through before rebuilding the tab.
 - **10.11: meeting order.** The current meeting is now the highest book meeting number, not the newest lesson date (מפגש 8's lesson was dated before 7's). Inflection drill, translations and the practice status start from מפגש 8, then 7…1 (`lib/current-meeting.ts`).
 - **10.11: navigation reorganised.** Ariel: hard to tell where things are. The tabs are now חזרה יומית · תרגול · פיד · תכנים · עוד (`lib/nav.ts`). The feed has its own tab. The general review left the bar: a link under the daily tip opens it, and the review tab stays marked. "עוד" holds חזרה כללית and אדמין. /today left the menu too (Ariel, same day): the site, login and the iPhone app open on the review; the route still resolves. The videos with transliteration are one component (`components/WatchList.tsx`), shared by /watch and the top of תכנים, with the songs beside them; they left תרגול and the scattered ▶ links. Test: `tests/e2e/content-watch.spec.ts`.
@@ -140,6 +141,7 @@ More detail, only when needed:
 - **Songs:**
   - New songs in the playlist need their lyrics pasted (Inez, TUL8TE and others).
   - The 11 existing songs hold Latin transliteration instead of Hebrew.
+- **מפגש בעל פה 11.11:** צ'לַּתְלְנַא חַ'מֵס דַּקַאיֵק ("דלתנא"): ضلتلנא or ضل إلنا? יִחְ'רֵבּ בֵּיתַכּ: he wrote יוחרוב, Ronen says yikhrib; which does he hear?
 - **מפגש 8 (10.11):** what is אלי ביראיתכ? "עשאן טרוד עלה" = so that I (אַרֻדּ) or you (תְרֻדּ) answer him? ארה"ב: he wrote אלאומאם אלמותחידה, which is the UN; the US is (א)לְוִלַאיַאת (א)לְמֻתַּחִדֵה. "באיש מהמת..." was cut off. None of these went in.
 - **Roa 2:** what is חַפְלֵת בְּלַאיְז (حفلة بلايز)? And שַחְטַה (شحطة) came with no meaning.
 - **Words for the translation list** (tag "מילה לתרגום"): טַיַרַאן, מֻבַּאשַר, אִיזַא, וְאַחְיַאנַן, תוּצַל, לִף.
