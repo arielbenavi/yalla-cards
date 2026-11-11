@@ -354,7 +354,7 @@ test("the menu: practice lives under one tab, admin screens under another, מפ�
   await login(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/practice", { waitUntil: "domcontentloaded" });
-  for (const name of ["התאמת הטיות", "סיומות שייכות", "תרגום משפטים", "שיחה", "אימון ממוקד", "משחק תמונות", "מספרים", "אותיות"]) {
+  for (const name of ["התאמת הטיות", "סיומות שייכות", "תרגום משפטים", "שיחה", "משחק תמונות", "מספרים", "אותיות"]) {
     await expect(page.locator("main").getByRole("link", { name: new RegExp(name) }).first()).toBeVisible();
   }
   // dispatchEvent: on the phone viewport the dev server's own badge sits over this corner.

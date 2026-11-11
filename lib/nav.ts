@@ -19,13 +19,13 @@ export const primaryNav: NavLink[] = [
 // Everything practised lives under the תרגול tab and every admin screen under אדמין (Ariel,
 // 2026-11-05: the menu was too long and felt scattered). Their pages keep their addresses,
 // and the tab stays marked while inside them. /lessons left the menu; the route still resolves.
+// אימון ממוקד left too (Ariel, 2026-11-10); /focused still resolves.
 // The videos with transliteration (/watch) and the songs live under תכנים only (2026-11-10).
 export const practiceLinks: NavLink[] = [
   { href: "/inflection-drill", label: strings.nav.inflectionDrill },
   { href: "/possessives", label: strings.nav.possessives },
   { href: "/translate", label: strings.nav.translate },
   { href: "/simulate", label: strings.nav.simulate },
-  { href: "/focused", label: strings.nav.focused },
 ];
 export const gameLinks: NavLink[] = [
   { href: "/picture-game", label: strings.nav.pictureGame },
