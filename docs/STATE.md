@@ -106,6 +106,7 @@ More detail, only when needed:
 - **iPhone:** renews by itself. The log is at `~/Library/Logs/yalla-reinstall.log`. Ariel is considering the Apple Developer Program ($99), which gives a 1-year signature or TestFlight. `mobile/release.sh` is ready for that.
 
 ## 5. Next, in order
+- **תרגול יומי** (spec [practice-daily.md](practice-daily.md), approved 11.11): one button at the top of תרגול, a 10-minute session of short mixed rounds from the current meeting (inflections, translation both ways, a dialogue), say-then-reveal, audio from class clips, streak. Ready for Sonnet.
 1. **Cut the rest of the תפצ'לו episodes into scenes:**
    ```bash
    npx tsx scripts/watch-scenes.ts --file <mp4> --series "תפצ'לו ע(א)לעשא" --slug tafaddalu-<name> --cache <dir> --apply
