@@ -343,8 +343,11 @@ test("drills and translations start from the current meeting, and ?meeting= goes
   await page.goto(`/inflection-drill?meeting=${current}`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("button", { name: "חזרה לרשימה" })).toBeVisible();
 
+  // The translations open on the newest meeting that has sentences (מפגש 8 has none yet).
+  const tr = await page.request.get("/api/translation-drill").then((r) => r.json());
+  const newest = Math.max(...tr.sets.map((s: { meeting: number | null }) => s.meeting ?? 0).filter((m: number) => m <= current));
   await page.goto("/translate", { waitUntil: "domcontentloaded" });
-  await expect(page.locator("h2").first()).toHaveText(`מפגש ${current}`);
+  await expect(page.locator("h2").first()).toHaveText(`מפגש ${newest}`);
 });
 
 test("the menu: practice lives under one tab, admin screens under another, מפגשים is gone", async ({ page }) => {
