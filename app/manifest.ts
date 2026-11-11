@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "יאללה כרטיסים",
     short_name: "יאללה",
     description: "ערבית מדוברת — חזרה יומית",
-    start_url: "/today",
+    start_url: "/review",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

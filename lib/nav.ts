@@ -50,12 +50,12 @@ export function navOwner(pathname: string): string {
   return pathname;
 }
 
-// Behind "עוד".
+// Behind "עוד". /today left the menu (Ariel, 2026-11-10); the route still resolves, and every
+// entry point (logo, login, start URL) opens the review instead.
 export const navGroups: { title: string; links: NavLink[] }[] = [
   {
     title: "עוד",
     links: [
-      { href: "/today", label: strings.nav.today },
       { href: "/browse", label: strings.nav.browse },
       { href: "/admin", label: strings.nav.admin },
     ],

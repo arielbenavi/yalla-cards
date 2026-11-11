@@ -52,7 +52,7 @@ export default function NavBar() {
       {/* Top bar: the full menu on wide screens, just the name on phones. */}
       {/* Top padding for the status bar in the iPhone app and the home-screen icon (0 elsewhere). */}
       <nav className="flex items-center justify-between gap-6 border-b border-gray-200 bg-white/80 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur md:px-6">
-        <Link href="/today" className="shrink-0 text-xl font-bold tracking-tight text-gray-900">
+        <Link href="/review" className="shrink-0 text-xl font-bold tracking-tight text-gray-900">
           {strings.appName}
         </Link>
         <div className="hidden flex-1 flex-wrap items-center gap-x-5 gap-y-1 text-[15px] md:flex">

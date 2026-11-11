@@ -120,7 +120,7 @@ export default function App({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snap, tick, gradedNow]);
 
-  const exit = () => (embedded ? (location.href = "/today") : setScreen("home"));
+  const exit = () => (embedded ? (location.href = "/review") : setScreen("home"));
 
   let body: ReactNode;
   if (!snap || (embedded && !snap.hasDeck))

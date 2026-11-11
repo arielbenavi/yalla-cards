@@ -2,9 +2,11 @@ import { test, expect } from "@playwright/test";
 import { login } from "./helpers";
 
 test.describe("daily checklist", () => {
-  test("login lands on the checklist and it lists review plus the drills", async ({ page }) => {
+  // Login lands on the review since 2026-11-10; the checklist left the menu but still resolves.
+  test("the checklist lists review plus the drills", async ({ page }) => {
     await login(page);
-    await page.waitForURL(/\/today/);
+    await page.waitForURL(/\/review/);
+    await page.goto("/today");
 
     await expect(page.getByRole("heading", { name: "היום" })).toBeVisible();
 

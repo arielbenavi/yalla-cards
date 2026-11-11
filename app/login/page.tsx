@@ -34,7 +34,7 @@ function LoginForm() {
       return;
     }
 
-    router.replace(searchParams.get("from") || "/today");
+    router.replace(searchParams.get("from") || "/review");
     router.refresh();
   }
 
@@ -43,7 +43,7 @@ function LoginForm() {
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     const supabase = supabaseAuthBrowser();
-    const from = searchParams.get("from") || "/today";
+    const from = searchParams.get("from") || "/review";
     if (navigator.userAgent.includes(IN_APP_UA)) return googleInApp(from);
     await supabase.auth.signInWithOAuth({
       provider: "google",

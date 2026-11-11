@@ -79,8 +79,8 @@ test.describe("inflection matching drill", () => {
     await page.locator("nav").getByRole("link", { name: "תרגול" }).first().click();
     await page.waitForURL("**/practice");
     await page.locator("main").getByRole("link", { name: /התאמת הטיות/ }).click();
-    await page.waitForLoadState("networkidle");
-    await page.getByRole("button", { name: rx(target.group) }).first().click();
+    // Not networkidle: the review's deck download (login lands there) keeps the network busy.
+    await page.getByRole("button", { name: rx(target.group) }).first().click({ timeout: 30_000 });
 
     const first = target.slots[0];
     const other = target.slots.find((s) => s.person !== first.person)!;

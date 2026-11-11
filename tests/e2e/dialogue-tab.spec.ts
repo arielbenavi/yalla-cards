@@ -58,9 +58,9 @@ test.describe("stored dialogues on /simulate", () => {
     await page.locator("main").getByRole("link", { name: /שיחה/ }).click();
 
     await page.getByRole("button", { name: "דו-שיח" }).click();
-    await page.waitForLoadState("networkidle");
-
-    await page.getByRole("button", { name: /שווארמה/ }).click();
+    // Not networkidle: login lands on the review, whose deck download outlives a client-side
+    // navigation, so the network is never idle. The click waits for the button itself.
+    await page.getByRole("button", { name: /שווארמה/ }).click({ timeout: 30_000 });
 
     // Advance until the choice point gates progress
     for (let i = 0; i < 12; i++) {
