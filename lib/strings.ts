@@ -22,6 +22,7 @@ export const strings = {
     songs: "שירים",
     pictureGame: "משחק תמונות",
     content: "תכנים",
+    feed: "פיד",
     practice: "תרגול",
     admin: "אדמין",
     letters: "אותיות",

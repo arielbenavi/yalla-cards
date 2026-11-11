@@ -1,16 +1,14 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers";
 
-// תכנים → פיד: posts show in Arabic only, a post can reveal its transliteration and Hebrew,
+// The פיד tab: posts show in Arabic only, a post can reveal its transliteration and Hebrew,
 // and a tapped word shows its meaning and grows into a phrase. Adds no card.
 test("feed: Arabic first, reveal layers, tap a word into a phrase", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewportSize({ width: 390, height: 760 });
   await login(page);
-  await page.goto("/content");
-  await page.getByText("פיד מ־X", { exact: false }).click();
-  await page.waitForURL(/\/feed$/);
+  await page.goto("/feed");
 
   const post = page.getByTestId("feed-post").first();
   await expect(post).toBeVisible({ timeout: 15000 });

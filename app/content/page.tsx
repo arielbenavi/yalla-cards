@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import WatchList from "@/components/WatchList";
 
 // ---- Types ----
 type Resource = { name: string; url: string; note?: string };
@@ -12,13 +14,6 @@ type ProgressMap = Record<string, Progress>;
 
 // ---- Data ----
 const sections: Section[] = [
-  {
-    title: "פיד",
-    emoji: "📱",
-    items: [
-      { name: "▶ פיד מ־X: פוסטים בעאמיה, מילים לחיצות", url: "/feed", note: "ערבית בלבד, ובלחיצה תעתיק או עברית · מילה לחיצה הופכת לכרטיס" },
-    ],
-  },
   {
     title: "סרטונים בערבית",
     emoji: "🎬",
@@ -51,7 +46,6 @@ const sections: Section[] = [
     title: "אוכל",
     emoji: "🍲",
     items: [
-      { name: "▶ תפצ'לו ע(א)לעשא, נגן עם כתוביות לחיצות", url: "/watch", note: "סצנות קצרות · לחיצה על מילה עוצרת ומתרגמת" },
       { type: "playlist", name: "תפצ'לו ע(א)לעשא 1 — בואו לאכול איתי", playlistId: "PL1QztFTkh_cdceBeFh7NVbjAfBDYz8ijR" },
       { type: "playlist", name: "תפצ'לו ע(א)לעשא 2 — בואו לאכול איתי 2", playlistId: "PL1QztFTkh_ceXivgcmWQL1nPeHs3pMz3j" },
       { type: "playlist", name: "טנג'רה וע'טאהא", playlistId: "PL1QztFTkh_cdPhzCKGuYzsdTXt9q3Mhw9" },
@@ -75,12 +69,10 @@ const sections: Section[] = [
     title: "סיפורים של מינרוה",
     emoji: "📖",
     items: [
-      { name: "▶ סיפורים של מינרוה, נגן עם כתוביות לחיצות", url: "/watch", note: "העכבר והדלעת, דברי האדמה, אסיפת הורים, למען הדורות הבאים, המזל הרע" },
       { name: "דברי האדמה — كلام الأرض", url: "https://youtu.be/jf782k4Eb-g", note: "0:41" },
       { name: "אסיפת הורים — إجتماع أهالي", url: "https://youtu.be/OuAwxXUZBU4", note: "1:21 · שיחה" },
       { name: "התנצלות גרועה מחטא — عذر أقبح من ذنب", url: "https://youtu.be/hFxI_jmgzVk", note: "2:18" },
       { name: "למען הדורות הבאים — عشان الأجيال الجاي", url: "https://youtu.be/I3dibv1zXac", note: "1:33" },
-      { name: "▶ המזל הרע, נגן עם כתוביות לחיצות", url: "/watch/bad-luck", note: "1:41 · לחיצה על מילה עוצרת ומתרגמת" },
       { name: "המזל הרע — الحظ العاطل", url: "https://youtu.be/6QubRNusq_g", note: "1:41 · מפגש בעל פה 6 · יש כרטיסים" },
       { name: "העכבר והדלעת — الفار والقرعة", url: "https://youtu.be/HttMrNDwhjE", note: "2:20" },
       { name: "הנער היתום והזקן החכם — الصبي اليتيم والختيار الذكي", url: "https://youtu.be/ToA75d6hWbI", note: "1:46" },
@@ -554,6 +546,20 @@ export default function ContentPage() {
         <h1 className="text-2xl font-bold">תכנים לצפייה ולהאזנה</h1>
         <p className="text-sm text-gray-500 mt-1">המלצות R.D לחשיפה לערבית פלסטינית מדוברת</p>
       </div>
+
+      {/* The in-app videos, the same list as /watch (Ariel, 2026-11-10), then the songs. */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-base font-semibold flex items-center gap-2">
+          <span>▶</span>
+          <span>עם תעתיק לחיץ</span>
+        </h2>
+        <p className="-mt-2 text-sm text-gray-500">לחיצה על מילה עוצרת, מתרגמת ומוסיפה ככרטיס</p>
+        <WatchList />
+        <Link href="/songs" className="flex items-center justify-between rounded-2xl border p-4 font-bold hover:bg-gray-50">
+          <span>🎵 שירים עם תעתיק</span>
+          <span className="text-gray-300">←</span>
+        </Link>
+      </section>
 
       {sections.map((section) => (
         <section key={section.title} className="flex flex-col gap-3">

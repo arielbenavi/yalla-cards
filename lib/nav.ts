@@ -6,20 +6,21 @@ import { strings } from "@/lib/strings";
 export type NavLink = { href: string; label: string };
 
 // The bottom tabs, on the site and in the app, on every screen (the review too).
-// Ariel's pick (2026-10-29): the review, the games, the general review (opens on
-// untagged + שוב, for more words after the daily), and the Arabic content.
+// Reorganised 2026-11-10 (Ariel: "קשה להבין איפה כל דבר"): one tab per kind of thing.
+// The review (the general review opens from inside it and keeps this tab marked), practice and
+// games, the social feed on its own tab, and everything to watch or hear under תכנים.
 export const primaryNav: NavLink[] = [
   { href: "/review", label: strings.nav.review },
   { href: "/practice", label: strings.nav.practice },
-  { href: "/browse", label: strings.nav.browse },
+  { href: "/feed", label: strings.nav.feed },
   { href: "/content", label: strings.nav.content },
 ];
 
 // Everything practised lives under the תרגול tab and every admin screen under אדמין (Ariel,
 // 2026-11-05: the menu was too long and felt scattered). Their pages keep their addresses,
 // and the tab stays marked while inside them. /lessons left the menu; the route still resolves.
+// The videos with transliteration (/watch) and the songs live under תכנים only (2026-11-10).
 export const practiceLinks: NavLink[] = [
-  { href: "/watch", label: "סרטונים עם תעתיק" },
   { href: "/inflection-drill", label: strings.nav.inflectionDrill },
   { href: "/possessives", label: strings.nav.possessives },
   { href: "/translate", label: strings.nav.translate },
@@ -44,6 +45,8 @@ export function navOwner(pathname: string): string {
   const inside = (links: NavLink[]) => links.some((l) => pathname.startsWith(l.href));
   if (inside(practiceLinks) || inside(gameLinks)) return "/practice";
   if (inside(adminLinks)) return "/admin";
+  if (pathname.startsWith("/browse")) return "/review";
+  if (pathname.startsWith("/watch") || pathname.startsWith("/songs")) return "/content";
   return pathname;
 }
 
@@ -53,7 +56,7 @@ export const navGroups: { title: string; links: NavLink[] }[] = [
     title: "עוד",
     links: [
       { href: "/today", label: strings.nav.today },
-      { href: "/songs", label: strings.nav.songs },
+      { href: "/browse", label: strings.nav.browse },
       { href: "/admin", label: strings.nav.admin },
     ],
   },

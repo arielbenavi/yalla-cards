@@ -29,6 +29,12 @@ const TAB_ICONS: Record<string, React.ReactNode> = {
       <circle cx="16.5" cy="16.5" r="3.5" />
     </>
   ),
+  "/feed": (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="3" />
+      <path d="M8 9h8M8 13h8M8 17h5" />
+    </>
+  ),
   "/content": (
     <>
       <rect x="3" y="5" width="18" height="14" rx="3" />

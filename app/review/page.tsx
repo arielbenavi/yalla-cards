@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { strings } from "@/lib/strings";
@@ -37,6 +38,12 @@ function ReviewPageInner() {
   return (
     <>
       <DailyTip />
+      {/* The general review left the tab bar (2026-11-10) and opens from here. */}
+      {mode.kind === "daily" && (
+        <Link href="/browse" className="mx-auto mt-1 text-xs text-gray-400 underline-offset-4 hover:underline">
+          {strings.nav.browse} ←
+        </Link>
+      )}
       <ReviewApp
         embedded
         mode={mode}
