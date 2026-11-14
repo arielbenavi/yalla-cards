@@ -10,7 +10,16 @@ export NVM_DIR="$HOME/.nvm"
 nvm use 24 >/dev/null 2>&1 || true  # Capacitor needs Node 22+
 export PATH="$HOME/.nvm/versions/node/v24.22.2/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/homebrew/bin:$PATH"
 echo "── $(date '+%Y-%m-%d %H:%M')"
-if "$(dirname "$0")/install-iphone.sh"; then exit 0; fi
+out=$("$(dirname "$0")/install-iphone.sh" 2>&1); rc=$?
+echo "$out"
+(( rc == 0 )) && exit 0
+
+# Signed out of Xcode: no retry can fix that, so say so at once (10.11–14.11 the
+# app expired while the notification still said "connect the iPhone").
+if [[ "$out" == *"No Accounts"* ]]; then
+  osascript -e 'display notification "Xcode התנתק מה-Apple ID: Xcode → Settings → Accounts → +" with title "יאללה כרטיסים לא מתחדש"'
+  exit 1
+fi
 
 # Failed: warn when the signature on the phone is close to running out
 app=mobile/build/personal/Build/Products/Release-iphoneos/App.app/embedded.mobileprovision

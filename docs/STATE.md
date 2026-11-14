@@ -104,7 +104,7 @@ More detail, only when needed:
     ```
   Takes over 10 minutes, so run it in the background. Then report to Ariel how many cards got a clip.
 - **Storage:** approved clips are WAV. Compress them to mp3/opus before Ariel approves many more, or the 1GB fills up.
-- **iPhone:** renews by itself. The log is at `~/Library/Logs/yalla-reinstall.log`. Ariel is considering the Apple Developer Program ($99), which gives a 1-year signature or TestFlight. `mobile/release.sh` is ready for that.
+- **iPhone:** renews by itself. The log is at `~/Library/Logs/yalla-reinstall.log`. 14.11: the app expired because Xcode had signed out of the Apple ID on 10.11 (sign-in failed with -7005 until Tailscale was off). The build is now generic (no phone needed), and a sign-out sends its own notification. The install needs the phone unlocked, and iPhone Mirroring keeps it locked. Ariel is considering the Apple Developer Program ($99), which gives a 1-year signature or TestFlight. `mobile/release.sh` is ready for that.
 
 ## 5. Next, in order
 - **תרגול יומי** (spec [practice-daily.md](practice-daily.md), approved 11.11): one button at the top of תרגול, a 10-minute session of short mixed rounds from the current meeting (inflections, translation both ways, a dialogue), say-then-reveal, audio from class clips, streak. Ready for Sonnet.
