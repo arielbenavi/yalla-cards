@@ -52,3 +52,4 @@ backups/
 
 # graphify knowledge graph (local)
 /graphify-out/
+scripts/mufeed/*.json
