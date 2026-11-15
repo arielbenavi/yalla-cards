@@ -20,5 +20,7 @@ xcodebuild -project mobile/ios/App/App.xcodeproj -scheme App -configuration Rele
 
 rm -rf "$OUT/Payload" && mkdir -p "$OUT/Payload"
 cp -R "$OUT/Build/Products/Release-iphoneos/App.app" "$OUT/Payload/"
+# SideStore names the App ID after the display name, and Apple accepts only ASCII there.
+/usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Yalla" "$OUT/Payload/App.app/Info.plist"
 (cd "$OUT" && rm -f ../YallaCards.ipa && zip -qry ../YallaCards.ipa Payload)
 echo "✅ mobile/build/YallaCards.ipa ($(du -h mobile/build/YallaCards.ipa | cut -f1))"
