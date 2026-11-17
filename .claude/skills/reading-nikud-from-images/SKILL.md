@@ -151,3 +151,8 @@ if a step failed.
   that mark on his slide. The linking hiriq before -לְהַא / -לְכֹּם / -לְהֹם is easy to read as sheva
   because the word "should" have one: zoom on any vowel before a suffix. Ariel's annotated slides
   point at what the class corrected, so read the circled marks first.
+- 2026-11-17, Ariel's handwritten oral-meeting notes (tablet, 1872px, 11 lines): crops at 2×
+  were enough. His small ש above a letter marks a shadda (מַרַּה, קַדֵּיש). Where his vowel and
+  MuFeed's differ (שַאיֶף vs the MuFeed pattern רַאיֵח), MuFeed won for words it has; his reading
+  is kept in the note. Ambiguous lines with no Hebrew meaning beside them (a box + "סלפו") were
+  left out rather than guessed.
