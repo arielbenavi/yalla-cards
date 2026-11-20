@@ -1,0 +1,83 @@
+{
+ "cards": [
+  {
+   "id": "8cfb04d5-1fd3-4f24-b1bc-265efc017b51",
+   "lesson_id": "79e157c0-5c95-4598-ae54-d3fb3c619105",
+   "hebrew_meaning": "כחול",
+   "translit_nikud": "אַזְרַא",
+   "translit_normalized": "אזרא",
+   "arabic_script": "أزرق",
+   "item_type": "word",
+   "recording_id": null,
+   "audio_start_sec": null,
+   "audio_end_sec": null,
+   "notes": "הספר/ההערות: אַזְרַק",
+   "created_at": "2026-08-03T19:20:44.250012+00:00",
+   "clip_path": null,
+   "batch_id": null,
+   "plural_form": "זֻרֻק",
+   "self_score": 4,
+   "chatifai_verified": true,
+   "course_verified": false,
+   "course_note": null,
+   "dialect_check": null,
+   "mufeed_verified": false
+  },
+  {
+   "id": "c228cb86-6041-4224-9d5c-de9dbcf2d710",
+   "lesson_id": null,
+   "hebrew_meaning": "מזכיר של גוף רשמי / שם של גבר / ישר",
+   "translit_nikud": "אַמִין",
+   "translit_normalized": "אמין",
+   "arabic_script": "أمين",
+   "item_type": "phrase",
+   "recording_id": "21dfae1a-b497-4496-867b-40c0ee0abb3e",
+   "audio_start_sec": 253.99998,
+   "audio_end_sec": 254.77998,
+   "notes": null,
+   "created_at": "2026-07-21T21:48:48.743557+00:00",
+   "clip_path": "87349fc8-4d56-4c09-b4b1-887ec5455aad.wav",
+   "batch_id": null,
+   "plural_form": null,
+   "self_score": 3,
+   "chatifai_verified": false,
+   "course_verified": false,
+   "course_note": "כתב ערבי מ-chatifai (הספר לא נותן ערבית)",
+   "dialect_check": null,
+   "mufeed_verified": false
+  }
+ ],
+ "srs": [
+  {
+   "id": "faa42763-bc4d-44b7-a218-cb1c474ee045",
+   "card_id": "8cfb04d5-1fd3-4f24-b1bc-265efc017b51",
+   "direction": "he_to_ar",
+   "due": "2026-08-03T19:20:44.336287+00:00",
+   "stability": 0,
+   "difficulty": 0,
+   "elapsed_days": 0,
+   "scheduled_days": 0,
+   "learning_steps": 0,
+   "reps": 0,
+   "lapses": 0,
+   "state": 0,
+   "last_review": null
+  },
+  {
+   "id": "3603e620-8d11-4965-a3ce-083fe54b283d",
+   "card_id": "c228cb86-6041-4224-9d5c-de9dbcf2d710",
+   "direction": "he_to_ar",
+   "due": "2026-07-21T21:48:49.055889+00:00",
+   "stability": 0,
+   "difficulty": 0,
+   "elapsed_days": 0,
+   "scheduled_days": 0,
+   "learning_steps": 0,
+   "reps": 0,
+   "lapses": 0,
+   "state": 0,
+   "last_review": null
+  }
+ ],
+ "log": []
+}
