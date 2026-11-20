@@ -156,3 +156,10 @@ if a step failed.
   MuFeed's differ (שַאיֶף vs the MuFeed pattern רַאיֵח), MuFeed won for words it has; his reading
   is kept in the note. Ambiguous lines with no Hebrew meaning beside them (a box + "סלפו") were
   left out rather than guessed.
+- 2026-11-20, pp. 134–146 and 311–312 (meeting 9 + meeting 8 answers): clean print, so the page at
+  1414px was readable for the tables; the vocabulary column was cropped at 2× and the sentences of
+  p. 137 at 1.5×. One word needed 4× (עַאמֵלִלְנַא) and is still marked משוער. Crop coordinates guessed
+  from the 1414px view missed twice: multiply by 1.13 first. 12 of 14 practice answers were already
+  in the deck with tsere where this read has segol (מֵש / מֶש, (א)לְעַאדֵה / (א)לְעַאדֶה): the book's
+  ֶ and ֵ are hard to tell apart at 1×, so the earlier cards are worth a zoomed look.
+
