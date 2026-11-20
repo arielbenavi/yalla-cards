@@ -1,0 +1,51 @@
+[
+ {
+  "id": "c3af9bbb-4327-4c22-8f77-e4afcfa83581",
+  "translit_nikud": "קַארַאז׳",
+  "arabic_script": "كراج",
+  "plural_form": "כַּרַאגַ'את",
+  "hebrew_meaning": "מוסך"
+ },
+ {
+  "id": "dc57c368-65a3-468f-9a18-eff920ac7590",
+  "translit_nikud": "אַזְרַכּ",
+  "arabic_script": "أزرق",
+  "plural_form": "—",
+  "hebrew_meaning": "כחול"
+ },
+ {
+  "id": "3761d44d-0dc3-4c6d-afdd-cbb39fdf9396",
+  "translit_nikud": "מַטְבַּח",
+  "arabic_script": "مطبخ",
+  "plural_form": "מַטַאבֵּח",
+  "hebrew_meaning": "מטבח"
+ },
+ {
+  "id": "35891e7f-b061-45db-9f57-0bc15ec3f48e",
+  "translit_nikud": "חַ'מְסְטַעְש",
+  "arabic_script": "خمستعش",
+  "plural_form": "—",
+  "hebrew_meaning": "חמש עשרה (15)"
+ },
+ {
+  "id": "c228cb86-6041-4224-9d5c-de9dbcf2d710",
+  "translit_nikud": "אָמִין",
+  "arabic_script": "أمين",
+  "plural_form": null,
+  "hebrew_meaning": "מזכיר של גוף רשמי / שם של גבר / ישר"
+ },
+ {
+  "id": "83afa716-1c51-4cd0-b814-c0baef72df9b",
+  "translit_nikud": "וֻוז'",
+  "arabic_script": "وجه",
+  "plural_form": null,
+  "hebrew_meaning": "פרצוף"
+ },
+ {
+  "id": "ed03e4f7-d34f-4279-bed0-498f34998d94",
+  "translit_nikud": "אַריבּ",
+  "arabic_script": "قريب",
+  "plural_form": "אַקַארֵבּ",
+  "hebrew_meaning": "קרוב משפחה / קרוב במרחק"
+ }
+]
