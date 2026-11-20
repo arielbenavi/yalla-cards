@@ -1,0 +1,422 @@
+[
+ {
+  "id": "3ccc63ba-4a77-401e-b312-d8334796abc5",
+  "translit_nikud": "חַכַּם",
+  "notes": null,
+  "plural_form": "חֻכַּאם"
+ },
+ {
+  "id": "1f49c9e6-1a4b-4282-9911-feea9e82d2d9",
+  "translit_nikud": "נַגַ׳אר",
+  "notes": null,
+  "plural_form": "נַגַּארִין"
+ },
+ {
+  "id": "ceab4e91-a740-4649-97f9-d5e19e8dda65",
+  "translit_nikud": "תְשַרַפְנַא",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "566bb52a-f8a2-4ccc-ab7f-f0c042f11cb7",
+  "translit_nikud": "אַעְטַא",
+  "notes": null,
+  "plural_form": "—"
+ },
+ {
+  "id": "ed4c97fa-8c02-4353-b813-09c599f50979",
+  "translit_nikud": "דֻחַ'אן",
+  "notes": "[מהשיעור] בַּאכֵּט דֻחַ'אן=קופסת סיגריות",
+  "plural_form": "—"
+ },
+ {
+  "id": "019a44fe-89d4-444e-8112-0a3f2fe3ee17",
+  "translit_nikud": "בֻּנִי",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "b024c4aa-3993-4d37-8d6b-0a9034c85388",
+  "translit_nikud": "מֻהִם",
+  "notes": "chatifai: יש שדה על המ' הסופית — Muhimm · הספר/ההערות: מְהֵםّ",
+  "plural_form": null
+ },
+ {
+  "id": "724dcb13-a968-4ef4-abef-7a8fe66b992e",
+  "translit_nikud": "בַּס",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "70f148e7-79ea-4b43-9710-b215f65c8aac",
+  "translit_nikud": "צַח",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "0618d98e-e049-482c-bede-730f5ecc48a9",
+  "translit_nikud": "רַאח",
+  "notes": "גם תחילית עתיד: רַאח + פועל",
+  "plural_form": null
+ },
+ {
+  "id": "61196a30-b20d-4ef9-bfad-0098d486754f",
+  "translit_nikud": "אִסַא",
+  "notes": "chatifai: להג צפוני/גלילי. ה-ע' שנשמעה היא א' גרונית",
+  "plural_form": null
+ },
+ {
+  "id": "b6801b97-5c07-4c28-87e0-a18d6f312c41",
+  "translit_nikud": "בִּסֵה",
+  "notes": "chatifai: מילת הרחוב הנפוצה ביותר לחתול",
+  "plural_form": "בְּסַאס"
+ },
+ {
+  "id": "53999df4-0350-48e0-8d58-8fdbe98200dc",
+  "translit_nikud": "אֻעְ'נִיֵה",
+  "notes": null,
+  "plural_form": "אַעַ'אנִי"
+ },
+ {
+  "id": "ac911c4c-03eb-473e-b56a-5783c227e6fb",
+  "translit_nikud": "שְוַיֵה",
+  "notes": "מהשיר: براحة يا شيخة · chatifai: מילת מפתח בשני הלהגים",
+  "plural_form": null
+ },
+ {
+  "id": "ce0e42a6-baa6-436b-a671-97bfbc5c7325",
+  "translit_nikud": "טַאל",
+  "notes": "מהשיר: ولا مرة",
+  "plural_form": null
+ },
+ {
+  "id": "e8d4b674-77d4-48a9-9c97-ae01a208f1bb",
+  "translit_nikud": "כַּאן",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "69dc5191-467f-4106-9a69-81bd23c9f901",
+  "translit_nikud": "הַגַ'ם",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "ac99604a-2fea-4680-93de-bc3bb7385cbc",
+  "translit_nikud": "תְעַ'דַּא",
+  "notes": "אני: בַּתְעַ'דַּא",
+  "plural_form": null
+ },
+ {
+  "id": "ac584f16-f996-426f-a90e-b5324ba81444",
+  "translit_nikud": "מַשַא",
+  "notes": "אני: בַּמְשִי",
+  "plural_form": null
+ },
+ {
+  "id": "cbea7588-7152-4b2c-9cf4-d5d9060acae7",
+  "translit_nikud": "טַ'בַּט",
+  "notes": "טַ'בְּטַת מַעְכֹּם? = זה הסתדר לכם?",
+  "plural_form": null
+ },
+ {
+  "id": "ddc6d6e9-d0c6-4b6f-94e9-4becc68a508f",
+  "translit_nikud": "חַגַ'ז",
+  "notes": null,
+  "plural_form": "חְג'וּזַאת"
+ },
+ {
+  "id": "c8bb98ab-a2ad-4b13-b9e5-0f639c052f8c",
+  "translit_nikud": "חַ'לַּץ",
+  "notes": "מַחְ'לִצְתֶש = לא סיימתי",
+  "plural_form": null
+ },
+ {
+  "id": "205dc72a-96b3-42d8-8012-ae5d5cd520d0",
+  "translit_nikud": "גַ'מַע",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "32d48cf4-bcf1-4e72-8636-1a19135642e5",
+  "translit_nikud": "אִשְתַרַא",
+  "notes": "אִשְתַרֵית = קניתי",
+  "plural_form": null
+ },
+ {
+  "id": "0730ff8c-6021-4604-9ed1-6b10aae877d0",
+  "translit_nikud": "זִעֵל",
+  "notes": "עמ' 306–308. השלילה בתרגול ההטיות, מפגש 7",
+  "plural_form": null
+ },
+ {
+  "id": "38aef9fe-eb57-4e24-9e6e-9b14f2d85d5a",
+  "translit_nikud": "כַּסַר",
+  "notes": "עמ' 306–308. השלילה בתרגול ההטיות, מפגש 7",
+  "plural_form": null
+ },
+ {
+  "id": "e027e1d4-ad85-4afe-bdbe-f3b100996d15",
+  "translit_nikud": "רַבַּט",
+  "notes": "עמ' 306–308. השלילה בתרגול ההטיות, מפגש 7",
+  "plural_form": null
+ },
+ {
+  "id": "8e8e7f3f-79ee-473a-b9a2-19e33d542042",
+  "translit_nikud": "כִּבֵּר",
+  "notes": "עמ' 306–308. השלילה בתרגול ההטיות, מפגש 7",
+  "plural_form": null
+ },
+ {
+  "id": "2c327928-dfdf-4648-89f9-794b73f99a91",
+  "translit_nikud": "קַתַל",
+  "notes": "עמ' 306–308. השלילה בתרגול ההטיות, מפגש 7",
+  "plural_form": null
+ },
+ {
+  "id": "7782da0f-9e16-40c1-8fe2-b46921f32406",
+  "translit_nikud": "חַרַק",
+  "notes": "עמ' 306–308. השלילה בתרגול ההטיות, מפגש 7",
+  "plural_form": null
+ },
+ {
+  "id": "e30f36f5-bc48-4041-a67f-4f5184162bf1",
+  "translit_nikud": "הַאגַ'ר",
+  "notes": "≠ هجر (נטש)",
+  "plural_form": null
+ },
+ {
+  "id": "47809899-83ce-4452-804d-949701107a38",
+  "translit_nikud": "תַרַכּ",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "f32251b2-3108-43b6-8807-15bcba0dc69c",
+  "translit_nikud": "בִּדִי",
+  "notes": "ד חלש — בלי דגש",
+  "plural_form": null
+ },
+ {
+  "id": "375afe3a-d550-4157-b5cc-3fe07fba3282",
+  "translit_nikud": "בַּעַת",
+  "notes": "ניקוד משוער (מפגש 8, בעל פה)",
+  "plural_form": null
+ },
+ {
+  "id": "e397ab6a-cbf2-4202-bcce-63ba00305bc3",
+  "translit_nikud": "פַאת",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "45b5c78e-3232-4fae-a225-2de0a949303c",
+  "translit_nikud": "דַחַ'ל",
+  "notes": "כניסה = מדחל",
+  "plural_form": "דֻח'וּל"
+ },
+ {
+  "id": "8f8fc123-f2d3-4f86-9ee8-1d47fc8dea20",
+  "translit_nikud": "לִעֵבּ",
+  "notes": "פועל — משקל פִעֵל · מהמשך תרגול ההטיות של מפגש 6",
+  "plural_form": null
+ },
+ {
+  "id": "b397e94f-bf2b-431f-844c-21d34e737865",
+  "translit_nikud": "צַאר",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "80cf1a53-9359-4bdb-a3a0-fc800de1a3e5",
+  "translit_nikud": "אַכַּל",
+  "notes": "מפגש בעל פה 6 — פועל להוסיף",
+  "plural_form": null
+ },
+ {
+  "id": "fa1155c0-06b0-41d1-af08-d7b3ca6dcc0d",
+  "translit_nikud": "שִרֵבּ",
+  "notes": "מפגש בעל פה 6 — פועל להוסיף",
+  "plural_form": null
+ },
+ {
+  "id": "68f59cec-38de-4176-bca0-ee7e75206a80",
+  "translit_nikud": "צַ'רַבּ",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "35697644-b409-469f-8d37-d58bd6869389",
+  "translit_nikud": "דַפַע",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "e7146e30-b48b-416e-a2ed-66bc96580bcf",
+  "translit_nikud": "עַזַם",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "cdc6569e-e50c-4ca1-b08f-683a96a686e5",
+  "translit_nikud": "חַ'רַג'",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "34efd5ce-3611-476b-a50b-2c744a828fe9",
+  "translit_nikud": "שַרַח",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "cf50bc58-1048-4d3c-a4a4-d05c74c3f289",
+  "translit_nikud": "אֻם",
+  "notes": "ברבים: אֻמַּהַאת",
+  "plural_form": null
+ },
+ {
+  "id": "d8fc7ead-3aae-4cbb-9eab-a2992a334b62",
+  "translit_nikud": "חַ'אף",
+  "notes": "ספר המדרשה עמ׳ 88",
+  "plural_form": null
+ },
+ {
+  "id": "4b7892c1-e419-4142-98af-f95d3aa5e963",
+  "translit_nikud": "פַחַצ",
+  "notes": "ספר המדרשה, טבלת פעלים בעבר",
+  "plural_form": "פֻחוּצַאת"
+ },
+ {
+  "id": "6cf2e4eb-17bb-42bd-99b4-d9783d21dd55",
+  "translit_nikud": "עִמֵל",
+  "notes": "ספר המדרשה, טבלת פעלים בעבר",
+  "plural_form": null
+ },
+ {
+  "id": "d30badc0-55b1-41dc-883f-ee6c9e221956",
+  "translit_nikud": "סַרַק",
+  "notes": "ספר המדרשה, טבלת פעלים בעבר",
+  "plural_form": null
+ },
+ {
+  "id": "a02f0c31-3bfa-4dc4-a7e1-aeeafcf7f845",
+  "translit_nikud": "תִעֵבּ",
+  "notes": "ספר המדרשה, טבלת פעלים בעבר",
+  "plural_form": null
+ },
+ {
+  "id": "6a2f07e7-5e7e-4cde-824a-5816a75d97f4",
+  "translit_nikud": "רַפַע",
+  "notes": "פועל — משקל פַעַל · מהמשך תרגול ההטיות של מפגש 6",
+  "plural_form": null
+ },
+ {
+  "id": "b6fe79f7-5820-48a5-8b8d-b09f2fa92e42",
+  "translit_nikud": "מַרַק",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "429c7183-4edb-4b77-835b-c2c9b0b7c482",
+  "translit_nikud": "וִקֵע",
+  "notes": "היא: וִקְעַת",
+  "plural_form": null
+ },
+ {
+  "id": "4af13f96-4d8c-44c4-95c3-754509728147",
+  "translit_nikud": "צִ'חֵכּ",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "43b290d4-85c6-451b-bce1-697f4ee45aa2",
+  "translit_nikud": "חִ'סֵר",
+  "notes": "חִ'סֵר כְּתִיר מַצַארִי = הפסיד הרבה כסף",
+  "plural_form": null
+ },
+ {
+  "id": "355271ac-7755-48e0-b436-872662699569",
+  "translit_nikud": "טַבַּח'",
+  "notes": "היא: טַבְּחַ'ת",
+  "plural_form": null
+ },
+ {
+  "id": "98a56daf-f48f-4462-a1c1-554e181a856d",
+  "translit_nikud": "צִחִי",
+  "notes": "אני: בַּצְחַא · כשאני מתעורר: לַמַּא אַצְחַא",
+  "plural_form": null
+ },
+ {
+  "id": "8418f72a-4c76-44fb-999a-93cbb7a98e63",
+  "translit_nikud": "עַ'סַל",
+  "notes": "אני: בַּעְ'סֵל",
+  "plural_form": null
+ },
+ {
+  "id": "16959785-62e1-472d-bf1d-622597bd8c86",
+  "translit_nikud": "סַאַל",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "81d9266e-143b-4ce7-9cf8-c2ff25317739",
+  "translit_nikud": "שַכַר",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "1d2f4e69-4cfb-4687-adfc-906199f046ef",
+  "translit_nikud": "קֻטַה",
+  "notes": null,
+  "plural_form": "קֻטַט"
+ },
+ {
+  "id": "c7fcce28-7606-42c5-a884-8e6f0118e6cd",
+  "translit_nikud": "רִבֵּח",
+  "notes": "רְבִחֵת = הרווחתי · מַרְבִּחְתוּש = לא הרווחתם",
+  "plural_form": "אַרְבַּאח"
+ },
+ {
+  "id": "ce631a7b-2ce9-4594-955c-b449e4bfcf5c",
+  "translit_nikud": "רַדּ",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "8fd38f9a-bf4f-4184-8196-1d99cb0051e3",
+  "translit_nikud": "בַּאע",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "cdc7ab3a-8971-48c3-ab0e-fd481769b7b9",
+  "translit_nikud": "חַ'אצ",
+  "notes": "≠ خصوصي",
+  "plural_form": null
+ },
+ {
+  "id": "66b6d72a-c03e-4ea4-ac16-da91d216f586",
+  "translit_nikud": "אִסְתַפַאד",
+  "notes": null,
+  "plural_form": null
+ },
+ {
+  "id": "b7f399d5-7a13-4e9a-a17c-bd60b273eb40",
+  "translit_nikud": "צַוַּת",
+  "notes": "צַוַּתְת = הצבעתי / הצבעת",
+  "plural_form": "אַצְוַאת"
+ },
+ {
+  "id": "7f3367d5-4296-4008-b55f-fc1401c1875c",
+  "translit_nikud": "דַרַס",
+  "notes": "אני: בַּדְרֹס",
+  "plural_form": "דֻרוּס"
+ },
+ {
+  "id": "cf234c8d-fd99-4231-9059-481671e9f23d",
+  "translit_nikud": "קַטַע",
+  "notes": "עמ' 306–308. השלילה בתרגול ההטיות, מפגש 7",
+  "plural_form": null
+ }
+]
