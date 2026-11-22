@@ -1,0 +1,42 @@
+[
+ {
+  "id": "e8696e23-47b8-4215-ad60-0d8e1a7eef72",
+  "lesson_id": "77373969-51b5-4882-a0e3-bd5389465db5",
+  "hebrew_meaning": "סבלנות, איפוק",
+  "translit_nikud": "צַבְּר",
+  "translit_normalized": "צבר",
+  "arabic_script": "صبر",
+  "item_type": "word",
+  "recording_id": null,
+  "audio_start_sec": null,
+  "audio_end_sec": null,
+  "notes": "ניקוד לפי מופיד",
+  "created_at": "2026-11-22T23:13:33.878846+00:00",
+  "clip_path": null,
+  "batch_id": null,
+  "plural_form": null,
+  "self_score": null,
+  "chatifai_verified": false,
+  "course_verified": false,
+  "course_note": null,
+  "dialect_check": null,
+  "mufeed_verified": false,
+  "card_srs": [
+   {
+    "id": "ebf6ede7-0b00-4283-a943-ac4caada32f4",
+    "due": "2026-11-22T23:13:33.977408+00:00",
+    "reps": 0,
+    "state": 0,
+    "lapses": 0,
+    "card_id": "e8696e23-47b8-4215-ad60-0d8e1a7eef72",
+    "direction": "he_to_ar",
+    "stability": 0,
+    "difficulty": 0,
+    "last_review": null,
+    "elapsed_days": 0,
+    "learning_steps": 0,
+    "scheduled_days": 0
+   }
+  ]
+ }
+]

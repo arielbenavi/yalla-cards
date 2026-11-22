@@ -8,54 +8,80 @@ function todayKey(): string {
   return new Date().toISOString().slice(0, 10); // "2026-07-30"
 }
 
-function dayNumber(): number {
-  const d = new Date();
-  return Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86_400_000);
-}
-
-/** A fixed shuffle of 0..n-1, so the proverbs come in a random order that never repeats until all were shown. */
-function shuffled(n: number, seed: number): number[] {
-  const a = Array.from({ length: n }, (_, i) => i);
-  let x = seed;
-  for (let i = n - 1; i > 0; i--) {
-    x = (x * 1103515245 + 12345) % 2147483648;
-    const j = x % (i + 1);
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 type Daily = { kind: "tip"; tip: Tip } | { kind: "proverb"; proverb: Proverb };
+type Kind = Daily["kind"];
 
-/** Even days a tip, odd days a proverb from the deck: never both on the same day, never one right after the other. */
-async function pickDaily(): Promise<Daily> {
-  const day = dayNumber();
-  const half = Math.floor(day / 2);
-  const tip: Daily = { kind: "tip", tip: TIPS[half % TIPS.length] };
-  if (day % 2 === 0) return tip;
+/**
+ * Next item from a per-kind shuffled queue kept in localStorage: every item is shown once, in random
+ * order, before any repeats. Keys are the item titles, so adding tips or proverbs later just appends them.
+ */
+function nextFromQueue(kind: Kind, keys: string[]): string {
+  const k = `daily_queue_${kind}`;
+  let queue: string[] = [];
+  try { queue = JSON.parse(localStorage.getItem(k) ?? "[]"); } catch {}
+  queue = queue.filter((x) => keys.includes(x));
+  if (!queue.length) {
+    queue = [...keys];
+    for (let i = queue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [queue[i], queue[j]] = [queue[j], queue[i]];
+    }
+  }
+  const [head, ...rest] = queue;
+  localStorage.setItem(k, JSON.stringify(rest));
+  return head;
+}
+
+async function pick(kind: Kind): Promise<Daily | null> {
+  if (kind === "tip") {
+    const key = nextFromQueue("tip", TIPS.map((t) => t.title));
+    return { kind: "tip", tip: TIPS.find((t) => t.title === key)! };
+  }
   try {
     const { items } = (await (await fetch("/api/proverbs")).json()) as { items: Proverb[] };
     const all = [...items, ...EXTRA_PROVERBS];
-    if (!all.length) return tip;
-    const order = shuffled(all.length, new Date().getFullYear());
-    return { kind: "proverb", proverb: all[order[half % all.length]] };
+    if (!all.length) return null;
+    const key = nextFromQueue("proverb", all.map((p) => p.tr));
+    return { kind: "proverb", proverb: all.find((p) => p.tr === key)! };
   } catch {
-    return tip; // offline: a tip instead
+    return null; // offline: skip the proverb this time
   }
+}
+
+/**
+ * A tip and a proverb every day, never on the same app open: the first open of the day shows one,
+ * a later open shows the other. Which comes first alternates day to day.
+ */
+function kindToShow(): Kind | null {
+  const today = todayKey();
+  const tipDone = localStorage.getItem("daily_tip_date") === today;
+  const provDone = localStorage.getItem("daily_proverb_date") === today;
+  if (tipDone && provDone) return null;
+  if (tipDone) return "proverb";
+  if (provDone) return "tip";
+  return localStorage.getItem("daily_first_kind") === "tip" ? "proverb" : "tip";
 }
 
 export default function DailyTip() {
   const [daily, setDaily] = useState<Daily | null>(null);
 
   useEffect(() => {
-    const today = todayKey();
-    const lastShown = localStorage.getItem("daily_tip_date");
-    if (lastShown === today) return;
-    pickDaily().then(setDaily);
+    const kind = kindToShow();
+    if (!kind) return;
+    pick(kind).then((d) => {
+      if (!d) return;
+      const today = todayKey();
+      // Mark on show, so the next open moves on to the other kind even if this one is not dismissed.
+      localStorage.setItem(`daily_${kind}_date`, today);
+      if (localStorage.getItem("daily_first_date") !== today) {
+        localStorage.setItem("daily_first_date", today);
+        localStorage.setItem("daily_first_kind", kind);
+      }
+      setDaily(d);
+    });
   }, []);
 
   function dismiss() {
-    localStorage.setItem("daily_tip_date", todayKey());
     setDaily(null);
   }
 
