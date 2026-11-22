@@ -16,6 +16,7 @@ const CARDS: [string, string, string, string?][] = [
   ["מֻגַ'רַּד", "סתם, רק, גרידא", "مجرّد", "מופיד. גם מֻגַ'רַּד מַא = ברגע ש..."],
   ["מַזְחַה / מַזְחַאת", "בדיחה / בדיחות", "مزحة", "מופיד"],
   ["מְקַסַּמֵה", "מחולקת", "مقسّمة", "לא במופיד; אריאל שמע מקאסמה"],
+  ["עַנְגַ'ד", "ברצינות, באמת", "عنجد", "מופיד: עַנְגַ'ד / עַן גַ'דّ (عَن جَدّ). ניקוד מאומת במופיד"],
   ["צַרַח' / בֻּצְרֹח'", "צעק / (אני) צועק", "صرخ / بصرخ", "מופיד: צַרַח' / יֻצְרֹח'. אריאל שמע ביסאריח"],
 ];
 const nt = (s: string) => (s ?? "").normalize("NFD").replace(/[֑-ׇ'׳"?!.,()\s–-]/g, "").replace(/ך/g, "כ").replace(/ם/g, "מ").replace(/ן/g, "נ").replace(/ף/g, "פ").replace(/ץ/g, "צ");
@@ -29,7 +30,7 @@ const nt = (s: string) => (s ?? "").normalize("NFD").replace(/[֑-ׇ'׳"?!.,()\s
   let { data: l } = await sb.from("lessons").select("id").eq("title", "Preply Roa K. 5").maybeSingle();
   if (!l) { const r = await sb.from("lessons").insert({ title: "Preply Roa K. 5", source: "preply", meeting: 5, date: "2026-11-22" }).select("id").single(); if (r.error) throw r.error; l = r.data; }
   for (const [tr, he, ar, extra] of fresh) {
-    const { data, error } = await sb.from("cards").insert({ translit_nikud: tr, hebrew_meaning: he, arabic_script: ar, notes: extra ? `${extra}. ${NOTE}` : NOTE, item_type: tr.includes(" ") && !tr.includes(" / ") ? "phrase" : "word", lesson_id: l!.id, chatifai_verified: false }).select("id").single();
+    const { data, error } = await sb.from("cards").insert({ translit_nikud: tr, hebrew_meaning: he, arabic_script: ar, notes: extra?.includes("מאומת") ? extra : extra ? `${extra}. ${NOTE}` : NOTE, item_type: tr.includes(" ") && !tr.includes(" / ") ? "phrase" : "word", lesson_id: l!.id, chatifai_verified: false }).select("id").single();
     if (error) throw error;
     const { error: e2 } = await sb.from("card_srs").insert({ card_id: data.id, direction: "he_to_ar" }); if (e2) throw e2;
   }
