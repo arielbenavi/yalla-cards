@@ -130,6 +130,7 @@ More detail, only when needed:
 - **Meeting 9 recording:** Ariel is about halfway through; add what he sends to lesson "מפגש 9" (`scripts/insert-meeting-9-oral.ts` pattern).
 - **Open notes from 24.11:** a chatifai-checked paradigm for אִשְתַרַא / יִשְתְרִי (verbs live in `verb_conjugations`, not cards); chatifai check of meeting 10's 22 cards; idea: particles (בַּעֵד מַא, קַבֵּל מַא, עַשַאן…) should recur more often.
 - **MuFeed differences:** `docs/mufeed-review-2026-11-20.md` (250 left unchanged, mostly conventions; the 68 letter ones were reviewed with Ariel).
+- **סבב צורות, בטא** (spec [forms-round.md](forms-round.md), approved 25.11): after the daily review, 10 known words ask for their plural; outside FSRS, an A/B split by card id, logged in `learning_events`, `scripts/forms-report.ts` decides after 3 weeks. Plural only (feminine has no source). Ready for Sonnet.
 - **תרגול יומי** (spec [practice-daily.md](practice-daily.md), approved 11.11): one button at the top of תרגול, a 10-minute session of short mixed rounds from the current meeting (inflections, translation both ways, a dialogue), say-then-reveal, audio from class clips, streak. Ready for Sonnet.
 1. **Cut the rest of the תפצ'לו episodes into scenes:**
    ```bash
@@ -183,5 +184,5 @@ More detail, only when needed:
   - **Twitter/X research (7.11):** [twitter-feed-research.md](twitter-feed-research.md). The X API on pay-per-use costs about $15/month for 3,000 posts. His following list adds 10 Gazan dialect accounts (Jerusalem/Jaffa voices still missing); most dialect content is on Instagram/Facebook, not X. MVP built 8.11 (see Done), Ariel approved importing from X. Waiting for his feedback and an `X_BEARER_TOKEN`.
 - **Playlists over 15 videos:** need a YouTube Data API key (ג'ארכ קריבכ, סלם ותעלם, תעלם ותכלם).
 - **Offline:** done for review (service worker plus the iPhone app). Not done for the other screens.
-- **Forms round (22.11):** known words shown at random as feminine/plural in a separate round, not inside FSRS (note in `notes`).
+- **Forms round (22.11):** spec written 25.11, see Next ([forms-round.md](forms-round.md)).
 - **Practice beyond the daily review:** a red dot exists. A popup or "next practice" is still open.
