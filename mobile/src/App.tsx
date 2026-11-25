@@ -383,6 +383,16 @@ function Review({
     if (current) store.audioSrc(current).then(setAudioUrl);
   }, [current]);
 
+  // Ariel, 25.11: flipping a card with a recording plays it. Called inside the
+  // tap/key handler itself, so iOS's WebView treats it as user-started audio.
+  const reveal = () => {
+    setRevealed(true);
+    const a = audioRef.current;
+    if (!a) return;
+    a.currentTime = 0;
+    a.play().catch(() => {});
+  };
+
   const reset = () => {
     setRevealed(false);
     setHintUsed(false);
@@ -438,7 +448,7 @@ function Review({
       }
       if (e.key === " " && !revealed) {
         e.preventDefault();
-        setRevealed(true);
+        reveal();
         return;
       }
       if (!revealed) return;
@@ -499,7 +509,6 @@ function Review({
   const dir: "he_to_ar" | "ar_to_he" = dirFlipped
     ? current.direction === "he_to_ar" ? "ar_to_he" : "he_to_ar"
     : current.direction;
-  const audioOnlyPrompt = dir === "ar_to_he" && !!audioUrl;
   const translit = (
     <TappableWords
       text={current.translit_nikud}
@@ -568,9 +577,9 @@ function Review({
       <div className="tile card" key={current.card_srs_id}>
         {dir === "he_to_ar" ? (
           <p className="prompt nikud">{current.hebrew_meaning}</p>
-        ) : audioOnlyPrompt ? (
-          <AudioButton onClick={play} large />
         ) : (
+          // Ariel, 25.11: the transliteration, even when the card has a recording.
+          // It used to be a lone speaker, with nothing to read until the flip.
           <p className="prompt nikud">{revealed ? translit : current.translit_nikud}</p>
         )}
 
@@ -580,11 +589,6 @@ function Review({
               <>
                 <p className="answer-main nikud">{translit}</p>
                 {current.notes && <p className="muted">{current.notes}</p>}
-              </>
-            ) : audioOnlyPrompt ? (
-              <>
-                <p className="answer-main nikud bold">{translit}</p>
-                <p className="answer-main nikud">{current.hebrew_meaning}</p>
               </>
             ) : (
               <p className="answer-main nikud">{current.hebrew_meaning}</p>
@@ -598,7 +602,7 @@ function Review({
                 <span className="muted"> — {example.hebrew_meaning}</span>
               </p>
             )}
-            {audioUrl && !audioOnlyPrompt && <AudioButton onClick={play} />}
+            {audioUrl && <AudioButton onClick={play} />}
             {adminSlot?.(current)}
           </div>
         )}
@@ -650,7 +654,7 @@ function Review({
                 רמז
               </button>
             )}
-            <button className="btn primary grow" onClick={() => setRevealed(true)}>
+            <button className="btn primary grow" onClick={reveal}>
               {strings.review.showAnswer}
             </button>
             {safeIndex < queue.length - 1 && (
