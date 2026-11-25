@@ -58,16 +58,15 @@ test.describe("inflection matching drill", () => {
     const { sets } = await page.request.get("/api/inflection-drill").then((r) => r.json());
     const all = sets as DrillSet[];
 
-    // Pick a group with exactly one table, so the shuffle inside a run cannot
-    // change which table opens. Also require every form in it to be distinct —
-    // syncretic tables are legitimate (מפגש 6 past tense has אַנַא and אִנְתֵ both
-    // as כַּתַבְּת) but two identical tiles make `exact: true` ambiguous, which is
-    // a limitation of the locator, not of the drill.
-    const counts = new Map<string, number>();
-    for (const s of all) counts.set(s.group, (counts.get(s.group) ?? 0) + 1);
+    // Open a group, then drill whichever table it opened: groups hold several
+    // tables in shuffled order (every meeting does since the מפגש 9–10 homework),
+    // so the test reads the heading instead of guessing. Every form in the table
+    // must be distinct — syncretic tables are legitimate (מפגש 6 past tense has
+    // אַנַא and אִנְתֵ both as כַּתַבְּת) but two identical tiles make `exact: true`
+    // ambiguous, which is a limitation of the locator, not of the drill.
     const distinct = (s: DrillSet) => new Set(s.slots.map((x) => x.answer)).size === s.slots.length;
-    const target = all.find((s) => counts.get(s.group) === 1 && distinct(s)) ?? all.find(distinct)!;
-    test.skip(!target, "no drill set with distinct forms");
+    const group = all.find(distinct)?.group;
+    test.skip(!group, "no drill set with distinct forms");
 
     const tip = page.getByRole("button", { name: "הבנתי" });
     await tip.waitFor({ state: "visible", timeout: 3_000 }).catch(() => {});
@@ -80,10 +79,15 @@ test.describe("inflection matching drill", () => {
     await page.waitForURL("**/practice");
     await page.locator("main").getByRole("link", { name: /התאמת הטיות/ }).click();
     // Not networkidle: the review's deck download (login lands there) keeps the network busy.
-    await page.getByRole("button", { name: rx(target.group) }).first().click({ timeout: 30_000 });
+    await page.getByRole("button", { name: rx(group!) }).first().click({ timeout: 30_000 });
 
-    const first = target.slots[0];
-    const other = target.slots.find((s) => s.person !== first.person)!;
+    const heading = (await page.locator("main h2").first().innerText()).trim();
+    const target = all.find((s) => s.group === group && s.title === heading);
+    expect(target, `no set titled "${heading}" in ${group}`).toBeTruthy();
+    test.skip(!distinct(target!), `"${heading}" repeats a form`);
+
+    const first = target!.slots[0];
+    const other = target!.slots.find((s) => s.person !== first.person)!;
 
     // Pick the form belonging to `first`, then drop it on the WRONG person
     await page.getByRole("button", { name: first.answer, exact: true }).click();
@@ -93,7 +97,7 @@ test.describe("inflection matching drill", () => {
 
     // Now the right box
     await page.getByRole("button", { name: rx(first.person) }).first().click();
-    await expect(page.getByText("1 / " + target.slots.length)).toBeVisible();
+    await expect(page.getByText("1 / " + target!.slots.length)).toBeVisible();
   });
 
   /**
