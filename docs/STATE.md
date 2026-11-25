@@ -1,6 +1,6 @@
 # yalla-cards: current state, plans and ideas
 
-**The source of truth for a new session.** Updated 2026-11-07. Whoever finishes something updates this file in the same commit: move the item to "Done", or add a new one.
+**The source of truth for a new session.** Updated 2026-11-25. Whoever finishes something updates this file in the same commit: move the item to "Done", or add a new one.
 
 More detail, only when needed:
 - [handoff-2026-11-05.md](handoff-2026-11-05.md): table of commits since November.
@@ -27,7 +27,7 @@ More detail, only when needed:
 1. **Reversible, additive changes only.** Never write FSRS state (`card_srs`, `review_log`), except the `card_srs` row (`direction: "he_to_ar"`) of a new card.
    - Before deleting a card, back it up to `scripts/data/*.json`.
 2. **Migrations:**
-   - Write `supabase/migrations/00XX_*.sql`, then run `npx tsx scripts/migrate.ts`. The last one is 0036.
+   - Write `supabase/migrations/00XX_*.sql`, then run `npx tsx scripts/migrate.ts`. The last one is 0037 (`cards.mufeed_verified`).
    - Never ask Ariel to run SQL.
 3. **Tests:** a change to review, inbox or recordings needs `npx playwright test` to pass in full.
    - Do not skip tests.
@@ -50,6 +50,7 @@ More detail, only when needed:
    - ض → צ', ص → צ, ظ → ט', ج → ג', خ → ח', غ → ע'. ق in Palestinian is mostly א.
    - Latin pronunciation in his notes decides the nikud, but is never stored as a card note.
    - Reading text from an image: always use the skill `.claude/skills/reading-nikud-from-images`, then update its Lessons.
+   - **MuFeed** (the dictionary app on the Mac) is the second source for nikud, after the course book: `python3 -I scripts/mufeed/dump.py` downloads its whole dictionary with Ariel's login (gitignored `scripts/mufeed/dict.json`, 3,285 entries with plurals and present tense), `local_lookup.py` + `cmp.py` compare the deck. Take a form only when Arabic, transliteration and a word of the meaning all match. Its conventions differ from the book's (ֵ for ֶ, no helping vowel); the book wins. Mark exact matches `mufeed_verified=true`.
 8. **Ideas:** every idea Ariel mentions becomes a row in `notes` with tag `idea`, in the same turn.
 9. **Teachers:** only רונן counts as a teacher in class recordings. לנדי פרפט is a student.
 10. **Cards:**
@@ -116,9 +117,12 @@ More detail, only when needed:
     ```
   Takes over 10 minutes, so run it in the background. Then report to Ariel how many cards got a clip.
 - **Storage:** approved clips are WAV. Compress them to mp3/opus before Ariel approves many more, or the 1GB fills up.
-- **iPhone (14.11): SideStore.** Installed with iloader (Apple ID pudabeats), plus LocalDevVPN; the phone renews the 7-day signature itself. The app is `mobile/build/YallaCards.ipa` from `mobile/build-ipa.sh` (unsigned; SideStore signs it), handed over through iCloud Drive → Files → SideStore. Rebuild only when native code changes, since content loads from Vercel. A free account allows 3 apps per device: SideStore, Yalla, Hindsight (Columbia Rec Check and a second Hindsight were removed). **Switched 15.11:** Yalla (named "Yalla" on the home screen, since SideStore's App ID name must be ASCII) is installed by SideStore; the Xcode copy was removed and the Mac's launchd job is unloaded. Later the same day: SideStore replaced by LiveContainer+SideStore (iloader), so it takes one slot; slots are now LiveContainer+SideStore, Yalla, and (pending) Rec Check. Hindsight runs inside LiveContainer (`Hindsight.ipa`, `RecCheck.ipa` built unsigned and copied to iCloud Drive). **Done 15.11 night:** Rec Check installed by SideStore (widget kept, own App ID). The "not connected to VPN" error came from iloader's pairing file holding both Lockdown and RemotePairing keys; the fix was LiveContainer+SideStore **Nightly** (SS 0.7.0) via iloader, a Lockdown-only pairing file (remove keys alt_irk, identifier, private_key, public_key), and in SideStore Settings → Advanced → User Customizations, On-Device Anisette OFF (it fails with ADI -45061 inside LiveContainer). Refresh All works. **20.11:** Apple began rejecting SideStore/iloader sign-ins (HTTP 503); iloader 2.4.2 fixes it on the Mac, SideStore on the phone has no fix yet and lost its signing key after signing out. All apps use one certificate (iloader's, serial 60FA…), so nothing was revoked: Yalla was re-signed with iloader → Import IPA (good to 27.11, data kept); LiveContainer+Hindsight and Rec Check were already good to 27.11. **Until SideStore gets the fix, renew before 27.11 from the Mac with iloader** (Import IPA for Yalla/Rec Check, reinstall LiveContainer+SideStore Nightly). Still open: the Hindsight home-screen profile (Ariel, Settings) (`launchctl load ~/Library/LaunchAgents/il.ariel.yalla.reinstall.plist` brings it back). New icon: the site's (arielbenavi.com) two cards with يلا on green; old icons in `scripts/data/old-icons/`.
+- **iPhone:** LiveContainer+SideStore (Nightly, one slot, Hindsight inside it), Yalla and Columbia Rec Check (with widget), all signed with iloader's certificate (serial 60FA…). **Since 20.11 Apple rejects SideStore's sign-in (HTTP 503), so the phone cannot refresh itself.** Until SideStore ships a fix ([SideStore#1745](https://github.com/SideStore/SideStore/issues/1745)): before each expiry (next: **27.11**) renew from the Mac over the cable with iloader ≥ 2.4.2 → Import IPA (`YallaCards.ipa`, `RecCheck.ipa` from iCloud Drive) and reinstall LiveContainer+SideStore (Nightly); revoke nothing. Once fixed: reinstall from iloader, Ariel signs in to SideStore, LiveContainer → Import Certificate. Full setup and every error: the skill `~/.claude/skills/iphone-sideload` (REFERENCE.md) and [ios-app.md](ios-app.md). Open: the Hindsight home-screen profile (Ariel).
 
 ## 5. Next, in order
+- **Renew the iPhone apps before 27.11** (see Running / waiting) unless SideStore has fixed sign-in.
+- **Meeting 9 recording:** Ariel is about halfway through; add what he sends to lesson "מפגש 9" (`scripts/insert-meeting-9-oral.ts` pattern).
+- **MuFeed differences:** `docs/mufeed-review-2026-11-20.md` (250 left unchanged, mostly conventions; the 68 letter ones were reviewed with Ariel).
 - **תרגול יומי** (spec [practice-daily.md](practice-daily.md), approved 11.11): one button at the top of תרגול, a 10-minute session of short mixed rounds from the current meeting (inflections, translation both ways, a dialogue), say-then-reveal, audio from class clips, streak. Ready for Sonnet.
 1. **Cut the rest of the תפצ'לו episodes into scenes:**
    ```bash
@@ -149,7 +153,7 @@ More detail, only when needed:
   - בִּדִי is listed as "התחיל" but means "אני רוצה".
   - הַ(א)לְוַלַד/הַ(א)לְבִּנְת needs splitting.
   - 5 cards have broken transliteration (שוּ אִקְצַתַכ and others).
-- **Missing tables:** the object-pronoun tables (פַחַצ, מִסֵכּ) are unreadable in the photo. There is no table of place words (פוֹק, תַחְת, קֻדַּאם…).
+- **Missing tables:** there is no table of place words (פוֹק, תַחְת, קֻדַּאם…). (פַחַץ and מִסֵכּ are in the drill since 20.11, from the book.)
 - **Songs:**
   - New songs in the playlist need their lyrics pasted (Inez, TUL8TE and others).
   - The 11 existing songs hold Latin transliteration instead of Hebrew.
@@ -172,4 +176,5 @@ More detail, only when needed:
   - **Twitter/X research (7.11):** [twitter-feed-research.md](twitter-feed-research.md). The X API on pay-per-use costs about $15/month for 3,000 posts. His following list adds 10 Gazan dialect accounts (Jerusalem/Jaffa voices still missing); most dialect content is on Instagram/Facebook, not X. MVP built 8.11 (see Done), Ariel approved importing from X. Waiting for his feedback and an `X_BEARER_TOKEN`.
 - **Playlists over 15 videos:** need a YouTube Data API key (ג'ארכ קריבכ, סלם ותעלם, תעלם ותכלם).
 - **Offline:** done for review (service worker plus the iPhone app). Not done for the other screens.
+- **Forms round (22.11):** known words shown at random as feminine/plural in a separate round, not inside FSRS (note in `notes`).
 - **Practice beyond the daily review:** a red dot exists. A popup or "next practice" is still open.
