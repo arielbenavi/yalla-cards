@@ -51,6 +51,8 @@ More detail, only when needed:
    - Latin pronunciation in his notes decides the nikud, but is never stored as a card note.
    - Reading text from an image: always use the skill `.claude/skills/reading-nikud-from-images`, then update its Lessons.
    - **MuFeed** (the dictionary app on the Mac) is the second source for nikud, after the course book: `python3 -I scripts/mufeed/dump.py` downloads its whole dictionary with Ariel's login (gitignored `scripts/mufeed/dict.json`, 3,285 entries with plurals and present tense), `local_lookup.py` + `cmp.py` compare the deck. Take a form only when Arabic, transliteration and a word of the meaning all match. Its conventions differ from the book's (ֵ for ֶ, no helping vowel); the book wins. Mark exact matches `mufeed_verified=true`.
+   - **Class recordings → notes:** ffmpeg into 30-min mono mp3 chunks, then gemini-4-argon with a prompt holding Ariel's own questions, giving Hebrew notes per chunk (about 40KB for 2.5h); then MuFeed for the pointing. Clips the teacher shows inside the Zoom share: crop the player region with ffmpeg, find when it plays by frame difference, then `scripts/subtitle-media.ts --file … --slug … --apply` puts it on /watch.
+   - Tips are code, in `lib/tips.ts`. A card note containing "מאומת" skips the "ניקוד משוער" suffix (`scripts/insert-roa-5-lesson-2026-11-22.ts`).
 8. **Ideas:** every idea Ariel mentions becomes a row in `notes` with tag `idea`, in the same turn.
 9. **Teachers:** only רונן counts as a teacher in class recordings. לנדי פרפט is a student.
 10. **Cards:**
@@ -122,6 +124,7 @@ More detail, only when needed:
 ## 5. Next, in order
 - **Renew the iPhone apps before 27.11** (see Running / waiting) unless SideStore has fixed sign-in.
 - **Meeting 9 recording:** Ariel is about halfway through; add what he sends to lesson "מפגש 9" (`scripts/insert-meeting-9-oral.ts` pattern).
+- **Open notes from 24.11:** a chatifai-checked paradigm for אִשְתַרַא / יִשְתְרִי (verbs live in `verb_conjugations`, not cards); chatifai check of meeting 10's 22 cards; idea: particles (בַּעֵד מַא, קַבֵּל מַא, עַשַאן…) should recur more often.
 - **MuFeed differences:** `docs/mufeed-review-2026-11-20.md` (250 left unchanged, mostly conventions; the 68 letter ones were reviewed with Ariel).
 - **תרגול יומי** (spec [practice-daily.md](practice-daily.md), approved 11.11): one button at the top of תרגול, a 10-minute session of short mixed rounds from the current meeting (inflections, translation both ways, a dialogue), say-then-reveal, audio from class clips, streak. Ready for Sonnet.
 1. **Cut the rest of the תפצ'לו episodes into scenes:**
