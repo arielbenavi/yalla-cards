@@ -129,4 +129,29 @@ test.describe("reversibility — drills must not write to FSRS or self_score", (
     const after = await snapshot();
     assertUnchanged(before, after);
   });
+
+  test("forms round session leaves FSRS tables unchanged", async ({ page }) => {
+    const before = await snapshot();
+
+    await login(page);
+    // Real words from the real API; only the event log is caught, so a test
+    // never puts answers into the A/B data
+    let answers = 0;
+    await page.route("**/api/learning-events", (r) => {
+      if (r.request().postDataJSON().event === "forms_answer") answers++;
+      return r.fulfill({ json: { ok: true } });
+    });
+    await page.goto("/forms");
+
+    const reveal = page.getByRole("button", { name: "הצג תשובה" });
+    await expect(reveal).toBeVisible({ timeout: 30_000 });
+    for (const grade of ["ידעתי", "לא ידעתי"]) {
+      await reveal.click();
+      await page.getByRole("button", { name: grade, exact: true }).click();
+    }
+    await expect.poll(() => answers).toBe(2);
+
+    const after = await snapshot();
+    assertUnchanged(before, after);
+  });
 });

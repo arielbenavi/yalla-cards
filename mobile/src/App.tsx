@@ -5,6 +5,7 @@ import { strings } from "@/lib/strings";
 import { dailyQueue, laterToday, type DeckCard, type ReviewEvent } from "@/lib/daily-queue";
 import { buildExampleIndex, exampleFor } from "@/lib/deck-examples";
 import { FIX_ROUND_MAX } from "@/lib/focused-practice";
+import { FORMS_ROUND_SIZE } from "@/lib/forms-round";
 import { buildWordIndex, lookupWord, type SentenceWord } from "@/lib/word-lookup";
 import { TappableWords, WordSheet } from "./WordTap";
 import * as store from "./store";
@@ -362,6 +363,8 @@ function Review({
   // what got שוב today, once more, outside FSRS.
   const fixIds = useMemo(() => (current || mode.kind !== "daily" ? [] : fixRoundIds(reviews)), [current, mode.kind, reviews]);
   const fixOffered = fixIds.length > 0;
+  // Then the forms round (docs/forms-round.md), once a day. The page picks the words.
+  const formsOffered = !current && mode.kind === "daily" && !formsRoundDone();
   // After the daily review, the one thing that has waited longest. Only with a network.
   const [nextPractice, setNextPractice] = useState<{ label: string; href: string } | null>(null);
   const reviewDone = !current;
@@ -377,6 +380,10 @@ function Review({
     if (fixOffered) logEvent("fix_round_offered", null, { size: fixIds.length });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fixOffered]);
+
+  useEffect(() => {
+    if (formsOffered) logEvent("forms_round_offered", null, { size: FORMS_ROUND_SIZE });
+  }, [formsOffered]);
 
   useEffect(() => {
     setAudioUrl(null);
@@ -480,6 +487,17 @@ function Review({
             }}
           >
             סבב תיקון: {fixIds.length} {fixIds.length === 1 ? "כרטיס" : "כרטיסים"}
+          </button>
+        )}
+        {formsOffered && (
+          <button
+            className="btn side"
+            onClick={() => {
+              markFormsRoundDone();
+              location.href = `${store.API_BASE}/forms`;
+            }}
+          >
+            סבב צורות (בטא): {FORMS_ROUND_SIZE} מילים
           </button>
         )}
         {trail.length > 0 && (
@@ -729,6 +747,22 @@ function fixRoundIds(reviews: ReviewEvent[]): string[] {
 function markFixRoundDone() {
   try {
     localStorage.setItem(FIX_ROUND_KEY, todayKey());
+  } catch {}
+}
+
+const FORMS_ROUND_KEY = "forms-round-started";
+
+function formsRoundDone(): boolean {
+  try {
+    return localStorage.getItem(FORMS_ROUND_KEY) === todayKey();
+  } catch {
+    return false;
+  }
+}
+
+function markFormsRoundDone() {
+  try {
+    localStorage.setItem(FORMS_ROUND_KEY, todayKey());
   } catch {}
 }
 

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 
-const EVENTS = new Set(["example_shown", "fix_round_offered", "fix_round_started", "word_tapped", "word_requested", "next_practice_started"]);
+const EVENTS = new Set(["example_shown", "fix_round_offered", "fix_round_started", "word_tapped", "word_requested", "next_practice_started", "forms_round_offered", "forms_round_started", "forms_answer"]);
 
 /** Best-effort usage log. learning_events only, never FSRS state. */
 export async function POST(request: NextRequest) {
