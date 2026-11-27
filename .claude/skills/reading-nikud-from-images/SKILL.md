@@ -162,4 +162,10 @@ if a step failed.
   from the 1414px view missed twice: multiply by 1.13 first. 12 of 14 practice answers were already
   in the deck with tsere where this read has segol (מֵש / מֶש, (א)לְעַאדֵה / (א)לְעַאדֶה): the book's
   ֶ and ֵ are hard to tell apart at 1×, so the earlier cards are worth a zoomed look.
-
+- 2026-11-26, Ronen's whiteboard from a Zoom share (Ariel's screenshot, 1066px, his handwriting): 2×
+  crops showed the layout, 3–4× crops read the marks. Coordinates guessed from a 2× view missed the
+  words the first time: divide by the display scale. His א looks like an N with a tail and his ב like
+  a rounded כ, so the words only fell into place with the Zoom transcript (`.transcript.vtt` next to
+  the recording) open beside it: search it for the board's Arabic before reading letter by letter.
+  The small ש above a letter is a shadda, as in Ariel's notes. Top-left fragments with no context
+  were left out.
